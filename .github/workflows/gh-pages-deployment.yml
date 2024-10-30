@@ -6,16 +6,15 @@ on:
       - main
   pull_request:
 
-permissions:
-  contents: write
-
 jobs:
   build-deploy:
     runs-on: ubuntu-24.04
+
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
+
     steps:
-      - uses: actions/checkout@v1                  
+      - uses: actions/checkout@v4                  
         with:
           submodules: true
           fetch-depth: 0
