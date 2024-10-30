@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: http://bluebugs.github.io/sitemap.xml
