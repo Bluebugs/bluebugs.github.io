@@ -1,3 +1,28 @@
-baseURL = 'https://example.org/'
+baseURL = 'http://bluebugs.github.io/'
 languageCode = 'en-us'
-title = 'My New Hugo Site'
+title = 'Cedric Bail'
+theme = ["ananke"]
+
+SectionPagesMenu = 'main'
+googleAnalytics = ''
+enableRobotsTXT = true
+disqusShortname = "bluebugs"
+
+builddrafts = true
+
+[sitemap]
+  changefreq = "monthly"
+  priority = 0.5
+  filename = "sitemap.xml"
+
+[pagination]
+  pagerSize = 3
+
+[params]
+  text_color = "black"
+  author = "Cedric Bail"
+  description = "Random stuff and blog."
+  background_color_class = "bg-black"
+  recent_posts_number = 3
+  read_more_copy = "Read More"
+  commentoEnable = true
