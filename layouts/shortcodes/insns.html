@@ -1,0 +1,582 @@
+<script type='text/javascript' src='https://s3.amazonaws.com/dynatable-docs-assets/js/jquery-1.9.1.min.js'></script>
+<script type='text/javascript' src='https://s3.amazonaws.com/dynatable-docs-assets/js/jquery.scrollTo.js'></script>
+<script type='text/javascript' src='https://s3.amazonaws.com/dynatable-docs-assets/js/jquery.toc.min.js'></script>
+<script type='text/javascript'
+  src='https://s3.amazonaws.com/dynatable-docs-assets/js/jquery.sharrre-1.2.0.min.js'></script>
+
+<script type='text/javascript' src='https://s3.amazonaws.com/dynatable-docs-assets/js/jquery.dynatable.js'></script>
+
+<style type="text/css">
+  .horizontal {
+    display: inline-flex;
+    flex-direction: row;
+    justify-content: space-between;
+    width: 60%;
+  }
+
+  #filter-family {
+    order: 1;
+  }
+
+  #insns-group {
+    order: 2;
+  }
+
+  .search {
+    order: 3;
+  }
+
+  .remember {
+    order: 4;
+  }
+
+  .remember label {
+    display: inline-block;
+    padding-right: 10px;
+    white-space: nowrap;
+  }
+
+  .remember input {
+    vertical-align: middle;
+  }
+
+  .remember label span {
+    vertical-align: middle;
+  }
+
+  .vertical {
+    display: flex;
+    flex-direction: column;
+  }
+
+  #horizontal {
+    order: -1;
+  }
+
+  #instructions {
+    flex-grow: 1;
+    order: 3;
+  }
+
+  #dynatable-record-count {
+    order: 2;
+  }
+
+  * {
+    padding: 3px;
+    border: none;
+    border-collapse: collapse;
+    border-spacing: 0px;
+  }
+
+  .top {
+    border-top-width: 1px;
+    border-top-style: dotted;
+  }
+
+  .collapse {
+    font-family: monospace;
+    white-space: pre-wrap;
+    font-size: 11px;
+    display: none;
+  }
+
+  .header {
+    background-color: #D0D0D0;
+  }
+
+  .header a {
+    color: #000;
+    font-size: 18px;
+    font-weight: bold;
+    font-style: italic;
+  }
+
+  .compat {
+    font-size: 9px;
+    overflow: hidden;
+    font-family: monospace;
+    color: #000;
+    white-space: pre-wrap;
+    text-align: left;
+  }
+
+  .family {
+    font-size: 9px;
+    overflow: hidden;
+    font-family: monospace;
+    color: #808080;
+    white-space: pre-wrap;
+    text-align: left;
+  }
+
+  .family a {
+    color: #808080;
+    font-size: 13px;
+    text-decoration: none;
+  }
+
+  pre.code {
+    font-size: 11px;
+    font-family: monospace;
+  }
+
+  .dynatable-record-count {
+    color: #808080;
+  }
+</style>
+
+<h2>Renesas SH Instruction Set Summary</h2>
+
+<script type="text/javascript">
+  var local_storage = false;
+  if (typeof (Storage) !== "undefined") {
+    local_storage = true;
+    console.log("We do have storage.\n");
+
+    var remember = JSON.parse(window.localStorage.getItem('remember'));
+    if (remember === null) {
+      remember = new Object();
+    }
+  } else {
+    console.log("we don't have storage :-(\n");
+  }
+
+  var itr = 0;
+  function update_remember() {
+    if (document.getElementById('chk_remember').checked) {
+      $('#remember').val(true);
+    } else {
+      $('#remember').val(false);
+    }
+
+    $('#remember').trigger(jQuery.Event('keypress', { which: 13 }));
+  }
+</script>
+
+<div class="vertical">
+  <div class="horizontal" id="horizontal">
+    <div id="filter-family">Family :
+      <select id="family" name="family">
+        <option>*</option>
+        <option>SH1</option>
+        <option>SH2</option>
+        <option>SH2E</option>
+        <option>SH2A</option>
+        <option>SH3</option>
+        <option>SH3E</option>
+        <option>SH4</option>
+        <option>SH4A</option>
+        <option>DSP</option>
+        <option>J-Core</option>
+      </select>
+    </div>
+    <div id="insns-group">Instructions group :
+      <select id="group" name="group">
+        <option>*</option>
+        <option>Data Transfer Instructions</option>
+        <option>Bit Manipulation Instructions</option>
+        <option>Arithmetic Operation Instructions</option>
+        <option>Logic Operation Instructions</option>
+        <option>Shift Instructions</option>
+        <option>Branch Instructions</option>
+        <option>System Control Instructions</option>
+        <option>32 Bit Floating-Point Data Transfer Instructions (FPSCR.SZ = 0)</option>
+        <option>64 Bit Floating-Point Data Transfer Instructions (FPSCR.SZ = 1)</option>
+        <option>Floating-Point Single-Precision Instructions (FPSCR.PR = 0)</option>
+        <option>Floating-Point Double-Precision Instructions (FPSCR.PR = 1)</option>
+        <option>Floating-Point Control Instructions</option>
+        <option>DSP Data Transfer Instructions</option>
+        <option>DSP ALU Arithmetic Operation Instructions</option>
+        <option>DSP ALU Logical Operation Instructions</option>
+        <option>DSP Fixed Decimal Point Multiplication Instructions</option>
+        <option>DSP Shift Operation Instructions</option>
+        <option>DSP System Control Instructions</option>
+      </select>
+    </div>
+    <div class="search">Matching regexp :
+      <input type="search" id="search" />
+    </div>
+    <div class="remember">
+      <input type="search" id="remember" value="false" />
+      <label><input type=checkbox id="chk_remember" onclick="update_remember();" /><span>Stared</span></label>
+    </div>
+  </div>
+  <table id="instructions">
+    <thead class="header" id="top_header">
+      <th colspan=3>Compatibility</th>
+      <th>Format</th>
+      <th>Abstract</th>
+      <th>Code</th>
+      <th>T Bits</br>DC Bits</th>
+      <th colspan=3>Issue cycles</th>
+      <th colspan=3>Latency cycles</th>
+      <script type="text/javascript">
+        if (local_storage) {
+          document.write("<th data-dynatable-column='remember'>Remember</th>");
+        }
+      </script>
+    </thead>
+    <thead class="header">
+      <th colspan=7></th>
+      <th class='family' data-dynatable-column="SH4.issue">SH1</th>
+      <th class='family' data-dynatable-column="SH2.issue">SH2</th>
+      <th class='family' data-dynatable-column="SH2E.issue">SH2E</th>
+      <th class='family' data-dynatable-column="SH4.issue">SH1</th>
+      <th class='family' data-dynatable-column="SH2.issue">SH2</th>
+      <th class='family' data-dynatable-column="SH2E.issue">SH2E</th>
+      <script type="text/javascript">
+        if (local_storage) {
+          document.write("<th></th>");
+        }
+      </script>
+    </thead>
+    <thead class="header">
+      <th colspan=7></th>
+      <th class='family' data-dynatable-column="SH4.issue">SH2A</th>
+      <th class='family' data-dynatable-column="SH3.issue">SH3</th>
+      <th class='family' data-dynatable-column="SH3E.issue">SH3E</th>
+      <th class='family' data-dynatable-column="SH4.issue">SH2A</th>
+      <th class='family' data-dynatable-column="SH3.issue">SH3</th>
+      <th class='family' data-dynatable-column="SH3E.issue">SH3E</th>
+      <script type="text/javascript">
+        if (local_storage) {
+          document.write("<th></th>");
+        }
+      </script>
+    </thead>
+    <thead class="header">
+      <th colspan=7></th>
+      <th class='family' data-dynatable-column="SH4.issue">SH4</th>
+      <th class='family' data-dynatable-column="SH4A.issue">SH4A</th>
+      <th class='family' data-dynatable-column="DSP.issue">DSP</th>
+      <th class='family' data-dynatable-column="SH4.latency">SH4</th>
+      <th class='family' data-dynatable-column="SH4A.latency">SH4A</th>
+      <th class='family' data-dynatable-column="DSP.lantency">DSP</th>
+      <script type="text/javascript">
+        if (local_storage) {
+          document.write("<th></th>");
+        }
+      </script>
+    </thead>
+    <thead class="header">
+      <th colspan=7></th>
+      <th class='family' data-dynatable-column="J32.issue">J32</th>
+      <th class='family'></th>
+      <th class='family'></th>
+      <th class='family' data-dynatable-column="J32.latency">J32</th>
+      <th class='family'></th>
+      <th class='family'></th>
+      <script type="text/javascript">
+        if (local_storage) {
+          document.write("<th></th>");
+        }
+      </script>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script type="text/javascript">
+  var cur_opened = null;
+
+  document.getElementById("remember").style.display = "none";
+
+  function on_remember(rowIndex, format, event) {
+    var r;
+
+    if (event.defaultPrevented === true)
+      return;
+
+    if (remember[format] === true) {
+      delete remember[format];
+      r = false;
+    } else {
+      remember[format] = true;
+      r = true;
+    }
+
+    window.localStorage.setItem('remember', JSON.stringify(remember));
+
+    // It is faster to manipulate the element directly
+    var text = document.getElementById('remember' + rowIndex);
+    text.setAttribute('src', remember[format] === true ?
+      '/images/star_icon-full.png' :
+      '/images/star_icon-empty.png');
+
+    dynatable.settings.dataset.originalRecords[rowIndex].remember = r;
+
+    event.preventDefault();
+  }
+
+  function on_mouse_click(rowIndex, event) {
+    if (event.defaultPrevented === true)
+      return;
+
+    var eh = document.getElementById('hex' + rowIndex);
+    var ed = document.getElementById('description' + rowIndex);
+    var eo = document.getElementById('operation' + rowIndex);
+    var s = window.getSelection();
+
+    if (!s.isCollapsed)
+      return;
+
+    if (ed.style.display == 'table-row') {
+      if (eh) eh.style.display = 'none';
+      ed.style.display = 'none';
+      eo.style.display = 'none';
+      cur_opened = null;
+    }
+    else {
+      if (eh) eh.style.display = 'table-row';
+      ed.style.display = 'table-row';
+      eo.style.display = 'table-row';
+
+      if (cur_opened != null) {
+        if (cur_opened[0]) cur_opened[0].style.display = 'none';
+        cur_opened[1].style.display = 'none';
+        cur_opened[2].style.display = 'none';
+      }
+      cur_opened = [eh, ed, eo];
+    }
+  }
+
+  function on_mouse_over(rowIndex) {
+    var h, d, o;
+
+    document.getElementById('line0.' + rowIndex).style.backgroundColor = "#F0F0F0";
+    document.getElementById('line1.' + rowIndex).style.backgroundColor = "#F0F0F0";
+    document.getElementById('line2.' + rowIndex).style.backgroundColor = "#F0F0F0";
+    document.getElementById('line3.' + rowIndex).style.backgroundColor = "#F0F0F0";
+
+    h = document.getElementById('hex' + rowIndex);
+    if (h) h.style.backgroundColor = "#F0F0F0";
+
+    d = document.getElementById('description' + rowIndex);
+    if (d) d.style.backgroundColor = "#F0F0F0";
+
+    o = document.getElementById('operation' + rowIndex);
+    if (o) o.style.backgroundColor = "#F0F0F0";
+  }
+
+  function on_mouse_out(rowIndex) {
+    var h, d, o;
+
+    document.getElementById('line0.' + rowIndex).style.backgroundColor = "";
+    document.getElementById('line1.' + rowIndex).style.backgroundColor = "";
+    document.getElementById('line2.' + rowIndex).style.backgroundColor = "";
+    document.getElementById('line3.' + rowIndex).style.backgroundColor = "";
+
+    h = document.getElementById('hex' + rowIndex);
+    if (h) h.style.backgroundColor = "";
+
+    d = document.getElementById('description' + rowIndex);
+    if (d) d.style.backgroundColor = "";
+
+    o = document.getElementById('operation' + rowIndex);
+    if (o) o.style.backgroundColor = "";
+  }
+
+  function extract_4c(code) {
+    half_bytes = [];
+
+    code = code.replace(' ', '');
+
+    for (var i = 0, length = code.length; i < length; i += 4) {
+      half_bytes.push(code.substring(i, i + 4));
+    }
+
+    return half_bytes;
+  }
+
+  var ConvertBase = function (num) {
+    return {
+      from: function (baseFrom) {
+        return {
+          to: function (baseTo) {
+            return parseInt(num, baseFrom).toString(baseTo);
+          }
+        };
+      }
+    };
+  };
+
+  function binary2hex(code) {
+    const half_bytes = extract_4c(code);
+    hex = [];
+
+    for (const half_byte of half_bytes) {
+      if (/^[01]+$/.test(half_byte)) {
+        hex.push(ConvertBase(half_byte).from(2).to(16));
+      } else if (half_byte === 'nnnn') {
+        hex.push('n');
+      } else if (half_byte === 'mmmm') {
+        hex.push('m');
+      } else if (half_byte === 'iiii') {
+        hex.push('i');
+      } else if (half_byte === 'dddd') {
+        hex.push('d');
+      } else {
+        return null;
+      }
+    }
+
+    const half_word = extract_4c(hex.join("").toUpperCase());
+
+    return half_word.join(" ");
+  }
+
+  var last_group = "";
+  function Writer(rowIndex, record, columns, cellWriter) {
+    var compat = [
+      record.SH1 ? 'SH1' : '-',
+      record.SH2 ? 'SH2' : '-',
+      record.SH2E ? 'SH2E' : '-',
+      record.SH2A ? 'SH2A' : '-',
+      record.SH3 ? 'SH3' : '-',
+      record.SH3E ? 'SH3E' : '-',
+      record.SH4 ? 'SH4' : '-',
+      record.SH4A ? 'SH4A' : '-',
+      record.DSP ? 'DSP' : '-',
+      record.J32 ? 'J32' : '-'
+    ];
+    var issue = [
+      record.SH1 ? record["SH1.issue"] : '-',
+      record.SH2 ? record["SH2.issue"] : '-',
+      record.SH2E ? record["SH2E.issue"] : '-',
+      record.SH2A ? record["SH2A.issue"] : '-',
+      record.SH3 ? record["SH3.issue"] : '-',
+      record.SH3E ? record["SH3E.issue"] : '-',
+      record.SH4 ? record["SH4.issue"] : '-',
+      record.SH4A ? record["SH4A.issue"] : '-',
+      record.DSP ? record["DSP.issue"] : '-',
+      record.J32 ? record["J32.issue"] : '-'
+    ];
+    var latency = [
+      record.SH1 ? record["SH1.latency"] : '-',
+      record.SH2 ? record["SH2.latency"] : '-',
+      record.SH2E ? record["SH2E.latency"] : '-',
+      record.SH2A ? record["SH2A.latency"] : '-',
+      record.SH3 ? record["SH3.latency"] : '-',
+      record.SH3E ? record["SH3E.latency"] : '-',
+      record.SH4 ? record["SH4.latency"] : '-',
+      record.SH4A ? record["SH4A.latency"] : '-',
+      record.DSP ? record["DSP.latency"] : '-',
+      record.J32 ? record["J32.latency"] : '-'
+    ];
+    var group_start = '';
+
+    if (local_storage) {
+      memory = '<td rowspan=4><a onclick="on_remember(' + rowIndex + ', \'' + String(record.format) + '\', event);"><img id="remember' + rowIndex + '" height=32 width=32 src="/images/star_icon-';
+      if (remember[String(record.format)] === true) {
+        memory += 'full';
+        record.remember = true;
+      } else {
+        memory += 'empty';
+        record.remember = false;
+      }
+      memory += '.png"></a></td>';
+      colspan = 14;
+    } else {
+      memory = '';
+      colspan = 13;
+    }
+
+    if (record.group != last_group) {
+      last_group = record.group;
+      group_start = '<tr><td colspan=' + colspan + '><br/><b>' + record.group + '</b><br/></td></tr>';
+    }
+
+    record.hex = binary2hex(record.code);
+    if (record.hex) {
+      hexCode = '<tr class="collapse" id="hex' + rowIndex + '" onmouseover="on_mouse_over(' + rowIndex + ');" onmouseout="on_mouse_out(' + rowIndex + ');" onclick="on_mouse_click(' + rowIndex + ', event);"><td colspan=' + colspan + '><i><b>Short hexadecimal instruction code:</i></b>&nbsp;' + record.hex + '</td></tr>';
+    } else {
+      hexcode = '';
+    }
+
+    return group_start + '<tr class="top" id="line0.' + rowIndex + '" onmouseover="on_mouse_over(' + rowIndex + ');" onmouseout="on_mouse_out(' + rowIndex + ');" onclick="on_mouse_click(' + rowIndex + ', event);">' +
+      '<td class="compat">' + compat[0] + '</td><td class="compat">' + compat[1] + '</td><td class="compat">' + compat[2] + '</td>' +
+      '<td rowspan=4>' + record.format + '</td>' +
+      '<td rowspan=4>' + record.abstract + '</td>' +
+      '<td rowspan=4><pre>' + record.code + '</pre></td>' +
+      '<td rowspan=4>' + record.T + '</td>' +
+      '<td>' + issue[0] + '</td><td>' + issue[1] + '</td><td>' + issue[2] + '</td><' +
+      '<td>' + latency[0] + '</td><td>' + latency[1] + '</td><td>' + latency[2] + '</td>' + memory + '</tr>' +
+      '<tr id="line1.' + rowIndex + '" onmouseover="on_mouse_over(' + rowIndex + ');" onmouseout="on_mouse_out(' + rowIndex + ');" onclick="on_mouse_click(' + rowIndex + ', event);">' +
+      '<td class="compat">' + compat[3] + '</td><td class="compat">' + compat[4] + '</td><td class="compat">' + compat[5] + '</td>' +
+      '<td>' + issue[3] + '</td><td>' + issue[4] + '</td><td>' + issue[5] + '</td>' +
+      '<td>' + latency[3] + '</td><td>' + latency[4] + '</td><td>' + latency[5] + '</td>' +
+      '</tr><tr id="line2.' + rowIndex + '" onmouseover="on_mouse_over(' + rowIndex + ');" onmouseout="on_mouse_out(' + rowIndex + ');" onclick="on_mouse_click(' + rowIndex + ', event);">' +
+      '<td class="compat">' + compat[6] + '</td><td class="compat">' + compat[7] + '</td><td class="compat">' + compat[8] + '</td>' +
+      '<td>' + issue[6] + '</td><td>' + issue[7] + '</td><td>' + issue[8] + '</td>' +
+      '<td>' + latency[6] + '</td><td>' + latency[7] + '</td><td>' + latency[8] + '</td>' +
+      '</tr><tr id="line3.' + rowIndex + '" onmouseover="on_mouse_over(' + rowIndex + ');" onmouseout="on_mouse_out(' + rowIndex + ');" onclick="on_mouse_click(' + rowIndex + ', event);">' +
+      '<td class="compat">' + compat[9] + '</td><td class="compat">' + '</td><td class="compat"></td>' +
+      '<td>' + issue[9] + '</td><td>' + '</td><td></td>' +
+      '<td>' + latency[9] + '</td><td>' + '</td><td></td>' +
+      '</tr>' + hexCode +
+      '<tr class="collapse" id="description' + rowIndex + '" onmouseover="on_mouse_over(' + rowIndex + ');" onmouseout="on_mouse_out(' + rowIndex + ');" onclick="on_mouse_click(' + rowIndex + ', event);"><td colspan=' + colspan + '><i><b>Description</i></b><br/><pre>' + record.description + '</pre></td></tr>' +
+      '<tr class="collapse" id="operation' + rowIndex + '" onmouseover="on_mouse_over(' + rowIndex + ');" onmouseout="on_mouse_out(' + rowIndex + ');" onclick="on_mouse_click(' + rowIndex + ', event);"><td colspan=' + colspan + '><i><b>Operation</i></b><pre class="code">' + record.operation + '</pre></td></tr>';
+  }
+
+  var last_query = "";
+  var last_rex = null;
+  var dynatable = null;
+
+  $.getJSON("/json/insns.json",
+    function (data) {
+      dynatable = $('#instructions')
+        .bind('dynatable:init', function (e, dynatable) {
+          dynatable.queries.functions['family'] = function (record, queryValue) {
+            if (queryValue === '*') return true;
+            if (queryValue === 'J-Core') return record.J32;
+            return record[queryValue] === true;
+          };
+          dynatable.queries.functions['group'] = function (record, queryValue) {
+            if (queryValue === '*') return true;
+            return record.group === queryValue;
+          };
+          dynatable.queries.functions['search'] = function (record, queryValue) {
+            if (queryValue.length == 0) return true;
+
+            if (queryValue != last_query) {
+              last_query = queryValue;
+              last_rex = new RegExp(queryValue);
+            }
+
+            var rex = last_rex;
+            if (rex.test(record.format)) return true;
+            if (rex.test(record.abstract)) return true;
+            if (rex.test(record.code)) return true;
+            if (rex.test(record.description)) return true;
+            if (rex.test(record.operation)) return true;
+            if (rex.test(record.group)) return true;
+            if (rex.test(record.hex)) return true;
+
+            return false;
+          };
+          dynatable.queries.functions['remember'] = function (record, queryValue) {
+            if (queryValue === "true") {
+              if (record.remember) return true;
+              return false;
+            }
+            return true;
+          };
+        })
+        .dynatable({
+          features: {
+            search: false,
+            paginate: false
+          },
+          writers: {
+            _rowWriter: Writer
+          },
+          dataset: {
+            records: data.instructions
+          },
+          inputs: {
+            queries: $('#family, #search, #group, #remember')
+          }
+        }).data('dynatable');
+    });
+</script>
