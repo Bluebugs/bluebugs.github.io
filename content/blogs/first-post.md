@@ -16,7 +16,7 @@ The history of _SuperH_ was cut short by the Asian economic crisis and never rea
 
 # Take away
 
-As _SuperH_ was designed to be more efficient at decoding instructions and using memory, I believe it would still have an edge and be relevant in any environment where energy and performance matter. This marks an important change over the last few decades; our main constraint for most computing use cases today is the ratio of energy to performance. This ratio won’t improve in the future. The past advantage that x86 had with performance, regardless of other considerations, is now a hindrance, and the technological debt of this family makes it very difficult to compete with ARM, which has been much more focused on energy efficiency.
+As _SuperH_ was designed to be more efficient at decoding instructions and using memory, I believe it would still have an edge and be relevant in any environment where energy and performance matter. Our main constraint for most computing use cases today is the ratio of energy to performance; this marks an important change over the last few decades. This ratio won’t improve in the future. The past advantage that x86 had with performance, regardless of other considerations, is now a hindrance, and the technological debt of this family makes it very difficult to compete with ARM, which has been much more focused on energy efficiency.
 
 However, as a 90s CPU, bringing _SuperH_ outside of the IoT scope would require figuring out how to:
 
