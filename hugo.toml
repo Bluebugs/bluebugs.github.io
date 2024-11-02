@@ -26,3 +26,4 @@ builddrafts = true
   recent_posts_number = 3
   read_more_copy = "Read More"
   commentoEnable = true
+  custom_css = ["custom.css"]
