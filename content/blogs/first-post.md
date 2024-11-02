@@ -6,7 +6,7 @@ description = 'In depth SuperH instructions set'
 
 In this post, I’ll explore the SuperH instruction set and its relevance today, along with a tool I created to navigate it.
 
-A few years ago, I met some of the members of the team behind the development of the _J-Core_, a _SuperH_ clone, and had some really interesting discussions with them. Using this [resource](http://www.shared-ptr.com/sh_insns.html), I created, for my own understanding, a JSON file and the dynamic table below to help me navigate and understand the _SuperH_ instruction set. I also added J2-related instructions that were not present in the initial material. As I turn off my _AWS_ account, I realized I could just share it via a _GitHub_ page. Here is a bit more context about _SuperH_.
+A few years ago, I met some of the members of the team behind the development of the _J-Core_, a _SuperH_ clone, and had some really interesting discussions with them. Using this [resource](http://www.shared-ptr.com/sh_insns.html), I created, for my own understanding, a [JSON file](https://bluebugs.github.io/json/insns.json) and the dynamic table below to help me navigate and understand the _SuperH_ instruction set. I also added J2-related instructions that were not present in the initial material. As I turn off my _AWS_ account, I realized I could just share it via a _GitHub_ page. Here is a bit more context about _SuperH_.
 
 # The Evolution of _SuperH_
 
