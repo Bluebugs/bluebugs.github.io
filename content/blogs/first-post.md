@@ -1,6 +1,5 @@
 +++
 date = '2024-10-29T20:49:45-06:00'
-draft = true
 title = 'The SuperH family'
 description = 'In depth SuperH instructions set'
 +++
