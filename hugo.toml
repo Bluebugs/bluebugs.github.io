@@ -11,19 +11,28 @@ disqusShortname = "bluebugs"
 builddrafts = true
 
 [sitemap]
-  changefreq = "monthly"
-  priority = 0.5
-  filename = "sitemap.xml"
+changefreq = "monthly"
+priority = 0.5
+filename = "sitemap.xml"
 
 [pagination]
-  pagerSize = 3
+pagerSize = 3
 
 [params]
-  text_color = "black"
-  author = "Cedric Bail"
-  description = "Random stuff and blog."
-  background_color_class = "bg-black"
-  recent_posts_number = 3
-  read_more_copy = "Read More"
-  commentoEnable = true
-  custom_css = ["custom.css"]
+text_color = "black"
+author = "Cedric Bail"
+description = "Random stuff and blog."
+background_color_class = "bg-black"
+recent_posts_number = 3
+read_more_copy = "Read More"
+commentoEnable = true
+custom_css = ["custom.css"]
+
+[markup.goldmark.parser.attribute]
+block = true
+
+[markup]
+defaultMarkdownHandler = "goldmark"
+
+[[module.imports]]
+path = "github.com/KKKZOZ/hugo-admonitions"
