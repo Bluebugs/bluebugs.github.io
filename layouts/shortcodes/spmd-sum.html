@@ -1,0 +1,533 @@
+<style>
+    #spmd-demo_sum {
+        /* ID Suffix Added */
+        display: flex;
+        flex-direction: column;
+        font-family: sans-serif;
+        border: 1px solid #ccc;
+        padding: 10px;
+        max-width: 900px;
+        margin: 20px auto;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    #spmd-main-content_sum {
+        /* ID Suffix Added */
+        display: flex;
+        width: 100%;
+        margin-bottom: 15px;
+    }
+
+    #spmd-code-pane_sum {
+        /* ID Suffix Added */
+        flex: 1;
+        padding: 15px;
+        background-color: #fff;
+        border-right: 1px solid #eee;
+        border-radius: 4px 0 0 4px;
+    }
+
+    #spmd-code-pane_sum pre {
+        /* ID Suffix Added */
+        background-color: #2d2d2d;
+        color: #f8f8f2;
+        padding: 0 10px;
+        border-radius: 4px;
+        overflow-x: auto;
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+        font-size: 0;
+        line-height: 0;
+        margin: 0;
+    }
+
+    #spmd-code-pane_sum .code-line {
+        /* Parent ID Suffix Reflected */
+        display: block;
+        transition: background-color 0.3s ease;
+        margin: 0;
+        padding: 0;
+        font-size: 14px;
+        line-height: 1.2;
+    }
+
+    #spmd-code-pane_sum #spmd-go-code_sum {
+        /* ID Suffix Added to both parent and target */
+        display: block;
+        padding: 0;
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.2;
+    }
+
+    #spmd-code-pane_sum .highlight {
+        /* Parent ID Suffix Reflected */
+        background-color: #44475a;
+    }
+
+    #spmd-info-pane_sum {
+        /* ID Suffix Added */
+        padding: 10px;
+        font-size: 0.9em;
+        color: #333;
+        text-align: left;
+        width: 100%;
+        background-color: #fff;
+        border: 1px solid #eee;
+        border-radius: 4px;
+    }
+
+    #spmd-info-pane_sum h4 {
+        /* Parent ID Suffix Reflected */
+        margin-top: 0;
+        color: #555;
+    }
+
+    #spmd-final-result_sum {
+        /* ID Suffix Added */
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #f0f4f8;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        width: 100%;
+        font-size: 1em;
+    }
+
+    #spmd-final-result_sum h4 {
+        /* Parent ID Suffix Reflected */
+        margin-top: 0;
+        margin-bottom: 12px;
+        text-align: center;
+        color: #334e68;
+        font-size: 1.15em;
+        font-weight: 600;
+    }
+
+    /* START: Styles for Final Result (copied from spmd-oddeven.html) */
+    .result-line {
+        display: flex;
+        justify-content: flex-start;
+        /* Changed from space-between to flex-start */
+        align-items: center;
+        padding: 8px 10px;
+        /* Padding for each line */
+        border-bottom: 1px solid #dde4eb;
+        /* Lighter separator line */
+        background-color: #fff;
+        /* White background for lines */
+        margin: 0 -15px 0 -15px;
+        /* Extend to edge of parent padding */
+        padding-left: 25px;
+        /* Re-apply padding */
+        padding-right: 25px;
+        /* Re-apply padding */
+    }
+
+    .result-line:first-of-type {
+        border-top-left-radius: 3px;
+        border-top-right-radius: 3px;
+    }
+
+    .result-line:last-of-type {
+        border-bottom: none;
+        border-bottom-left-radius: 3px;
+        border-bottom-right-radius: 3px;
+        margin-bottom: -15px;
+        /* Pull last line to bottom of parent padding */
+    }
+
+    .spmd-result-label {
+        font-weight: 500;
+        /* Medium weight */
+        color: #506a80;
+        /* Softer color for label */
+        margin-right: 10px;
+    }
+
+    .spmd-result-value-group {
+        text-align: left;
+        /* Changed from right to left for better alignment with flex-start */
+        font-weight: 500;
+    }
+
+    .spmd-equals-sign {
+        margin: 0 0.3em;
+        color: #506a80;
+    }
+
+    /* END: Styles for Final Result */
+
+
+    #spmd-viz-pane_sum {
+        /* ID Suffix Added */
+        flex: 1.5;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    /* New Grid Styles for Lane Data */
+    #spmd-lane-data-grid_sum {
+        /* ID Suffix Added */
+        display: grid;
+        grid-template-columns: auto repeat(4, 1fr);
+        /* Label col, then 4 data cols */
+        gap: 5px 8px;
+        /* row-gap column-gap */
+        width: 100%;
+        margin-bottom: 20px;
+        align-items: center;
+        /* Vertically align items in cells */
+    }
+
+    .spmd-grid-header {
+        font-weight: bold;
+        padding: 5px;
+        text-align: center;
+        background-color: #f0f0f0;
+        border-radius: 3px;
+    }
+
+    .spmd-grid-label {
+        font-weight: bold;
+        text-align: right;
+        padding-right: 10px;
+    }
+
+    .spmd-grid-cell {
+        padding: 8px 5px;
+        text-align: center;
+        border: 1px solid #eee;
+        background-color: #fff;
+        border-radius: 3px;
+        min-height: 1.5em;
+        /* Ensure cells have some height */
+    }
+
+    /* Styling for v and sum value cells */
+    .spmd-grid-cell[id*='-v'] {
+        /* Selects cells for v values */
+        color: #28a745;
+        /* Green */
+        font-weight: bold;
+    }
+
+    .spmd-grid-cell[id*='-s'] {
+        /* Selects cells for sum values */
+        color: #007bff;
+        /* Blue */
+        font-weight: bold;
+    }
+
+    #spmd-summation-expression_sum {
+        /* ID Suffix Added */
+        color: #007bff;
+        /* Blue, same as s values */
+        font-weight: bold;
+        font-size: 1.1em;
+        /* Slightly larger for emphasis */
+    }
+
+    #spmd-final-result-value_sum {
+        /* ID Suffix Added */
+        font-size: 1.3em;
+        font-weight: bold;
+        color: #17a2b8;
+    }
+
+    #spmd-controls_sum {
+        /* ID Suffix Added */
+        margin-top: 20px;
+        text-align: center;
+    }
+
+    #spmd-controls_sum button {
+        /* Parent ID Suffix Reflected */
+        padding: 8px 15px;
+        margin: 0 5px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    #spmd-controls_sum button:hover {
+        /* Parent ID Suffix Reflected */
+        background-color: #0056b3;
+    }
+
+    #spmd-controls_sum button:disabled {
+        /* Parent ID Suffix Reflected */
+        background-color: #ccc;
+        cursor: not-allowed;
+    }
+
+    /* General Go Syntax Highlighting Styles (scoped to the demo) */
+    #spmd-demo_sum .gokw {
+        /* Parent ID Suffix Reflected */
+        color: #c586c0;
+    }
+
+    #spmd-demo_sum .gofn {
+        /* Parent ID Suffix Reflected */
+        color: #dcdcaa;
+    }
+
+    #spmd-demo_sum .goty {
+        /* Parent ID Suffix Reflected */
+        color: #4ec9b0;
+    }
+
+    #spmd-demo_sum .gohypo {
+        /* Parent ID Suffix Reflected */
+        color: #ce9178;
+    }
+
+    #spmd-demo_sum .govar {
+        /* Parent ID Suffix Reflected */
+        color: #9cdcfe;
+    }
+
+    #spmd-demo_sum .goop {
+        /* Parent ID Suffix Reflected */
+        color: #d4d4d4;
+    }
+
+    #spmd-demo_sum .gopunct {
+        /* Parent ID Suffix Reflected */
+        color: #d4d4d4;
+    }
+
+    #spmd-demo_sum .gocomment {
+        /* Parent ID Suffix Reflected */
+        color: #6a9955;
+    }
+
+    #spmd-info-pane_sum .spmd-inline-code {
+        /* Parent ID Suffix Reflected */
+        background-color: #2d2d2d;
+        color: #f8f8f2;
+        padding: 0.1em 0.4em;
+        border-radius: 3px;
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+        font-size: 0.95em;
+    }
+</style>
+
+<div id="spmd-demo_sum"> <!-- ID Suffix Added -->
+    <div id="spmd-main-content_sum"> <!-- ID Suffix Added -->
+        <div id="spmd-code-pane_sum"> <!-- ID Suffix Added -->
+            <pre><code id="spmd-go-code_sum"> <!-- ID Suffix Added -->
+<span class="code-line" data-line="1"><span class="gokw">func</span> <span class="gofn">sum</span><span class="gopunct">(</span><span class="govar">a</span> <span class="goty">[]int</span><span class="gopunct">)</span> <span class="goty">int</span> <span class="gopunct">{</span></span>
+<span class="code-line" data-line="2">    <span class="gokw">var</span> <span class="govar">s</span> <span class="gohypo">varying</span> <span class="goty">int</span></span>
+<span class="code-line" data-line="3">    <span class="gokw">go</span> <span class="gokw">for</span> <span class="govar">_</span><span class="gopunct">,</span> <span class="govar">v</span> <span class="goop">:=</span> <span class="gokw">range</span> <span class="govar">a</span> <span class="gopunct">{</span></span>
+<span class="code-line" data-line="4">        <span class="govar">s</span> <span class="goop">+=</span> <span class="govar">v</span></span>
+<span class="code-line" data-line="5">    <span class="gopunct">}</span></span>
+<span class="code-line" data-line="6">    <span class="gokw">return</span> <span class="gofn">reduce.Add</span><span class="gopunct">(</span><span class="govar">s</span><span class="gopunct">)</span></span>
+<span class="code-line" data-line="7"><span class="gopunct">}</span></span>
+    </code></pre>
+        </div>
+
+        <div id="spmd-viz-pane_sum"> <!-- ID Suffix Added -->
+            <div id="spmd-lane-data-grid_sum"> <!-- ID Suffix Added -->
+                <!-- Row 1: Lane Titles -->
+                <div class="spmd-grid-label"></div>
+                <div class="spmd-grid-header">Lane 1</div>
+                <div class="spmd-grid-header">Lane 2</div>
+                <div class="spmd-grid-header">Lane 3</div>
+                <div class="spmd-grid-header">Lane 4</div>
+
+                <!-- Row 2: v values -->
+                <div class="spmd-grid-label">v:</div>
+                <div class="spmd-grid-cell" id="spmd-lane-0-v_sum">-</div> <!-- ID Suffix Added -->
+                <div class="spmd-grid-cell" id="spmd-lane-1-v_sum">-</div> <!-- ID Suffix Added -->
+                <div class="spmd-grid-cell" id="spmd-lane-2-v_sum">-</div> <!-- ID Suffix Added -->
+                <div class="spmd-grid-cell" id="spmd-lane-3-v_sum">-</div> <!-- ID Suffix Added -->
+
+                <!-- Row 3: sum values -->
+                <div class="spmd-grid-label">s:</div>
+                <div class="spmd-grid-cell" id="spmd-lane-0-s_sum">0</div> <!-- ID Suffix Added -->
+                <div class="spmd-grid-cell" id="spmd-lane-1-s_sum">0</div> <!-- ID Suffix Added -->
+                <div class="spmd-grid-cell" id="spmd-lane-2-s_sum">0</div> <!-- ID Suffix Added -->
+                <div class="spmd-grid-cell" id="spmd-lane-3-s_sum">0</div> <!-- ID Suffix Added -->
+            </div>
+
+            <div id="spmd-final-result_sum"> <!-- ID Suffix Added -->
+                <h4>Final Result</h4>
+                <div class="result-lines-container">
+                    <div class="result-line">
+                        <span class="spmd-result-label">reduce.Add:</span> <!-- Changed text here -->
+                        <span class="spmd-result-value-group"><span id="spmd-summation-expression_sum"></span> <span
+                                class="spmd-equals-sign" id="spmd-equals-sign_sum" style="display: none;">=</span> <span
+                                id="spmd-final-result-value_sum">N/A</span></span> <!-- ID Suffixes Added -->
+                    </div>
+                </div>
+            </div>
+            <div id="spmd-controls_sum"> <!-- ID Suffix Added -->
+                <button id="spmd-prev-step_sum">Previous</button> <!-- ID Suffix Added -->
+                <button id="spmd-next-step_sum">Next</button> <!-- ID Suffix Added -->
+            </div>
+        </div>
+    </div>
+
+    <div id="spmd-info-pane_sum"> <!-- ID Suffix Added -->
+        <h4>Execution Step:</h4>
+        <p id="spmd-step-description_sum">Initialize `a` with `[]int{1,2,3,4,5,6}`. Four execution lanes available.</p>
+        <!-- ID Suffix Added -->
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const codeLines = document.querySelectorAll('#spmd-go-code_sum .code-line'); /* ID Suffix Added */
+        const stepDescription = document.getElementById('spmd-step-description_sum'); /* ID Suffix Added */
+
+        const laneVCells = [
+            document.getElementById('spmd-lane-0-v_sum'), /* ID Suffix Added */
+            document.getElementById('spmd-lane-1-v_sum'), /* ID Suffix Added */
+            document.getElementById('spmd-lane-2-v_sum'), /* ID Suffix Added */
+            document.getElementById('spmd-lane-3-v_sum')  /* ID Suffix Added */
+        ];
+        const laneSCells = [
+            document.getElementById('spmd-lane-0-s_sum'), /* ID Suffix Added */
+            document.getElementById('spmd-lane-1-s_sum'), /* ID Suffix Added */
+            document.getElementById('spmd-lane-2-s_sum'), /* ID Suffix Added */
+            document.getElementById('spmd-lane-3-s_sum')  /* ID Suffix Added */
+        ];
+
+        const finalResultValue = document.getElementById('spmd-final-result-value_sum'); /* ID Suffix Added */
+        const summationExpressionElement = document.getElementById('spmd-summation-expression_sum'); /* ID Suffix Added */
+        const equalsSignElement = document.getElementById('spmd-equals-sign_sum'); /* ID Suffix Added */
+        const prevButton = document.getElementById('spmd-prev-step_sum'); /* ID Suffix Added */
+        const nextButton = document.getElementById('spmd-next-step_sum'); /* ID Suffix Added */
+
+        const numLanes = 4;
+
+        const steps = [
+            { // 0
+                line: null,
+                description: "Calling <span class='spmd-inline-code'><span class='gofn'>sum</span><span class='gopunct'>(</span><span class='goty'>[]int</span><span class='gopunct'{>{</span>1,2,3,4,5,6<span class='gopunct'><}</span><span class='gopunct'>)</span></span> which initializes <span class='spmd-inline-code'><span class='govar'>a</span> = <span class='goty'>[]int</span><span class='gopunct'{>{</span>1,2,3,4,5,6<span class='gopunct'><}</span></span>.",
+                laneVDisplay: ["-", "-", "-", "-"],
+                laneSDisplay: [0, 0, 0, 0],
+                finalResult: "N/A"
+            },
+            { // 1
+                line: 2,
+                description: "<span class='spmd-inline-code'><span class='gokw'>var</span> <span class='govar'>s</span> <span class='gohypo'>varying</span> <span class='goty'>int</span></span>: Each lane gets its own <span class='spmd-inline-code'><span class='govar'>s</span></span> initialized to 0.",
+                laneVDisplay: ["-", "-", "-", "-"],
+                laneSDisplay: [0, 0, 0, 0],
+                finalResult: "N/A"
+            },
+            { // 2: v values assigned
+                line: 3,
+                description: "<span class='spmd-inline-code'><span class='gokw'>go</span> <span class='gokw'>for</span> <span class='govar'>_</span><span class='gopunct'>,</span> <span class='govar'>v</span> <span class=\\\'goop\\\'>:=</span> <span class='gokw'>range</span> <span class='govar'>a</span></span>: Distributing first batch. <span class='spmd-inline-code'><span class='govar'>v</span>=1</span> (L1), <span class='spmd-inline-code'><span class='govar'>v</span>=2</span> (L2), <span class='spmd-inline-code'><span class='govar'>v</span>=3</span> (L3), <span class='spmd-inline-code'><span class='govar'>v</span>=4</span> (L4).",
+                laneVDisplay: [1, 2, 3, 4],
+                laneSDisplay: [0, 0, 0, 0],
+                finalResult: "N/A"
+            },
+            { // 3: sums updated with v
+                line: 4,
+                description: "<span class='spmd-inline-code'><span class='govar'>s</span> <span class='goop'>+=</span> <span class='govar'>v</span></span>: For lanes 1, 2, 3, and 4, the current value of <span class='spmd-inline-code'><span class='govar'>s</span></span> is added to their assigned <span class='spmd-inline-code'><span class='govar'>v</span></span>, and the result is stored back in <span class='spmd-inline-code'><span class='govar'>s</span></span>.",
+                laneVDisplay: [1, 2, 3, 4],
+                laneSDisplay: [1, 2, 3, 4],
+                finalResult: "N/A"
+            },
+            { // 4: next batch of v values
+                line: 3,
+                description: "<span class='spmd-inline-code'><span class='gokw'>go</span> <span class='gokw'>for</span> <span class='govar'>_</span><span class='gopunct'>,</span> <span class='govar'>v</span> <span class=\\\'goop\\\'>:=</span> <span class='gokw'>range</span> <span class='govar'>a</span></span>: Distributing next batch. <span class='spmd-inline-code'><span class='govar'>v</span>=5</span> (L1), <span class='spmd-inline-code'><span class='govar'>v</span>=6</span> (L2). Lanes 3 & 4 idle for new <span class='spmd-inline-code'><span class='govar'>v</span></span>.",
+                laneVDisplay: [5, 6, "-", "-"],
+                laneSDisplay: [1, 2, 3, 4],
+                finalResult: "N/A"
+            },
+            { // 5: sums updated with new v
+                line: 4,
+                description: "<span class='spmd-inline-code'><span class='govar'>s</span> <span class='goop'>+=</span> <span class='govar'>v</span></span>: For lanes 1 & 2, the current value of <span class='spmd-inline-code'><span class='govar'>s</span></span> is added to their new <span class='spmd-inline-code'><span class='govar'>v</span></span>, and the result is stored back in <span class='spmd-inline-code'><span class='govar'>s</span></span>. Lanes 3 & 4 values for <span class='spmd-inline-code'><span class='govar'>s</span></span> remain unchanged.",
+                laneVDisplay: [5, 6, "-", "-"],
+                laneSDisplay: [1 + 5, 2 + 6, 3, 4],
+                finalResult: "N/A"
+            },
+            { // 6: Loop finished
+                line: 5,
+                description: "Loop finished. All elements from <span class='spmd-inline-code'><span class='govar'>a</span></span> have been processed.",
+                laneVDisplay: ["-", "-", "-", "-"],
+                laneSDisplay: [6, 8, 3, 4],
+                finalResult: "N/A"
+            },
+            { // 7: Reduce.Add
+                line: 6,
+                description: "<span class='spmd-inline-code'><span class='gokw'>return</span> <span class='gofn'>reduce.Add</span><span class='gopunct'>(</span><span class='govar'>s</span><span class='gopunct'>)</span></span>: Aggregating <span class='spmd-inline-code'><span class='govar'>s</span></span> values from all lanes (6+8+3+4).",
+                laneVDisplay: ["-", "-", "-", "-"],
+                laneSDisplay: [6, 8, 3, 4],
+                finalResult: 21
+            },
+            { // 8: Return
+                line: 7,
+                description: "Function returns the total sum: <span class='spmd-inline-code'>21</span>.",
+                laneVDisplay: ["-", "-", "-", "-"],
+                laneSDisplay: [6, 8, 3, 4],
+                finalResult: 21
+            }
+        ];
+
+        let currentStep = 0;
+
+        function renderStep(stepIndex) {
+            const step = steps[stepIndex];
+
+            // Highlight code line
+            codeLines.forEach(line => line.classList.remove('highlight'));
+            if (step.line !== null) {
+                const lineToHighlight = document.querySelector(`#spmd-go-code_sum .code-line[data-line="${step.line}"]`); /* ID Suffix Added */
+                if (lineToHighlight) {
+                    lineToHighlight.classList.add('highlight');
+                }
+            }
+
+            // Update description
+            stepDescription.innerHTML = step.description;
+
+            // Update lane v and s cell textContent
+            for (let i = 0; i < numLanes; i++) {
+                laneVCells[i].textContent = step.laneVDisplay[i];
+                laneSCells[i].textContent = step.laneSDisplay[i];
+            }
+
+            // Update final result display
+            if (step.finalResult !== "N/A") {
+                summationExpressionElement.textContent = step.laneSDisplay.join(' + ');
+                equalsSignElement.style.display = 'inline';
+                finalResultValue.textContent = step.finalResult;
+            } else {
+                summationExpressionElement.textContent = '';
+                equalsSignElement.style.display = 'none';
+                finalResultValue.textContent = "N/A";
+            }
+
+            // Update button states
+            prevButton.disabled = stepIndex === 0;
+            nextButton.disabled = stepIndex === steps.length - 1;
+        }
+
+        prevButton.addEventListener('click', () => {
+            if (currentStep > 0) {
+                currentStep--;
+                renderStep(currentStep);
+            }
+        });
+
+        nextButton.addEventListener('click', () => {
+            if (currentStep < steps.length - 1) {
+                currentStep++;
+                renderStep(currentStep);
+            }
+        });
+
+        // Initial render
+        renderStep(currentStep);
+    });
+</script>
