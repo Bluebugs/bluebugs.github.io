@@ -26,7 +26,7 @@ background_color_class = "bg-black"
 recent_posts_number = 3
 read_more_copy = "Read More"
 commentoEnable = true
-custom_css = ["custom.css"]
+custom_css = ["custom.css", "spmd-demos.css"]
 
 [markup.goldmark.parser.attribute]
 block = true

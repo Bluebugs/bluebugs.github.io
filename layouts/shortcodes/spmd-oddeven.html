@@ -1,4 +1,3 @@
-<link rel="stylesheet" href="{{ (resources.Get "css/spmd-demos.css").RelPermalink }}">
 <style>
     #spmd-demo_oddeven {
         /* ID Suffix Added */
@@ -26,67 +25,20 @@
         flex: 1;
         padding: 15px;
         background-color: #fff;
-        border-right: 1px solid #eee;
+        border-right: 1px solid #eee; /* Kept due to #eee vs #e0e0e0 and specific border-radius */
         border-radius: 4px 0 0 4px;
-    }
-
-    #spmd-code-pane_oddeven pre {
-        /* Parent ID Suffix Reflected */
-        background-color: #2d2d2d;
-        color: #f8f8f2;
-        padding: 0 10px;
-        border-radius: 4px;
-        overflow-x: auto;
-        font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
-        font-size: 0;
-        line-height: 0;
-        margin: 0;
-    }
-
-    #spmd-code-pane_oddeven .code-line {
-        /* Parent ID Suffix Reflected */
-        display: block;
-        transition: background-color 0.3s ease;
-        margin: 0;
-        padding: 0;
-        font-size: 14px;
-        line-height: 1.2;
-    }
-
-    #spmd-code-pane_oddeven #spmd-go-code_oddeven {
-        /* ID Suffix Added to both parent and target */
-        display: block;
-        padding: 0;
-        margin: 0;
-        font-size: 14px;
-        line-height: 1.2;
-    }
-
-    #spmd-code-pane_oddeven .highlight {
-        /* Parent ID Suffix Reflected */
-        background-color: #44475a;
     }
 
     #spmd-info-pane_oddeven {
         /* ID Suffix Added */
-        padding: 10px;
-        font-size: 0.9em;
+        padding: 10px; /* Differs from .spmd-info-pane */
+        font-size: 0.9em; /* Differs */
         color: #333;
         text-align: left;
         width: 100%;
-        background-color: #fff;
-        border: 1px solid #eee;
-        border-radius: 4px;
-    }
-
-    #spmd-info-pane_oddeven h4 {
-        /* Parent ID Suffix Reflected */
-        margin-top: 0;
-        margin-bottom: 12px;
-        text-align: center;
-        color: #334e68;
-        font-size: 1.15em;
-        font-weight: 600;
+        background-color: #fff; /* Differs */
+        border: 1px solid #eee; /* Differs */
+        border-radius: 4px; /* Differs */
     }
 
     #spmd-viz-pane_oddeven {
@@ -95,21 +47,19 @@
         padding: 15px;
         display: flex;
         flex-direction: column;
-        align-items: center;
+        align-items: center; /* Differs from .spmd-viz-pane justify-content */
     }
 
     #spmd-lane-data-grid_oddeven {
         /* ID Suffix Added */
         display: grid;
         grid-template-columns: auto repeat(4, 1fr);
-        gap: 5px 8px;
+        gap: 5px 8px; /* Differs from .spmd-lane-data-grid */
         width: 100%;
-        margin-bottom: 20px;
+        margin-bottom: 20px; /* Differs */
         align-items: center;
     }
 
-    /* REMOVED .spmd-grid-header, .spmd-grid-label, .spmd-grid-cell as they are in spmd-demos.css */
-    /* Specific styles for oddeven grid cells remain here if not generalizable */
     #spmd-lane-data-grid_oddeven .spmd-grid-cell[id*='-v'] {
         /* Parent ID Suffix Reflected */
         color: #28a745;
@@ -117,15 +67,12 @@
     }
 
     #spmd-lane-data-grid_oddeven .spmd-grid-cell[id*='-odd'],
-    /* Parent ID Suffix Reflected */
     #spmd-lane-data-grid_oddeven .spmd-grid-cell[id*='-even'] {
-        /* Parent ID Suffix Reflected */
         color: #007bff;
         font-weight: bold;
     }
 
     #spmd-lane-data-grid_oddeven .spmd-grid-cell.inactive-lane {
-        /* Parent ID Suffix Reflected */
         background-color: #e9ecef;
         color: #adb5bd;
         font-style: italic;
@@ -133,135 +80,28 @@
 
     #spmd-final-result_oddeven {
         /* ID Suffix Added */
-        margin-top: 20px;
-        /* This was missing, adding for consistency */
-        padding: 15px;
-        background-color: #f0f4f8;
-        border: 1px solid #ced4da;
-        border-radius: 6px;
-        width: 100%;
-        font-size: 1em;
-    }
-
-    #spmd-final-result_oddeven h4 {
-        /* Parent ID Suffix Reflected */
-        margin-top: 0;
-        margin-bottom: 12px;
-        text-align: center;
-        color: #334e68;
-        font-size: 1.15em;
-        font-weight: 600;
-    }
-
-    /* REMOVED .result-line, .spmd-result-label, .spmd-result-value-group, .spmd-equals-sign as they are in spmd-demos.css */
-
-    #spmd-odd-summation_oddeven,
-    /* ID Suffix Added - Corrected CSS Selector */
-    #spmd-even-summation_oddeven {
-        /* ID Suffix Added - Corrected CSS Selector */
-        color: #007bff;
-        font-weight: bold;
-        font-size: 1.1em;
-    }
-
-    #spmd-odd-final-value_oddeven,
-    /* ID Suffix Added */
-    #spmd-even-final-value_oddeven {
-        /* ID Suffix Added */
-        font-size: 1.3em;
-        font-weight: bold;
-        color: #17a2b8;
+        margin-top: 20px; 
+        padding: 15px; /* Kept as it's simpler than .spmd-final-result (missing bg, border etc) */
+        background-color: #f0f4f8; /* Added */
+        border: 1px solid #ced4da; /* Added */
+        border-radius: 6px; /* Added */
+        width: 100%; /* Added */
+        font-size: 1em; /* Added */
     }
 
     #spmd-controls_oddeven {
-        /* ID Suffix Added */
         margin-top: 20px;
         text-align: center;
     }
 
-    #spmd-controls_oddeven button {
-        /* Parent ID Suffix Reflected */
-        padding: 8px 15px;
-        margin: 0 5px;
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-    }
-
-    #spmd-controls_oddeven button:hover {
-        /* Parent ID Suffix Reflected */
-        background-color: #0056b3;
-    }
-
-    #spmd-controls_oddeven button:disabled {
-        /* Parent ID Suffix Reflected */
-        background-color: #ccc;
-        cursor: not-allowed;
-    }
-
-    /* General Go Syntax Highlighting Styles (scoped to the demo) */
-    #spmd-demo_oddeven .gokw {
-        /* Parent ID Suffix Reflected */
-        color: #c586c0;
-    }
-
-    #spmd-demo_oddeven .gofn {
-        /* Parent ID Suffix Reflected */
-        color: #dcdcaa;
-    }
-
-    #spmd-demo_oddeven .goty {
-        /* Parent ID Suffix Reflected */
-        color: #4ec9b0;
-    }
-
-    #spmd-demo_oddeven .gohypo {
-        /* Parent ID Suffix Reflected */
-        color: #ce9178;
-    }
-
-    #spmd-demo_oddeven .govar {
-        /* Parent ID Suffix Reflected */
-        color: #9cdcfe;
-    }
-
-    #spmd-demo_oddeven .goop {
-        /* Parent ID Suffix Reflected */
-        color: #d4d4d4;
-    }
-
-    #spmd-demo_oddeven .gonum {
-        /* Parent ID Suffix Reflected - Added from code */
-        color: #b5cea8;
-    }
-
-    #spmd-demo_oddeven .gopunct {
-        /* Parent ID Suffix Reflected */
-        color: #d4d4d4;
-    }
-
-    #spmd-demo_oddeven .gocomment {
-        /* Parent ID Suffix Reflected */
-        color: #6a9955;
-    }
-
-    #spmd-info-pane_oddeven .spmd-inline-code {
-        /* Parent ID Suffix Reflected */
-        background-color: #2d2d2d;
-        color: #f8f8f2;
-        padding: 0.1em 0.4em;
-        border-radius: 3px;
-        font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
-        font-size: 0.95em;
-    }
+    /* General Go Syntax Highlighting Styles (scoped to the demo) - REMOVED */
+    /* All #spmd-demo_oddeven .gokw, .gofn, etc. rules are removed */
+    /* REMOVED: #spmd-info-pane_oddeven .spmd-inline-code */
 </style>
 
 <div id="spmd-demo_oddeven"> <!-- ID Suffix Added -->
     <div id="spmd-main-content_oddeven"> <!-- ID Suffix Added -->
-        <div id="spmd-code-pane_oddeven"> <!-- ID Suffix Added -->
+        <div id="spmd-code-pane_oddeven" class="spmd-code-pane spmd-code-pane-oddeven"> <!-- ID Suffix Added -->
             <pre><code id="spmd-go-code_oddeven"> <!-- ID Suffix Added -->
 <span class="code-line" data-line="1"><span class="gokw">func</span> <span class="gofn">oddEvenCount</span><span class="gopunct">(</span><span class="govar">a</span> <span class="goty">[]int</span><span class="gopunct">)</span> <span class="gopunct">(</span><span class="goty">int</span><span class="gopunct">,</span> <span class="goty">int</span><span class="gopunct">)</span> <span class="gopunct">{</span></span>
 <span class="code-line" data-line="2">  <span class="gokw">var</span> <span class="govar">odd</span> <span class="gohypo">varying</span> <span class="goty">int</span></span>
@@ -321,21 +161,25 @@
                 <div class="result-lines-container">
                     <div class="result-line">
                         <span class="spmd-result-label">Total Odd:</span>
-                        <span class="spmd-result-value-group"><span id="spmd-odd-summation_oddeven"></span>
+                        <span class="spmd-result-value-group">
+                            <span id="spmd-odd-summation_oddeven" class="spmd-summation-text"></span>
                             <span class="spmd-equals-sign" id="spmd-odd-equals-sign_oddeven"
-                                style="display: none;">=</span> <span 
-                                id="spmd-odd-final-value_oddeven">N/A</span></span> 
+                                style="display: none;">=</span> <span
+                                id="spmd-odd-final-value_oddeven" class="spmd-final-value-text">N/A</span>
+                        </span>
                     </div>
                     <div class="result-line">
                         <span class="spmd-result-label">Total Even:</span>
-                        <span class="spmd-result-value-group"><span id="spmd-even-summation_oddeven"></span>
+                        <span class="spmd-result-value-group">
+                            <span id="spmd-even-summation_oddeven" class="spmd-summation-text"></span>
                             <span class="spmd-equals-sign" id="spmd-even-equals-sign_oddeven"
-                                style="display: none;">=</span> <span 
-                                id="spmd-even-final-value_oddeven">N/A</span></span> 
+                                style="display: none;">=</span> <span
+                                id="spmd-even-final-value_oddeven" class="spmd-final-value-text">N/A</span>
+                        </span>
                     </div>
                 </div>
             </div>
-            <div id="spmd-controls_oddeven"> <!-- ID Suffix Added -->
+            <div id="spmd-controls_oddeven" class="spmd-controls"> <!-- ID Suffix Added -->
                 <button id="spmd-prev-step_oddeven">Previous</button> <!-- ID Suffix Added -->
                 <button id="spmd-next-step_oddeven">Next</button> <!-- ID Suffix Added -->
             </div>
