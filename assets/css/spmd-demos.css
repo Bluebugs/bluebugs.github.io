@@ -1,0 +1,291 @@
+/* Common styles for SPMD Demos */
+
+/* Main Demo Container */
+.spmd-demo {
+    display: flex;
+    flex-direction: row;
+    /* Arrange code and viz panes side-by-side */
+    align-items: stretch;
+    /* Make panes the same height */
+    margin-bottom: 20px;
+    /* Space before the info-pane which is outside this div */
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    /* Ensures child border-radius is respected */
+}
+
+.spmd-grid-header {
+    font-weight: bold;
+    padding: 5px;
+    text-align: center;
+    background-color: #f0f0f0;
+    border-radius: 3px;
+}
+
+.spmd-grid-label {
+    font-weight: bold;
+    text-align: right;
+    padding-right: 10px;
+}
+
+.spmd-grid-cell {
+    padding: 8px 5px;
+    text-align: center;
+    border: 1px solid #eee;
+    background-color: #fff;
+    /* Ensure white background */
+    border-radius: 3px;
+    /* Ensure rounded corners */
+    min-height: 1.5em;
+    /* Ensure cells have some height */
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    /* Subtle shadow for depth */
+}
+
+/* Styles for Final Result Display */
+.spmd-final-result {
+    padding: 10px 15px;
+    margin-top: 15px;
+    /* Space from grid */
+    margin-bottom: 15px;
+    /* Space before controls */
+    background-color: #e9f5ff;
+    /* Light blue background */
+    border: 1px solid #cce7ff;
+    border-radius: 4px;
+    text-align: center;
+    /* Center the text elements */
+}
+
+.spmd-final-result .spmd-summation-text,
+.spmd-final-result .spmd-final-value-text {
+    font-size: 1.1em;
+    /* Make text slightly larger */
+    display: inline-block;
+    /* Allow margin/padding and centering */
+}
+
+.spmd-final-result .spmd-summation-text {
+    font-weight: 500;
+    color: #333;
+    margin-right: 8px;
+}
+
+.spmd-final-result .spmd-final-value-text {
+    font-weight: bold;
+    color: #0056b3;
+    /* Darker blue for value */
+}
+
+/* Common Go Syntax Highlighting Styles - to be referenced by demo-specific selectors */
+/* These will be prefixed by #spmd-demo_sum or #spmd-demo_oddeven in the shortcodes */
+.gokw {
+    color: #c586c0;
+}
+
+.gofn {
+    color: #dcdcaa;
+}
+
+.goty {
+    color: #4ec9b0;
+}
+
+.gohypo {
+    color: #ce9178;
+}
+
+.govar {
+    color: #9cdcfe;
+}
+
+.goop {
+    color: #d4d4d4;
+}
+
+.gonum {
+    color: #b5cea8;
+}
+
+.gopunct {
+    color: #d4d4d4;
+}
+
+.gocomment {
+    color: #6a9955;
+}
+
+.spmd-inline-code {
+    background-color: #2d2d2d;
+    color: #f8f8f2;
+    padding: 0.1em 0.4em;
+    border-radius: 3px;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+    font-size: 0.95em;
+}
+
+/* Common Button Styles for SPMD Demos */
+.spmd-controls button {
+    padding: 8px 15px;
+    margin: 0 5px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.spmd-controls button:hover {
+    background-color: #0056b3;
+}
+
+.spmd-controls button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* Common Pane Styles */
+.spmd-code-pane {
+    flex: 1;
+    /* Takes up 1 part of the flex space */
+    padding: 15px;
+    background-color: #fff;
+    /* White background for code pane */
+    border-right: 1px solid #e0e0e0;
+    /* Separator line */
+}
+
+.spmd-code-pane pre {
+    background-color: #2d2d2d;
+    color: #f8f8f2;
+    padding: 0 10px;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+    font-size: 0;
+    line-height: 0;
+    margin: 0;
+}
+
+.spmd-code-pane .code-line {
+    display: block;
+    transition: background-color 0.3s ease;
+    margin: 0;
+    padding: 0;
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+.spmd-code-pane code[id^="spmd-go-code_"] {
+    /* Targeting existing unique ID for go code block */
+    display: block;
+    padding: 0;
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+.spmd-code-pane .highlight {
+    background-color: #44475a;
+}
+
+.spmd-info-pane {
+    padding: 15px;
+    /* Increased padding */
+    font-size: 0.95em;
+    /* Slightly larger font */
+    color: #333;
+    text-align: left;
+    width: 100%;
+    /* Takes full width as it's a separate block */
+    background-color: #fdfdfd;
+    /* Slightly off-white */
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    /* Rounded corners */
+    margin-top: 0;
+    /* Remove top margin if .spmd-demo has margin-bottom */
+    box-sizing: border-box;
+    /* Ensure padding and border are included in width */
+}
+
+.spmd-viz-pane {
+    flex: 1.5;
+    /* Takes up 1.5 parts of the flex space, making it wider */
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    /* Stack children (grid, result, controls) vertically */
+    justify-content: flex-start;
+    /* Align items to the start */
+    background-color: #ffffff;
+    /* White background for viz pane */
+}
+
+/* Common Final Result Container Styles */
+.spmd-final-result {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f0f4f8;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    width: 100%;
+    font-size: 1em;
+}
+
+/* Common h4 Styles for Info and Final Result Panes */
+.spmd-final-result h4,
+.spmd-info-pane h4 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    text-align: center;
+    color: #334e68;
+    font-size: 1.15em;
+    font-weight: 600;
+}
+
+/* Common Styles for Summation/Expression Text in Final Result */
+.spmd-summation-text {
+    color: #007bff;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+/* Common Styles for Final Value Text in Final Result */
+.spmd-final-value-text {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: #17a2b8;
+}
+
+/* Common Lane Data Grid Styles */
+.spmd-lane-data-grid {
+    display: grid;
+    grid-template-columns: auto repeat(4, 1fr);
+    /* Label column + 4 data columns */
+    gap: 5px;
+    /* Gap between grid cells */
+    align-items: center;
+    /* Vertically center content in cells */
+    margin-bottom: 15px;
+    /* Space before the final result */
+    background-color: #f9f9f9;
+    /* Light background for the grid area */
+    padding: 10px;
+    /* Padding around the grid */
+    border-radius: 4px;
+    /* Rounded corners for the grid container */
+    border: 1px solid #e0e0e0;
+    /* Border for the grid container */
+}
+
+/* Style for the value cells ('v') specifically, if needed beyond .spmd-grid-cell */
+.spmd-grid-cell-value-v {
+    font-weight: 500;
+    /* Example: make 'v' values slightly bolder */
+    color: #2a2a2a;
+}

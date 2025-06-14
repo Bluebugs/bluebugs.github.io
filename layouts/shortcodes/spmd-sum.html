@@ -1,3 +1,4 @@
+<link rel="stylesheet" href="{{ (resources.Get "css/spmd-demos.css").RelPermalink }}">
 <style>
     #spmd-demo_sum {
         /* ID Suffix Added */
@@ -105,57 +106,7 @@
         font-weight: 600;
     }
 
-    /* START: Styles for Final Result (copied from spmd-oddeven.html) */
-    .result-line {
-        display: flex;
-        justify-content: flex-start;
-        /* Changed from space-between to flex-start */
-        align-items: center;
-        padding: 8px 10px;
-        /* Padding for each line */
-        border-bottom: 1px solid #dde4eb;
-        /* Lighter separator line */
-        background-color: #fff;
-        /* White background for lines */
-        margin: 0 -15px 0 -15px;
-        /* Extend to edge of parent padding */
-        padding-left: 25px;
-        /* Re-apply padding */
-        padding-right: 25px;
-        /* Re-apply padding */
-    }
-
-    .result-line:first-of-type {
-        border-top-left-radius: 3px;
-        border-top-right-radius: 3px;
-    }
-
-    .result-line:last-of-type {
-        border-bottom: none;
-        border-bottom-left-radius: 3px;
-        border-bottom-right-radius: 3px;
-        margin-bottom: -15px;
-        /* Pull last line to bottom of parent padding */
-    }
-
-    .spmd-result-label {
-        font-weight: 500;
-        /* Medium weight */
-        color: #506a80;
-        /* Softer color for label */
-        margin-right: 10px;
-    }
-
-    .spmd-result-value-group {
-        text-align: left;
-        /* Changed from right to left for better alignment with flex-start */
-        font-weight: 500;
-    }
-
-    .spmd-equals-sign {
-        margin: 0 0.3em;
-        color: #506a80;
-    }
+    /* REMOVED .result-line, .spmd-result-label, .spmd-result-value-group, .spmd-equals-sign as they are in spmd-demos.css */
 
     /* END: Styles for Final Result */
 
@@ -183,39 +134,17 @@
         /* Vertically align items in cells */
     }
 
-    .spmd-grid-header {
-        font-weight: bold;
-        padding: 5px;
-        text-align: center;
-        background-color: #f0f0f0;
-        border-radius: 3px;
-    }
-
-    .spmd-grid-label {
-        font-weight: bold;
-        text-align: right;
-        padding-right: 10px;
-    }
-
-    .spmd-grid-cell {
-        padding: 8px 5px;
-        text-align: center;
-        border: 1px solid #eee;
-        background-color: #fff;
-        border-radius: 3px;
-        min-height: 1.5em;
-        /* Ensure cells have some height */
-    }
+    /* REMOVED .spmd-grid-header, .spmd-grid-label, .spmd-grid-cell as they are in spmd-demos.css */
 
     /* Styling for v and sum value cells */
-    .spmd-grid-cell[id*='-v'] {
-        /* Selects cells for v values */
+    #spmd-lane-data-grid_sum .spmd-grid-cell[id*='-v'] {
+        /* Parent ID Suffix Reflected */
         color: #28a745;
         /* Green */
         font-weight: bold;
     }
 
-    .spmd-grid-cell[id*='-s'] {
+    #spmd-lane-data-grid_sum .spmd-grid-cell[id*='-s'] {
         /* Selects cells for sum values */
         color: #007bff;
         /* Blue */
@@ -384,34 +313,34 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const codeLines = document.querySelectorAll('#spmd-go-code_sum .code-line'); /* ID Suffix Added */
-        const stepDescription = document.getElementById('spmd-step-description_sum'); /* ID Suffix Added */
+        const codeLines_sum = document.querySelectorAll('#spmd-go-code_sum .code-line'); /* ID Suffix Added */
+        const stepDescription_sum = document.getElementById('spmd-step-description_sum'); /* ID Suffix Added */
 
-        const laneVCells = [
+        const laneVCells_sum = [
             document.getElementById('spmd-lane-0-v_sum'), /* ID Suffix Added */
             document.getElementById('spmd-lane-1-v_sum'), /* ID Suffix Added */
             document.getElementById('spmd-lane-2-v_sum'), /* ID Suffix Added */
             document.getElementById('spmd-lane-3-v_sum')  /* ID Suffix Added */
         ];
-        const laneSCells = [
+        const laneSCells_sum = [
             document.getElementById('spmd-lane-0-s_sum'), /* ID Suffix Added */
             document.getElementById('spmd-lane-1-s_sum'), /* ID Suffix Added */
             document.getElementById('spmd-lane-2-s_sum'), /* ID Suffix Added */
             document.getElementById('spmd-lane-3-s_sum')  /* ID Suffix Added */
         ];
 
-        const finalResultValue = document.getElementById('spmd-final-result-value_sum'); /* ID Suffix Added */
-        const summationExpressionElement = document.getElementById('spmd-summation-expression_sum'); /* ID Suffix Added */
-        const equalsSignElement = document.getElementById('spmd-equals-sign_sum'); /* ID Suffix Added */
-        const prevButton = document.getElementById('spmd-prev-step_sum'); /* ID Suffix Added */
-        const nextButton = document.getElementById('spmd-next-step_sum'); /* ID Suffix Added */
+        const finalResultValue_sum = document.getElementById('spmd-final-result-value_sum'); /* ID Suffix Added */
+        const summationExpressionElement_sum = document.getElementById('spmd-summation-expression_sum'); /* ID Suffix Added */
+        const equalsSignElement_sum = document.getElementById('spmd-equals-sign_sum'); /* ID Suffix Added */
+        const prevButton_sum = document.getElementById('spmd-prev-step_sum'); /* ID Suffix Added */
+        const nextButton_sum = document.getElementById('spmd-next-step_sum'); /* ID Suffix Added */
 
-        const numLanes = 4;
+        const numLanes_sum = 4;
 
-        const steps = [
+        const steps_sum = [
             { // 0
                 line: null,
-                description: "Calling <span class='spmd-inline-code'><span class='gofn'>sum</span><span class='gopunct'>(</span><span class='goty'>[]int</span><span class='gopunct'{>{</span>1,2,3,4,5,6<span class='gopunct'><}</span><span class='gopunct'>)</span></span> which initializes <span class='spmd-inline-code'><span class='govar'>a</span> = <span class='goty'>[]int</span><span class='gopunct'{>{</span>1,2,3,4,5,6<span class='gopunct'><}</span></span>.",
+                description: "Calling <span class='spmd-inline-code'><span class='gofn'>sum</span><span class='gopunct'>(</span><span class='goty'>[]int</span><span class='gopunct'>{>{</span>1,2,3,4,5,6<span class='gopunct'><}</span><span class='gopunct'>)</span></span> which initializes <span class='spmd-inline-code'><span class='govar'>a</span> = <span class='goty'>[]int</span><span class='gopunct'>{>{</span>1,2,3,4,5,6<span class='gopunct'><}</span></span>.",
                 laneVDisplay: ["-", "-", "-", "-"],
                 laneSDisplay: [0, 0, 0, 0],
                 finalResult: "N/A"
@@ -425,62 +354,62 @@
             },
             { // 2: v values assigned
                 line: 3,
-                description: "<span class='spmd-inline-code'><span class='gokw'>go</span> <span class='gokw'>for</span> <span class='govar'>_</span><span class='gopunct'>,</span> <span class='govar'>v</span> <span class=\\\'goop\\\'>:=</span> <span class='gokw'>range</span> <span class='govar'>a</span></span>: Distributing first batch. <span class='spmd-inline-code'><span class='govar'>v</span>=1</span> (L1), <span class='spmd-inline-code'><span class='govar'>v</span>=2</span> (L2), <span class='spmd-inline-code'><span class='govar'>v</span>=3</span> (L3), <span class='spmd-inline-code'><span class='govar'>v</span>=4</span> (L4).",
+                description: "Next, <span class='spmd-inline-code'><span class='gokw'>go</span> <span class='gokw'>for</span> <span class='govar'>_</span><span class='gopunct'>,</span> <span class='govar'>v</span> <span class='goop'>:=</span> <span class='gokw'>range</span> <span class='govar'>a</span></span> distributes the first batch of data: <span class='spmd-inline-code'><span class='govar'>v</span>=1</span> to Lane 1, <span class='spmd-inline-code'><span class='govar'>v</span>=2</span> to Lane 2, <span class='spmd-inline-code'><span class='govar'>v</span>=3</span> to Lane 3, and <span class='spmd-inline-code'><span class='govar'>v</span>=4</span> to Lane 4.",
                 laneVDisplay: [1, 2, 3, 4],
                 laneSDisplay: [0, 0, 0, 0],
                 finalResult: "N/A"
             },
             { // 3: sums updated with v
                 line: 4,
-                description: "<span class='spmd-inline-code'><span class='govar'>s</span> <span class='goop'>+=</span> <span class='govar'>v</span></span>: For lanes 1, 2, 3, and 4, the current value of <span class='spmd-inline-code'><span class='govar'>s</span></span> is added to their assigned <span class='spmd-inline-code'><span class='govar'>v</span></span>, and the result is stored back in <span class='spmd-inline-code'><span class='govar'>s</span></span>.",
+                description: "Then, <span class='spmd-inline-code'><span class='govar'>s</span> <span class='goop'>+=</span> <span class='govar'>v</span></span> executes. For lanes 1, 2, 3, and 4, the current value of <span class='spmd-inline-code'><span class='govar'>s</span></span> (which is 0 for all) is added to their assigned <span class='spmd-inline-code'><span class='govar'>v</span></span>. The result is stored back in <span class='spmd-inline-code'><span class='govar'>s</span></span> for each lane.",
                 laneVDisplay: [1, 2, 3, 4],
                 laneSDisplay: [1, 2, 3, 4],
                 finalResult: "N/A"
             },
             { // 4: next batch of v values
                 line: 3,
-                description: "<span class='spmd-inline-code'><span class='gokw'>go</span> <span class='gokw'>for</span> <span class='govar'>_</span><span class='gopunct'>,</span> <span class='govar'>v</span> <span class=\\\'goop\\\'>:=</span> <span class='gokw'>range</span> <span class='govar'>a</span></span>: Distributing next batch. <span class='spmd-inline-code'><span class='govar'>v</span>=5</span> (L1), <span class='spmd-inline-code'><span class='govar'>v</span>=6</span> (L2). Lanes 3 & 4 idle for new <span class='spmd-inline-code'><span class='govar'>v</span></span>.",
+                description: "The <span class='spmd-inline-code'><span class='gokw'>go</span> <span class='gokw'>for</span></span> loop continues, distributing the next batch: <span class='spmd-inline-code'><span class='govar'>v</span>=5</span> to Lane 1 and <span class='spmd-inline-code'><span class='govar'>v</span>=6</span> to Lane 2. Lanes 3 and 4 are idle for new <span class='spmd-inline-code'><span class='govar'>v</span></span> assignments as there's no more data for them.",
                 laneVDisplay: [5, 6, "-", "-"],
-                laneSDisplay: [1, 2, 3, 4],
+                laneSDisplay: [1, 2, 3, 4], // s values from previous step
                 finalResult: "N/A"
             },
             { // 5: sums updated with new v
                 line: 4,
-                description: "<span class='spmd-inline-code'><span class='govar'>s</span> <span class='goop'>+=</span> <span class='govar'>v</span></span>: For lanes 1 & 2, the current value of <span class='spmd-inline-code'><span class='govar'>s</span></span> is added to their new <span class='spmd-inline-code'><span class='govar'>v</span></span>, and the result is stored back in <span class='spmd-inline-code'><span class='govar'>s</span></span>. Lanes 3 & 4 values for <span class='spmd-inline-code'><span class='govar'>s</span></span> remain unchanged.",
+                description: "<span class='spmd-inline-code'><span class='govar'>s</span> <span class='goop'>+=</span> <span class='govar'>v</span></span> executes again. For lanes 1 and 2, their current <span class='spmd-inline-code'><span class='govar'>s</span></span> is added to their new <span class='spmd-inline-code'><span class='govar'>v</span></span>. Lane 1: <span class='spmd-inline-code'>1 + 5 = 6</span>. Lane 2: <span class='spmd-inline-code'>2 + 6 = 8</span>. The <span class='spmd-inline-code><span class='govar'>s</span></span> values for Lanes 3 and 4 remain unchanged.",
                 laneVDisplay: [5, 6, "-", "-"],
                 laneSDisplay: [1 + 5, 2 + 6, 3, 4],
                 finalResult: "N/A"
             },
             { // 6: Loop finished
                 line: 5,
-                description: "Loop finished. All elements from <span class='spmd-inline-code'><span class='govar'>a</span></span> have been processed.",
+                description: "The loop finishes as all elements from <span class='spmd-inline-code'><span class='govar'>a</span></span> have been processed. The <span class='spmd-inline-code'><span class='govar'>s</span></span> values in each lane are now: Lane 1: 6, Lane 2: 8, Lane 3: 3, Lane 4: 4.",
                 laneVDisplay: ["-", "-", "-", "-"],
                 laneSDisplay: [6, 8, 3, 4],
                 finalResult: "N/A"
             },
             { // 7: Reduce.Add
                 line: 6,
-                description: "<span class='spmd-inline-code'><span class='gokw'>return</span> <span class='gofn'>reduce.Add</span><span class='gopunct'>(</span><span class='govar'>s</span><span class='gopunct'>)</span></span>: Aggregating <span class='spmd-inline-code'><span class='govar'>s</span></span> values from all lanes (6+8+3+4).",
+                description: "Finally, <span class='spmd-inline-code'><span class='gokw'>return</span> <span class='gofn'>reduce.Add</span><span class='gopunct'>(</span><span class='govar'>s</span><span class='gopunct'>)</span></span> aggregates the <span class='spmd-inline-code'><span class='govar'>s</span></span> values from all lanes: <span class='spmd-inline-code'>6 + 8 + 3 + 4 = 21</span>.",
                 laneVDisplay: ["-", "-", "-", "-"],
                 laneSDisplay: [6, 8, 3, 4],
                 finalResult: 21
             },
             { // 8: Return
                 line: 7,
-                description: "Function returns the total sum: <span class='spmd-inline-code'>21</span>.",
+                description: "The function returns the total sum: <span class='spmd-inline-code'>21</span>.",
                 laneVDisplay: ["-", "-", "-", "-"],
                 laneSDisplay: [6, 8, 3, 4],
                 finalResult: 21
             }
         ];
 
-        let currentStep = 0;
+        let currentStep_sum = 0;
 
-        function renderStep(stepIndex) {
-            const step = steps[stepIndex];
+        function renderStep_sum(stepIndex) {
+            const step = steps_sum[stepIndex];
 
             // Highlight code line
-            codeLines.forEach(line => line.classList.remove('highlight'));
+            codeLines_sum.forEach(line => line.classList.remove('highlight'));
             if (step.line !== null) {
                 const lineToHighlight = document.querySelector(`#spmd-go-code_sum .code-line[data-line="${step.line}"]`); /* ID Suffix Added */
                 if (lineToHighlight) {
@@ -489,45 +418,47 @@
             }
 
             // Update description
-            stepDescription.innerHTML = step.description;
+            stepDescription_sum.innerHTML = step.description;
 
             // Update lane v and s cell textContent
-            for (let i = 0; i < numLanes; i++) {
-                laneVCells[i].textContent = step.laneVDisplay[i];
-                laneSCells[i].textContent = step.laneSDisplay[i];
+            for (let i = 0; i < numLanes_sum; i++) {
+                laneVCells_sum[i].textContent = step.laneVDisplay[i];
+                laneSCells_sum[i].textContent = step.laneSDisplay[i];
             }
 
             // Update final result display
             if (step.finalResult !== "N/A") {
-                summationExpressionElement.textContent = step.laneSDisplay.join(' + ');
-                equalsSignElement.style.display = 'inline';
-                finalResultValue.textContent = step.finalResult;
+                // Filter out non-numeric values before joining for the expression
+                const validLaneSValues = step.laneSDisplay.filter(val => typeof val === 'number');
+                summationExpressionElement_sum.textContent = validLaneSValues.join(' + ');
+                equalsSignElement_sum.style.display = 'inline';
+                finalResultValue_sum.textContent = step.finalResult;
             } else {
-                summationExpressionElement.textContent = '';
-                equalsSignElement.style.display = 'none';
-                finalResultValue.textContent = "N/A";
+                summationExpressionElement_sum.textContent = '';
+                equalsSignElement_sum.style.display = 'none';
+                finalResultValue_sum.textContent = "N/A";
             }
 
             // Update button states
-            prevButton.disabled = stepIndex === 0;
-            nextButton.disabled = stepIndex === steps.length - 1;
+            prevButton_sum.disabled = stepIndex === 0;
+            nextButton_sum.disabled = stepIndex === steps_sum.length - 1;
         }
 
-        prevButton.addEventListener('click', () => {
-            if (currentStep > 0) {
-                currentStep--;
-                renderStep(currentStep);
+        prevButton_sum.addEventListener('click', () => {
+            if (currentStep_sum > 0) {
+                currentStep_sum--;
+                renderStep_sum(currentStep_sum);
             }
         });
 
-        nextButton.addEventListener('click', () => {
-            if (currentStep < steps.length - 1) {
-                currentStep++;
-                renderStep(currentStep);
+        nextButton_sum.addEventListener('click', () => {
+            if (currentStep_sum < steps_sum.length - 1) {
+                currentStep_sum++;
+                renderStep_sum(currentStep_sum);
             }
         });
 
         // Initial render
-        renderStep(currentStep);
+        renderStep_sum(currentStep_sum);
     });
 </script>

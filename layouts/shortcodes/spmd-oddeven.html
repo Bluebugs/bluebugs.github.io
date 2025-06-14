@@ -1,8 +1,9 @@
+<link rel="stylesheet" href="{{ (resources.Get "css/spmd-demos.css").RelPermalink }}">
 <style>
-    #spmd-demo {
+    #spmd-demo_oddeven {
+        /* ID Suffix Added */
         display: flex;
         flex-direction: column;
-        /* Changed from row to column */
         font-family: sans-serif;
         border: 1px solid #ccc;
         padding: 10px;
@@ -13,16 +14,15 @@
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
-    /* New container for code and viz panes */
-    #spmd-main-content {
+    #spmd-main-content_oddeven {
+        /* ID Suffix Added */
         display: flex;
-        /* This will be a row for code and viz */
         width: 100%;
         margin-bottom: 15px;
-        /* Space before the info pane */
     }
 
-    #spmd-code-pane {
+    #spmd-code-pane_oddeven {
+        /* ID Suffix Added */
         flex: 1;
         padding: 15px;
         background-color: #fff;
@@ -30,82 +30,67 @@
         border-radius: 4px 0 0 4px;
     }
 
-    #spmd-code-pane pre {
+    #spmd-code-pane_oddeven pre {
+        /* Parent ID Suffix Reflected */
         background-color: #2d2d2d;
         color: #f8f8f2;
         padding: 0 10px;
-        /* No top/bottom padding, keep side padding */
         border-radius: 4px;
         overflow-x: auto;
         font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
-        /* font-size: 0.9em; */
-        /* Moved to .code-line with absolute value */
         font-size: 0;
-        /* Collapse whitespace nodes */
         line-height: 0;
-        /* Collapse newlines between span elements */
         margin: 0;
-        /* Remove any default pre margins */
     }
 
-    #spmd-code-pane .code-line {
+    #spmd-code-pane_oddeven .code-line {
+        /* Parent ID Suffix Reflected */
         display: block;
         transition: background-color 0.3s ease;
         margin: 0;
         padding: 0;
-        /* Ensure no extra padding */
         font-size: 14px;
-        /* Restore font size to an absolute value */
         line-height: 1.2;
-        /* Tight line height, adjust if needed */
     }
 
-    #spmd-code-pane #spmd-go-code {
-        /* Added style for the code element */
+    #spmd-code-pane_oddeven #spmd-go-code_oddeven {
+        /* ID Suffix Added to both parent and target */
         display: block;
         padding: 0;
         margin: 0;
         font-size: 14px;
-        /* Match .code-line font-size */
         line-height: 1.2;
-        /* Match .code-line line-height */
     }
 
-    #spmd-code-pane .highlight {
+    #spmd-code-pane_oddeven .highlight {
+        /* Parent ID Suffix Reflected */
         background-color: #44475a;
     }
 
-    #spmd-info-pane {
+    #spmd-info-pane_oddeven {
+        /* ID Suffix Added */
         padding: 10px;
         font-size: 0.9em;
         color: #333;
-        /* border-top: 1px solid #eee; Removed */
-        /* margin-top: 20px; Adjusted by #spmd-main-content margin-bottom */
         text-align: left;
         width: 100%;
-        /* Make it span the container width */
         background-color: #fff;
-        /* Optional: give it a distinct background */
         border: 1px solid #eee;
-        /* Optional: add a border */
         border-radius: 4px;
-        /* Optional: round corners */
     }
 
-    #spmd-info-pane h4 {
+    #spmd-info-pane_oddeven h4 {
+        /* Parent ID Suffix Reflected */
         margin-top: 0;
         margin-bottom: 12px;
-        /* Space after title */
         text-align: center;
         color: #334e68;
-        /* Darker blue-gray for title */
         font-size: 1.15em;
-        /* Slightly larger title */
         font-weight: 600;
     }
 
-    /* START: Added back Lane Visualization Styles */
-    #spmd-viz-pane {
+    #spmd-viz-pane_oddeven {
+        /* ID Suffix Added */
         flex: 1.5;
         padding: 15px;
         display: flex;
@@ -113,142 +98,89 @@
         align-items: center;
     }
 
-    #spmd-lane-data-grid {
+    #spmd-lane-data-grid_oddeven {
+        /* ID Suffix Added */
         display: grid;
         grid-template-columns: auto repeat(4, 1fr);
-        /* Label col, then 4 data cols */
         gap: 5px 8px;
-        /* row-gap column-gap */
         width: 100%;
         margin-bottom: 20px;
         align-items: center;
-        /* Vertically align items in cells */
     }
 
-    .spmd-grid-header {
-        font-weight: bold;
-        padding: 5px;
-        text-align: center;
-        background-color: #f0f0f0;
-        border-radius: 3px;
-    }
-
-    .spmd-grid-label {
-        font-weight: bold;
-        text-align: right;
-        padding-right: 10px;
-    }
-
-    .spmd-grid-cell {
-        padding: 8px 5px;
-        text-align: center;
-        border: 1px solid #eee;
-        background-color: #fff;
-        border-radius: 3px;
-        min-height: 1.5em;
-        /* Ensure cells have some height */
-    }
-
-    .spmd-grid-cell[id*='-v'] {
+    /* REMOVED .spmd-grid-header, .spmd-grid-label, .spmd-grid-cell as they are in spmd-demos.css */
+    /* Specific styles for oddeven grid cells remain here if not generalizable */
+    #spmd-lane-data-grid_oddeven .spmd-grid-cell[id*='-v'] {
+        /* Parent ID Suffix Reflected */
         color: #28a745;
-        /* Green */
         font-weight: bold;
     }
 
-    .spmd-grid-cell[id*='-odd'],
-    .spmd-grid-cell[id*='-even'] {
+    #spmd-lane-data-grid_oddeven .spmd-grid-cell[id*='-odd'],
+    /* Parent ID Suffix Reflected */
+    #spmd-lane-data-grid_oddeven .spmd-grid-cell[id*='-even'] {
+        /* Parent ID Suffix Reflected */
         color: #007bff;
-        /* Blue */
         font-weight: bold;
     }
 
-    .spmd-grid-cell.inactive-lane {
+    #spmd-lane-data-grid_oddeven .spmd-grid-cell.inactive-lane {
+        /* Parent ID Suffix Reflected */
         background-color: #e9ecef;
-        /* Light grey background */
         color: #adb5bd;
-        /* Muted text color */
         font-style: italic;
-        /* Optional: italicize text */
     }
 
-    /* END: Added back Lane Visualization Styles */
-
-    .result-line {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 8px 10px;
-        /* Padding for each line */
-        border-bottom: 1px solid #dde4eb;
-        /* Lighter separator line */
-        background-color: #fff;
-        /* White background for lines */
-        margin: 0 -15px 0 -15px;
-        /* Extend to edge of parent padding */
-        padding-left: 25px;
-        /* Re-apply padding */
-        padding-right: 25px;
-        /* Re-apply padding */
+    #spmd-final-result_oddeven {
+        /* ID Suffix Added */
+        margin-top: 20px;
+        /* This was missing, adding for consistency */
+        padding: 15px;
+        background-color: #f0f4f8;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        width: 100%;
+        font-size: 1em;
     }
 
-    .result-line:first-of-type {
-        border-top-left-radius: 3px;
-        /* Rounded corners for first/last if desired */
-        border-top-right-radius: 3px;
+    #spmd-final-result_oddeven h4 {
+        /* Parent ID Suffix Reflected */
+        margin-top: 0;
+        margin-bottom: 12px;
+        text-align: center;
+        color: #334e68;
+        font-size: 1.15em;
+        font-weight: 600;
     }
 
-    .result-line:last-of-type {
-        border-bottom: none;
-        border-bottom-left-radius: 3px;
-        border-bottom-right-radius: 3px;
-        margin-bottom: -15px;
-        /* Pull last line to bottom of parent padding */
-    }
+    /* REMOVED .result-line, .spmd-result-label, .spmd-result-value-group, .spmd-equals-sign as they are in spmd-demos.css */
 
-    .spmd-result-label {
-        font-weight: 500;
-        /* Medium weight */
-        color: #506a80;
-        /* Softer color for label */
-        margin-right: 10px;
-    }
-
-    .spmd-result-value-group {
-        text-align: right;
-        font-weight: 500;
-    }
-
-    .spmd-equals-sign {
-        margin: 0 0.3em;
-        color: #506a80;
-    }
-
-
-    #spmd-odd-summation-expression,
-    #spmd-even-summation-expression {
+    #spmd-odd-summation_oddeven,
+    /* ID Suffix Added - Corrected CSS Selector */
+    #spmd-even-summation_oddeven {
+        /* ID Suffix Added - Corrected CSS Selector */
         color: #007bff;
-        /* Blue */
         font-weight: bold;
         font-size: 1.1em;
-        /* Slightly larger for emphasis */
     }
 
-    #spmd-final-result-value,
-    /* May need to remove or adapt */
-    #spmd-odd-final-value,
-    #spmd-even-final-value {
+    #spmd-odd-final-value_oddeven,
+    /* ID Suffix Added */
+    #spmd-even-final-value_oddeven {
+        /* ID Suffix Added */
         font-size: 1.3em;
         font-weight: bold;
         color: #17a2b8;
-        /* Teal */
     }
 
-    #spmd-controls {
+    #spmd-controls_oddeven {
+        /* ID Suffix Added */
         margin-top: 20px;
         text-align: center;
     }
 
-    #spmd-controls button {
+    #spmd-controls_oddeven button {
+        /* Parent ID Suffix Reflected */
         padding: 8px 15px;
         margin: 0 5px;
         background-color: #007bff;
@@ -259,73 +191,78 @@
         transition: background-color 0.2s ease;
     }
 
-    #spmd-controls button:hover {
+    #spmd-controls_oddeven button:hover {
+        /* Parent ID Suffix Reflected */
         background-color: #0056b3;
     }
 
-    #spmd-controls button:disabled {
+    #spmd-controls_oddeven button:disabled {
+        /* Parent ID Suffix Reflected */
         background-color: #ccc;
         cursor: not-allowed;
     }
 
     /* General Go Syntax Highlighting Styles (scoped to the demo) */
-    #spmd-demo .gokw {
+    #spmd-demo_oddeven .gokw {
+        /* Parent ID Suffix Reflected */
         color: #c586c0;
     }
 
-    /* Keywords */
-    #spmd-demo .gofn {
+    #spmd-demo_oddeven .gofn {
+        /* Parent ID Suffix Reflected */
         color: #dcdcaa;
     }
 
-    /* Function names */
-    #spmd-demo .goty {
+    #spmd-demo_oddeven .goty {
+        /* Parent ID Suffix Reflected */
         color: #4ec9b0;
     }
 
-    /* Types */
-    #spmd-demo .gohypo {
+    #spmd-demo_oddeven .gohypo {
+        /* Parent ID Suffix Reflected */
         color: #ce9178;
     }
 
-    /* Hypothetical keywords (varying) */
-    #spmd-demo .govar {
+    #spmd-demo_oddeven .govar {
+        /* Parent ID Suffix Reflected */
         color: #9cdcfe;
     }
 
-    /* Variables and parameters */
-    #spmd-demo .goop {
+    #spmd-demo_oddeven .goop {
+        /* Parent ID Suffix Reflected */
         color: #d4d4d4;
     }
 
-    /* Operators */
-    #spmd-demo .gopunct {
+    #spmd-demo_oddeven .gonum {
+        /* Parent ID Suffix Reflected - Added from code */
+        color: #b5cea8;
+    }
+
+    #spmd-demo_oddeven .gopunct {
+        /* Parent ID Suffix Reflected */
         color: #d4d4d4;
     }
 
-    /* Punctuation */
-    #spmd-demo .gocomment {
+    #spmd-demo_oddeven .gocomment {
+        /* Parent ID Suffix Reflected */
         color: #6a9955;
     }
 
-    /* Comments */
-
-    /* Style for inline code snippets in descriptions */
-    #spmd-info-pane .spmd-inline-code {
+    #spmd-info-pane_oddeven .spmd-inline-code {
+        /* Parent ID Suffix Reflected */
         background-color: #2d2d2d;
         color: #f8f8f2;
         padding: 0.1em 0.4em;
         border-radius: 3px;
         font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
         font-size: 0.95em;
-        /* Slightly smaller to fit well inline */
     }
 </style>
 
-<div id="spmd-demo">
-    <div id="spmd-main-content">
-        <div id="spmd-code-pane">
-            <pre><code id="spmd-go-code">
+<div id="spmd-demo_oddeven"> <!-- ID Suffix Added -->
+    <div id="spmd-main-content_oddeven"> <!-- ID Suffix Added -->
+        <div id="spmd-code-pane_oddeven"> <!-- ID Suffix Added -->
+            <pre><code id="spmd-go-code_oddeven"> <!-- ID Suffix Added -->
 <span class="code-line" data-line="1"><span class="gokw">func</span> <span class="gofn">oddEvenCount</span><span class="gopunct">(</span><span class="govar">a</span> <span class="goty">[]int</span><span class="gopunct">)</span> <span class="gopunct">(</span><span class="goty">int</span><span class="gopunct">,</span> <span class="goty">int</span><span class="gopunct">)</span> <span class="gopunct">{</span></span>
 <span class="code-line" data-line="2">  <span class="gokw">var</span> <span class="govar">odd</span> <span class="gohypo">varying</span> <span class="goty">int</span></span>
 <span class="code-line" data-line="3">  <span class="gokw">var</span> <span class="govar">even</span> <span class="gohypo">varying</span> <span class="goty">int</span></span>
@@ -341,8 +278,8 @@
     </code></pre>
         </div>
 
-        <div id="spmd-viz-pane">
-            <div id="spmd-lane-data-grid">
+        <div id="spmd-viz-pane_oddeven"> <!-- ID Suffix Added -->
+            <div id="spmd-lane-data-grid_oddeven"> <!-- ID Suffix Added -->
                 <!-- Row 1: Lane Titles -->
                 <div class="spmd-grid-label"></div>
                 <div class="spmd-grid-header">Lane 1</div>
@@ -352,109 +289,115 @@
 
                 <!-- New Row for mask values -->
                 <div class="spmd-grid-label">mask:</div>
-                <div class="spmd-grid-cell" id="lane-1-mask">-</div>
-                <div class="spmd-grid-cell" id="lane-2-mask">-</div>
-                <div class="spmd-grid-cell" id="lane-3-mask">-</div>
-                <div class="spmd-grid-cell" id="lane-4-mask">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-1-mask_oddeven">-</div> <!-- ID Suffix Added -->
+                <div class="spmd-grid-cell" id="spmd-lane-2-mask_oddeven">-</div> <!-- ID Suffix Added -->
+                <div class="spmd-grid-cell" id="spmd-lane-3-mask_oddeven">-</div> <!-- ID Suffix Added -->
+                <div class="spmd-grid-cell" id="spmd-lane-4-mask_oddeven">-</div> <!-- ID Suffix Added -->
 
                 <!-- Row 2: v values -->
                 <div class="spmd-grid-label">v:</div>
-                <div class="spmd-grid-cell" id="spmd-lane-0-v">-</div>
-                <div class="spmd-grid-cell" id="spmd-lane-1-v">-</div>
-                <div class="spmd-grid-cell" id="spmd-lane-2-v">-</div>
-                <div class="spmd-grid-cell" id="spmd-lane-3-v">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-0-v_oddeven">-</div> <!-- ID Suffix Added -->
+                <div class="spmd-grid-cell" id="spmd-lane-1-v_oddeven">-</div> <!-- ID Suffix Added -->
+                <div class="spmd-grid-cell" id="spmd-lane-2-v_oddeven">-</div> <!-- ID Suffix Added -->
+                <div class="spmd-grid-cell" id="spmd-lane-3-v_oddeven">-</div> <!-- ID Suffix Added -->
 
                 <!-- Row 3: odd values -->
                 <div class="spmd-grid-label">odd:</div>
-                <div class="spmd-grid-cell" id="spmd-lane-0-odd">0</div>
-                <div class="spmd-grid-cell" id="spmd-lane-1-odd">0</div>
-                <div class="spmd-grid-cell" id="spmd-lane-2-odd">0</div>
-                <div class="spmd-grid-cell" id="spmd-lane-3-odd">0</div>
+                <div class="spmd-grid-cell" id="spmd-lane-0-odd_oddeven">0</div> <!-- ID Suffix Added -->
+                <div class="spmd-grid-cell" id="spmd-lane-1-odd_oddeven">0</div> <!-- ID Suffix Added -->
+                <div class="spmd-grid-cell" id="spmd-lane-2-odd_oddeven">0</div> <!-- ID Suffix Added -->
+                <div class="spmd-grid-cell" id="spmd-lane-3-odd_oddeven">0</div> <!-- ID Suffix Added -->
 
                 <!-- Row 4: even values -->
                 <div class="spmd-grid-label">even:</div>
-                <div class="spmd-grid-cell" id="spmd-lane-0-even">0</div>
-                <div class="spmd-grid-cell" id="spmd-lane-1-even">0</div>
-                <div class="spmd-grid-cell" id="spmd-lane-2-even">0</div>
-                <div class="spmd-grid-cell" id="spmd-lane-3-even">0</div>
+                <div class="spmd-grid-cell" id="spmd-lane-0-even_oddeven">0</div> <!-- ID Suffix Added -->
+                <div class="spmd-grid-cell" id="spmd-lane-1-even_oddeven">0</div> <!-- ID Suffix Added -->
+                <div class="spmd-grid-cell" id="spmd-lane-2-even_oddeven">0</div> <!-- ID Suffix Added -->
+                <div class="spmd-grid-cell" id="spmd-lane-3-even_oddeven">0</div> <!-- ID Suffix Added -->
             </div>
 
-            <div id="spmd-final-result">
+            <div id="spmd-final-result_oddeven"> <!-- ID Suffix Added -->
                 <h4>Final Results</h4>
                 <div class="result-lines-container">
                     <div class="result-line">
-                        <span class="spmd-result-label">Total Odd Count:</span>
-                        <span class="spmd-result-value-group"><span id="spmd-odd-summation-expression"></span> <span
-                                class="spmd-equals-sign" style="display: none;">=</span> <span
-                                id="spmd-odd-final-value">N/A</span></span>
+                        <span class="spmd-result-label">Total Odd:</span>
+                        <span class="spmd-result-value-group"><span id="spmd-odd-summation_oddeven"></span>
+                            <span class="spmd-equals-sign" id="spmd-odd-equals-sign_oddeven"
+                                style="display: none;">=</span> <span 
+                                id="spmd-odd-final-value_oddeven">N/A</span></span> 
                     </div>
                     <div class="result-line">
-                        <span class="spmd-result-label">Total Even Count:</span>
-                        <span class="spmd-result-value-group"><span id="spmd-even-summation-expression"></span> <span
-                                class="spmd-equals-sign" style="display: none;">=</span> <span
-                                id="spmd-even-final-value">N/A</span></span>
+                        <span class="spmd-result-label">Total Even:</span>
+                        <span class="spmd-result-value-group"><span id="spmd-even-summation_oddeven"></span>
+                            <span class="spmd-equals-sign" id="spmd-even-equals-sign_oddeven"
+                                style="display: none;">=</span> <span 
+                                id="spmd-even-final-value_oddeven">N/A</span></span> 
                     </div>
                 </div>
             </div>
-            <div id="spmd-controls">
-                <button id="spmd-prev-step">Previous</button>
-                <button id="spmd-next-step">Next</button>
+            <div id="spmd-controls_oddeven"> <!-- ID Suffix Added -->
+                <button id="spmd-prev-step_oddeven">Previous</button> <!-- ID Suffix Added -->
+                <button id="spmd-next-step_oddeven">Next</button> <!-- ID Suffix Added -->
             </div>
         </div>
     </div>
 
-    <div id="spmd-info-pane">
+    <div id="spmd-info-pane_oddeven"> <!-- ID Suffix Added -->
         <h4>Execution Step:</h4>
-        <p id="spmd-step-description">Initializing...</p>
+        <p id="spmd-step-description_oddeven">Initializing...</p> <!-- ID Suffix Added -->
     </div>
 </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const codeLines = document.querySelectorAll('#spmd-go-code .code-line');
-        const stepDescription = document.getElementById('spmd-step-description');
+        const codeLines_oddeven = document.querySelectorAll('#spmd-go-code_oddeven .code-line'); /* ID Suffix Added */
+        const stepDescription_oddeven = document.getElementById('spmd-step-description_oddeven'); /* ID Suffix Added */
 
-        const laneMaskCells = [ // New: References for mask cells
-            document.getElementById('lane-1-mask'), // Corrected ID
-            document.getElementById('lane-2-mask'), // Corrected ID
-            document.getElementById('lane-3-mask'), // Corrected ID
-            document.getElementById('lane-4-mask')  // Corrected ID
+        const laneMaskCells_oddeven = [
+            document.getElementById('spmd-lane-1-mask_oddeven'), /* ID Suffix Added */
+            document.getElementById('spmd-lane-2-mask_oddeven'), /* ID Suffix Added */
+            document.getElementById('spmd-lane-3-mask_oddeven'), /* ID Suffix Added */
+            document.getElementById('spmd-lane-4-mask_oddeven')  /* ID Suffix Added */
         ];
-        const laneVCells = [
-            document.getElementById('spmd-lane-0-v'),
-            document.getElementById('spmd-lane-1-v'),
-            document.getElementById('spmd-lane-2-v'),
-            document.getElementById('spmd-lane-3-v')
+        const laneVCells_oddeven = [
+            document.getElementById('spmd-lane-0-v_oddeven'), /* ID Suffix Added */
+            document.getElementById('spmd-lane-1-v_oddeven'), /* ID Suffix Added */
+            document.getElementById('spmd-lane-2-v_oddeven'), /* ID Suffix Added */
+            document.getElementById('spmd-lane-3-v_oddeven')  /* ID Suffix Added */
         ];
-        const laneOddCells = [
-            document.getElementById('spmd-lane-0-odd'),
-            document.getElementById('spmd-lane-1-odd'),
-            document.getElementById('spmd-lane-2-odd'),
-            document.getElementById('spmd-lane-3-odd')
+        const laneOddCells_oddeven = [
+            document.getElementById('spmd-lane-0-odd_oddeven'), /* ID Suffix Added */
+            document.getElementById('spmd-lane-1-odd_oddeven'), /* ID Suffix Added */
+            document.getElementById('spmd-lane-2-odd_oddeven'), /* ID Suffix Added */
+            document.getElementById('spmd-lane-3-odd_oddeven')  /* ID Suffix Added */
         ];
-        const laneEvenCells = [
-            document.getElementById('spmd-lane-0-even'),
-            document.getElementById('spmd-lane-1-even'),
-            document.getElementById('spmd-lane-2-even'),
-            document.getElementById('spmd-lane-3-even')
+        const laneEvenCells_oddeven = [
+            document.getElementById('spmd-lane-0-even_oddeven'), 
+            document.getElementById('spmd-lane-1-even_oddeven'), 
+            document.getElementById('spmd-lane-2-even_oddeven'), 
+            document.getElementById('spmd-lane-3-even_oddeven')  
         ];
 
-        const oddSummationExprEl = document.getElementById('spmd-odd-summation-expression');
-        const oddFinalValueEl = document.getElementById('spmd-odd-final-value');
-        const evenSummationExprEl = document.getElementById('spmd-even-summation-expression');
-        const evenFinalValueEl = document.getElementById('spmd-even-final-value');
-        const equalsSigns = document.querySelectorAll('#spmd-final-result .spmd-equals-sign');
+        const oddSummationExprEl_oddeven = document.getElementById('spmd-odd-summation_oddeven'); 
+        const oddFinalValueEl_oddeven = document.getElementById('spmd-odd-final-value_oddeven'); 
+        const evenSummationExprEl_oddeven = document.getElementById('spmd-even-summation_oddeven'); 
+        const evenFinalValueEl_oddeven = document.getElementById('spmd-even-final-value_oddeven'); 
+        const equalsSigns_oddeven = [ // Collect both equals signs
+            document.getElementById('spmd-odd-equals-sign_oddeven'), /* ID Suffix Added */
+            document.getElementById('spmd-even-equals-sign_oddeven') /* ID Suffix Added */
+        ];
 
-        const prevButton = document.getElementById('spmd-prev-step');
-        const nextButton = document.getElementById('spmd-next-step');
 
-        const numLanes = 4;
-        const inputArray = [1, 2, 3, 4, 5, 6, 7];
+        const prevButton_oddeven = document.getElementById('spmd-prev-step_oddeven'); /* ID Suffix Added */
+        const nextButton_oddeven = document.getElementById('spmd-next-step_oddeven'); /* ID Suffix Added */
 
-        const steps = [
+        const numLanes_oddeven = 4;
+        const inputArray_oddeven = [1, 2, 3, 4, 5, 6, 7];
+
+        const steps_oddeven = [
             { // 0: Initial Call
                 line: null,
-                description: `Calling <span class='spmd-inline-code'><span class='gofn'>oddEvenCount</span><span class='gopunct'>(</span><span class='goty'>[]int</span><span class='gopunct'>{>{</span>${inputArray.join(',')}<span class='gopunct'><}</span><span class='gopunct'>)</span></span>. Input <span class='spmd-inline-code'><span class='govar'>a</span></span> is initialized. Four execution lanes available.`,
+                description: `Calling <span class='spmd-inline-code'><span class='gofn'>oddEvenCount</span><span class='gopunct'>(</span><span class='goty'>[]int</span><span class='gopunct'{>{</span>${inputArray_oddeven.join(',')}<span class='gopunct'><}</span><span class='gopunct'>)</span></span>. Input <span class='spmd-inline-code'><span class='govar'>a</span></span> is initialized. Four execution lanes available.`,
                 laneMaskDisplay: [true, true, true, true],
                 laneVDisplay: ["-", "-", "-", "-"],
                 laneOddDisplay: [0, 0, 0, 0],
@@ -496,7 +439,7 @@
             { // 4: if v&1 == 1 (Test for 1st batch)
                 line: 5,
                 description: "Evaluating <span class='spmd-inline-code'><span class='gokw'>if</span> <span class='govar'>v</span><span class='goop'>&amp;</span>1 <span class='goop'>==</span> 1</span>. L1 (<span class='spmd-inline-code'>1</span>) is odd (mask=true). L2 (<span class='spmd-inline-code'>2</span>) is even (mask=false). L3 (<span class='spmd-inline-code'>3</span>) is odd (mask=true). L4 (<span class='spmd-inline-code'>4</span>) is even (mask=false).",
-                laneMaskDisplay: [true, false, true, false], // Lanes that will execute odd++
+                laneMaskDisplay: [true, false, true, false],
                 laneVDisplay: [1, 2, 3, 4],
                 laneOddDisplay: [0, 0, 0, 0],
                 laneEvenDisplay: [0, 0, 0, 0],
@@ -506,38 +449,38 @@
             { // 5: odd++ (1st batch)
                 line: 6,
                 description: "Executing <span class='spmd-inline-code'><span class='govar'>odd</span><span class='goop'>++</span></span> for lanes where condition was true. L1: <span class='spmd-inline-code'><span class='govar'>odd</span></span> becomes 1. L3: <span class='spmd-inline-code'><span class='govar'>odd</span></span> becomes 1.",
-                laneMaskDisplay: [true, false, true, false], // Mask reflects active lanes for this operation
+                laneMaskDisplay: [true, false, true, false],
                 laneVDisplay: [1, 2, 3, 4],
-                laneOddDisplay: [1, 0, 1, 0], // Updated
-                laneEvenDisplay: [0, 0, 0, 0], // Unchanged
+                laneOddDisplay: [1, 0, 1, 0],
+                laneEvenDisplay: [0, 0, 0, 0],
                 finalResultOdd: "N/A",
                 finalResultEven: "N/A"
             },
             { // 6: else (Transition for 1st batch)
                 line: 7,
                 description: "Transition to <span class='spmd-inline-code'><span class='gokw'>else</span></span> block. L2 and L4 will execute <span class='spmd-inline-code'><span class='govar'>even</span><span class='goop'>++</span></span>.",
-                laneMaskDisplay: [false, true, false, true], // Lanes that will execute even++
+                laneMaskDisplay: [false, true, false, true],
                 laneVDisplay: [1, 2, 3, 4],
-                laneOddDisplay: [1, 0, 1, 0], // From previous step
-                laneEvenDisplay: [0, 0, 0, 0], // Unchanged yet
+                laneOddDisplay: [1, 0, 1, 0],
+                laneEvenDisplay: [0, 0, 0, 0],
                 finalResultOdd: "N/A",
                 finalResultEven: "N/A"
             },
             { // 7: even++ (1st batch)
                 line: 8,
                 description: "Executing <span class='spmd-inline-code'><span class='govar'>even</span><span class='goop'>++</span></span> for lanes in the <span class='spmd-inline-code'><span class='gokw'>else</span></span> block. L2: <span class='spmd-inline-code'><span class='govar'>even</span></span> becomes 1. L4: <span class='spmd-inline-code'><span class='govar'>even</span></span> becomes 1.",
-                laneMaskDisplay: [false, true, false, true], // Mask reflects active lanes for this operation
+                laneMaskDisplay: [false, true, false, true],
                 laneVDisplay: [1, 2, 3, 4],
-                laneOddDisplay: [1, 0, 1, 0], // Unchanged
-                laneEvenDisplay: [0, 1, 0, 1], // Updated
+                laneOddDisplay: [1, 0, 1, 0],
+                laneEvenDisplay: [0, 1, 0, 1],
                 finalResultOdd: "N/A",
                 finalResultEven: "N/A"
             },
             { // 8: End if/else (1st batch)
                 line: 9,
                 description: "Finished <span class='spmd-inline-code'><span class='gokw'>if</span><span class='goop'>/</span><span class='gokw'>else</span></span> block for the first set of values. All lanes active for next iteration.",
-                laneMaskDisplay: [true, true, true, true], // All lanes active again
-                laneVDisplay: [1, 2, 3, 4], // Values processed in this batch
+                laneMaskDisplay: [true, true, true, true],
+                laneVDisplay: [1, 2, 3, 4],
                 laneOddDisplay: [1, 0, 1, 0],
                 laneEvenDisplay: [0, 1, 0, 1],
                 finalResultOdd: "N/A",
@@ -548,10 +491,10 @@
             { // 9: go for - 2nd batch
                 line: 4,
                 description: "<span class='spmd-inline-code'><span class='gokw'>go</span> <span class='gokw'>for</span></span>: Distributing next batch. <span class='spmd-inline-code'><span class='govar'>v</span>=5</span> (L1), <span class='spmd-inline-code'><span class='govar'>v</span>=6</span> (L2), <span class='spmd-inline-code'><span class='govar'>v</span>=7</span> (L3). Lane 4 is idle for data processing in this batch.",
-                laneMaskDisplay: [true, true, true, false], // Lane 4 is idle for data
+                laneMaskDisplay: [true, true, true, false],
                 laneVDisplay: [5, 6, 7, "-"],
-                laneOddDisplay: [1, 0, 1, 0], // from previous step
-                laneEvenDisplay: [0, 1, 0, 1], // from previous step
+                laneOddDisplay: [1, 0, 1, 0],
+                laneEvenDisplay: [0, 1, 0, 1],
                 finalResultOdd: "N/A",
                 finalResultEven: "N/A"
             },
@@ -559,10 +502,10 @@
             { // 10: if v&1 == 1 (Test for 2nd batch)
                 line: 5,
                 description: "Evaluating <span class='spmd-inline-code'><span class='gokw'>if</span> <span class='govar'>v</span><span class='goop'>&amp;</span>1 <span class='goop'>==</span> 1</span>. L1 (<span class='spmd-inline-code'>5</span>) is odd (mask=true). L2 (<span class='spmd-inline-code'>6</span>) is even (mask=false). L3 (<span class='spmd-inline-code'>7</span>) is odd (mask=true). Lane 4 is idle (mask=false).",
-                laneMaskDisplay: [true, false, true, false], // L4 remains false as it's idle
+                laneMaskDisplay: [true, false, true, false],
                 laneVDisplay: [5, 6, 7, "-"],
-                laneOddDisplay: [1, 0, 1, 0], // Current odd counts
-                laneEvenDisplay: [0, 1, 0, 1], // Current even counts
+                laneOddDisplay: [1, 0, 1, 0],
+                laneEvenDisplay: [0, 1, 0, 1],
                 finalResultOdd: "N/A",
                 finalResultEven: "N/A"
             },
@@ -571,18 +514,18 @@
                 description: "Executing <span class='spmd-inline-code'><span class='govar'>odd</span><span class='goop'>++</span></span>. L1: <span class='spmd-inline-code'><span class='govar'>odd</span></span> becomes 2 (1+1). L3: <span class='spmd-inline-code'><span class='govar'>odd</span></span> becomes 2 (1+1). Lane 4 idle.",
                 laneMaskDisplay: [true, false, true, false],
                 laneVDisplay: [5, 6, 7, "-"],
-                laneOddDisplay: [1 + 1, 0, 1 + 1, 0], // 2, 0, 2, 0
-                laneEvenDisplay: [0, 1, 0, 1],   // Unchanged
+                laneOddDisplay: [1 + 1, 0, 1 + 1, 0],
+                laneEvenDisplay: [0, 1, 0, 1],
                 finalResultOdd: "N/A",
                 finalResultEven: "N/A"
             },
             { // 12: else (Transition for 2nd batch)
                 line: 7,
                 description: "Transition to <span class='spmd-inline-code'><span class='gokw'>else</span></span> block. L2 will execute <span class='spmd-inline-code'><span class='govar'>even</span><span class='goop'>++</span></span>. Lane 4 idle.",
-                laneMaskDisplay: [false, true, false, false], // L4 remains false
+                laneMaskDisplay: [false, true, false, false],
                 laneVDisplay: [5, 6, 7, "-"],
-                laneOddDisplay: [2, 0, 2, 0], // From previous step
-                laneEvenDisplay: [0, 1, 0, 1],   // Unchanged yet
+                laneOddDisplay: [2, 0, 2, 0],
+                laneEvenDisplay: [0, 1, 0, 1],
                 finalResultOdd: "N/A",
                 finalResultEven: "N/A"
             },
@@ -591,15 +534,15 @@
                 description: "Executing <span class='spmd-inline-code'><span class='govar'>even</span><span class='goop'>++</span></span>. L2: <span class='spmd-inline-code'><span class='govar'>even</span></span> becomes 2 (1+1). Lane 4 idle.",
                 laneMaskDisplay: [false, true, false, false],
                 laneVDisplay: [5, 6, 7, "-"],
-                laneOddDisplay: [2, 0, 2, 0],   // Unchanged
-                laneEvenDisplay: [0, 1 + 1, 0, 1], // 0, 2, 0, 1
+                laneOddDisplay: [2, 0, 2, 0],
+                laneEvenDisplay: [0, 1 + 1, 0, 1],
                 finalResultOdd: "N/A",
                 finalResultEven: "N/A"
             },
             { // 14: End if/else (2nd batch)
                 line: 9,
                 description: "Finished <span class='spmd-inline-code'><span class='gokw'>if</span><span class='goop'>/</span><span class='gokw'>else</span></span> block for the second set of values. Lane 4 was idle.",
-                laneMaskDisplay: [true, true, true, false], // Reflects lanes active in this batch
+                laneMaskDisplay: [true, true, true, false],
                 laneVDisplay: [5, 6, 7, "-"],
                 laneOddDisplay: [2, 0, 2, 0],
                 laneEvenDisplay: [0, 2, 0, 1],
@@ -609,12 +552,12 @@
             // --- End of 2nd Batch If/Else Breakdown ---
 
             { // 15: Loop finished
-                line: 10, // Closing brace of for loop
+                line: 10,
                 description: "Loop finished. All elements from <span class='spmd-inline-code'><span class='govar'>a</span></span> have been processed.",
-                laneMaskDisplay: [true, true, true, true], // All lanes participated overall
+                laneMaskDisplay: [true, true, true, true],
                 laneVDisplay: ["-", "-", "-", "-"],
-                laneOddDisplay: [2, 0, 2, 0], // Final per-lane counts before reduction
-                laneEvenDisplay: [0, 2, 0, 1], // Final per-lane counts before reduction
+                laneOddDisplay: [2, 0, 2, 0],
+                laneEvenDisplay: [0, 2, 0, 1],
                 finalResultOdd: "N/A",
                 finalResultEven: "N/A"
             },
@@ -625,11 +568,11 @@
                 laneVDisplay: ["-", "-", "-", "-"],
                 laneOddDisplay: [2, 0, 2, 0],
                 laneEvenDisplay: [0, 2, 0, 1],
-                finalResultOdd: 4, // 2+0+2+0
-                finalResultEven: 3 // 0+2+0+1
+                finalResultOdd: 4,
+                finalResultEven: 3
             },
             { // 17: Function returns
-                line: 12, // Closing brace of function
+                line: 12,
                 description: "Function returns total odd count: <span class='spmd-inline-code'>4</span>, total even count: <span class='spmd-inline-code'>3</span>.",
                 laneMaskDisplay: [true, true, true, true],
                 laneVDisplay: ["-", "-", "-", "-"],
@@ -640,74 +583,76 @@
             }
         ];
 
-        let currentStep = 0;
+        let currentStep_oddeven = 0;
 
-        function renderStep(stepIndex) {
-            const step = steps[stepIndex];
+        function renderStep_oddeven(stepIndex) {
+            const step = steps_oddeven[stepIndex];
 
-            codeLines.forEach(line => line.classList.remove('highlight'));
+            codeLines_oddeven.forEach(line => line.classList.remove('highlight'));
             if (step.line !== null) {
                 if (Array.isArray(step.line)) {
                     step.line.forEach(lineNumber => {
-                        const lineToHighlight = document.querySelector(`#spmd-go-code .code-line[data-line="${lineNumber}"]`);
+                        const lineToHighlight = document.querySelector(`#spmd-go-code_oddeven .code-line[data-line="${lineNumber}"]`);
                         if (lineToHighlight) lineToHighlight.classList.add('highlight');
                     });
                 } else {
-                    const lineToHighlight = document.querySelector(`#spmd-go-code .code-line[data-line="${step.line}"]`);
+                    const lineToHighlight = document.querySelector(`#spmd-go-code_oddeven .code-line[data-line="${step.line}"]`);
                     if (lineToHighlight) lineToHighlight.classList.add('highlight');
                 }
             }
 
-            stepDescription.innerHTML = step.description;
+            stepDescription_oddeven.innerHTML = step.description;
 
-            for (let i = 0; i < numLanes; i++) {
+            for (let i = 0; i < numLanes_oddeven; i++) {
                 const isActive = step.laneMaskDisplay[i];
-                laneMaskCells[i].textContent = isActive ? 'true' : 'false'; // Display true/false for clarity
-                // laneMaskCells[i].classList.toggle('inactive-lane', !isActive); // Mask cell itself is not greyed out
+                laneMaskCells_oddeven[i].textContent = isActive ? 'true' : 'false';
 
-                // Apply/remove .inactive-lane class to v, odd, and even cells based on isActive
-                [laneVCells[i], laneOddCells[i], laneEvenCells[i]].forEach(cell => {
+                [laneVCells_oddeven[i], laneOddCells_oddeven[i], laneEvenCells_oddeven[i]].forEach(cell => {
                     cell.classList.toggle('inactive-lane', !isActive);
                 });
 
-                laneVCells[i].textContent = step.laneVDisplay[i];
-                laneOddCells[i].textContent = step.laneOddDisplay[i];
-                laneEvenCells[i].textContent = step.laneEvenDisplay[i];
+                laneVCells_oddeven[i].textContent = step.laneVDisplay[i];
+                laneOddCells_oddeven[i].textContent = step.laneOddDisplay[i];
+                laneEvenCells_oddeven[i].textContent = step.laneEvenDisplay[i];
             }
 
-            const showFinal = step.finalResultOdd !== "N/A";
-            equalsSigns.forEach(el => el.style.display = showFinal ? 'inline' : 'none');
+            const showFinal = step.finalResultOdd !== "N/A" && step.finalResultEven !== "N/A";
+            equalsSigns_oddeven.forEach(el => { if (el) el.style.display = showFinal ? 'inline' : 'none' }); // Added null check for el
 
             if (showFinal) {
-                oddSummationExprEl.textContent = step.laneOddDisplay.join(' + ');
-                oddFinalValueEl.textContent = step.finalResultOdd;
-                evenSummationExprEl.textContent = step.laneEvenDisplay.join(' + ');
-                evenFinalValueEl.textContent = step.finalResultEven;
+                if (oddSummationExprEl_oddeven) oddSummationExprEl_oddeven.textContent = step.laneOddDisplay.filter(v => typeof v === 'number' && !isNaN(v)).join(' + ');
+                if (oddFinalValueEl_oddeven) oddFinalValueEl_oddeven.textContent = step.finalResultOdd;
+                if (evenSummationExprEl_oddeven) evenSummationExprEl_oddeven.textContent = step.laneEvenDisplay.filter(v => typeof v === 'number' && !isNaN(v)).join(' + ');
+                if (evenFinalValueEl_oddeven) evenFinalValueEl_oddeven.textContent = step.finalResultEven;
             } else {
-                oddSummationExprEl.textContent = '';
-                oddFinalValueEl.textContent = "N/A";
-                evenSummationExprEl.textContent = '';
-                evenFinalValueEl.textContent = "N/A";
+                if (oddSummationExprEl_oddeven) oddSummationExprEl_oddeven.textContent = '';
+                if (oddFinalValueEl_oddeven) oddFinalValueEl_oddeven.textContent = "N/A";
+                if (evenSummationExprEl_oddeven) evenSummationExprEl_oddeven.textContent = '';
+                if (evenFinalValueEl_oddeven) evenFinalValueEl_oddeven.textContent = "N/A";
             }
 
-            prevButton.disabled = stepIndex === 0;
-            nextButton.disabled = stepIndex === steps.length - 1;
+            if (prevButton_oddeven) prevButton_oddeven.disabled = stepIndex === 0;
+            if (nextButton_oddeven) nextButton_oddeven.disabled = stepIndex === steps_oddeven.length - 1;
         }
 
-        prevButton.addEventListener('click', () => {
-            if (currentStep > 0) {
-                currentStep--;
-                renderStep(currentStep);
-            }
-        });
+        if (prevButton_oddeven) { // Added null check
+            prevButton_oddeven.addEventListener('click', () => {
+                if (currentStep_oddeven > 0) {
+                    currentStep_oddeven--;
+                    renderStep_oddeven(currentStep_oddeven);
+                }
+            });
+        }
 
-        nextButton.addEventListener('click', () => {
-            if (currentStep < steps.length - 1) {
-                currentStep++;
-                renderStep(currentStep);
-            }
-        });
+        if (nextButton_oddeven) { // Added null check
+            nextButton_oddeven.addEventListener('click', () => {
+                if (currentStep_oddeven < steps_oddeven.length - 1) {
+                    currentStep_oddeven++;
+                    renderStep_oddeven(currentStep_oddeven);
+                }
+            });
+        }
 
-        renderStep(currentStep); // Initial render
+        renderStep_oddeven(currentStep_oddeven); // Initial render
     });
 </script>
