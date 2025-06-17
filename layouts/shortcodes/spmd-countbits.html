@@ -414,13 +414,14 @@
 
                 steps.push({
                     line: lineNumbers.cIncrement,
-                    description: `Batch ${batchNum}, <span class=\"spmd-inline-code\"><span class=\"govar\">it</span> <span class=\"goop\"> = </span> <span class=\"gonum\">${it}</span></span>: ${cActuallyIncrementedThisSubStep ? 'Executing' : 'Skipping (or no active lanes had bitOn=true)'} <span class=\\"spmd-inline-code\\"><span class=\\"govar\\">c</span><span class=\\"goop\\">++</span></span>. ${cIncrementDescriptionParts.join('. ')}.`,
+                    description: `Batch ${batchNum}, <span class="spmd-inline-code"><span class="govar">it</span> <span class="goop"> = </span> <span class="gonum">${it}</span></span>: ${cActuallyIncrementedThisSubStep ? 'Executing' : 'Skipping (or no active lanes had bitOn=true)'} <span class="spmd-inline-code"><span class="govar">c</span><span class="goop">++</span></span>. ${cIncrementDescriptionParts.join('. ')}.`,
                     laneVDisplay: [...vValuesForBatch],
                     laneCDisplay: [...currentCForLanes],
                     laneOffsetDisplay: [...stepOffsetDisplay],
                     laneBitCheckDisplay: [...stepBitCheckDisplay],
                     laneBitOnDisplay: [...stepBitOnDisplay],
-                    laneMaskDisplay: activeLanesInBatch.map(active => active ? "true" : "false"), // Added mask display
+                    // Correctly update mask: if lane was active AND bitOn is true, it remains active for c++; otherwise, it's effectively masked for this c++ op
+                    laneMaskDisplay: activeLanesInBatch.map((isActiveLane, laneIdx) => isActiveLane && stepBitOnDisplay[laneIdx] ? "true" : (isActiveLane ? "false" : "false")),
                     finalResult: "N/A",
                     itVal: it // Store current it value
                 });
