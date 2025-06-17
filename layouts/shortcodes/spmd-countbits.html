@@ -1,0 +1,651 @@
+<style>
+    #spmd-demo_countbits {
+        display: flex;
+        flex-direction: column;
+        font-family: sans-serif;
+        border: 1px solid #ccc;
+        padding: 10px;
+        max-width: 900px;
+        margin: 20px auto;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    #spmd-main-content_countbits {
+        display: flex;
+        width: 100%;
+        margin-bottom: 15px;
+    }
+
+    #spmd-code-pane_countbits {
+        flex: 1;
+        padding: 15px;
+        background-color: #fff;
+        border-right: 1px solid #eee;
+        border-radius: 4px 0 0 4px;
+        overflow-x: auto;
+    }
+
+    #spmd-info-pane_countbits {
+        padding: 10px;
+        font-size: 0.9em;
+        color: #333;
+        text-align: left;
+        width: 100%;
+        background-color: #fff;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        margin-top: 10px; /* Added margin for separation */
+    }
+
+    #spmd-info-pane_countbits h4 {
+        margin-top: 0;
+        color: #555;
+    }
+
+    #spmd-final-result_countbits {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #f0f4f8;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        width: 100%;
+        font-size: 1em;
+    }
+
+    #spmd-viz-pane_countbits {
+        flex: 1.5;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    #spmd-lane-data-grid_countbits {
+        display: grid;
+        grid-template-columns: auto repeat(4, 1fr); /* 4 lanes */
+        gap: 5px 8px;
+        width: 100%;
+        margin-bottom: 20px;
+        align-items: center;
+    }
+
+    /* Removed general .spmd-grid-cell font size reduction */
+    #spmd-demo_countbits .spmd-binary-value {
+        font-size: 0.7em; /* Further reduced font size for binary values */
+    }
+
+    #spmd-demo_countbits .spmd-highlighted-bit {
+        color: red;
+        font-weight: bold;
+    }
+
+    /* Scoped grid cell styles - removed problematic overrides */
+    #spmd-demo_countbits .spmd-grid-header,
+    #spmd-demo_countbits .spmd-grid-label,
+    #spmd-demo_countbits .spmd-grid-cell {
+        padding: 4px; 
+        text-align: center;
+        /* border: 1px solid #e0e0e0; --- REMOVED for global style inheritance */
+        /* background-color: #fff; --- REMOVED for global style inheritance */
+    }
+
+    #spmd-demo_countbits .spmd-grid-label {
+        font-weight: bold; 
+        /* background-color: #f8f9fa; --- REMOVED for global style inheritance */
+        text-align: right;
+    }
+
+    #spmd-demo_countbits .spmd-grid-header {
+        font-weight: bold; 
+        /* background-color: #f0f4f8; --- REMOVED for global style inheritance */
+    }
+
+    #spmd-lane-data-grid_countbits .spmd-grid-cell[id*=\\\'-v\\\'] {
+        color: #28a745; /* Green */
+        font-weight: bold;
+    }
+
+    #spmd-lane-data-grid_countbits .spmd-grid-cell[id*=\\\'-c\\\'] {
+        color: #007bff; /* Blue */
+        font-weight: bold;
+    }
+
+    #spmd-controls_countbits {
+        margin-top: 20px;
+        text-align: center;
+    }
+    
+    #spmd-controls_countbits button {
+        padding: 8px 15px;
+        margin: 0 5px;
+        border-radius: 4px;
+        border: 1px solid #007bff;
+        background-color: #007bff;
+        color: white;
+        cursor: pointer;
+    }
+
+    #spmd-controls_countbits button:disabled {
+        background-color: #ccc;
+        border-color: #ccc;
+        cursor: not-allowed;
+    }
+
+    /* Style for inactive lanes */
+    #spmd-demo_countbits .spmd-grid-cell.inactive-lane {
+        background-color: #e9ecef; /* Light grey background */
+        color: #adb5bd;           /* Muted text color */
+        font-style: italic;
+    }
+</style>
+
+<div id="spmd-demo_countbits">
+    <div id="spmd-main-content_countbits">
+        <div id="spmd-code-pane_countbits" class="spmd-code-pane"> <!-- Added class="spmd-code-pane" -->
+            <pre><code id="spmd-go-code_countbits" class="language-go">
+<span class="code-line" data-line="1"><span class="gokw">func</span> <span class="gofn\">countBits</span><span class="gopunct\">(</span><span class="govar\">a</span> <span class="goty">[]byte</span><span class="gopunct\">)</span> <span class="goty">int</span> <span class="gopunct\">{</span></span>
+<span class="code-line" data-line="2">    <span class="gokw">var</span> <span class="govar">c</span> <span class="gohypo">varying</span> <span class="goty">int</span></span>
+<span class="code-line" data-line="3">    <span class="gokw">go</span> <span class="gokw">for</span> <span class="govar\\\">_</span><span class="gopunct\">,</span> <span class="govar">v</span> <span class="goop">:=</span> <span class="gokw">range</span> <span class="govar">a</span> <span class="gopunct\">{</span></span>
+<span class="code-line" data-line="4">        <span class="gokw">for</span> <span class="govar">it</span> <span class="goop">:=</span> <span class="gokw">range</span> <span class="gonum">8</span> <span class="gopunct\">{</span></span>
+<span class="code-line" data-line="5">            <span class="govar">offset</span> <span class="goop">:=</span> <span class="gonum">1</span> <span class="goop">&lt;&lt;</span> <span class="govar">it</span></span>
+<span class="code-line" data-line="6">            <span class="govar">bitCheck</span> <span class="goop">:=</span> <span class="govar">v</span> <span class="goop">&amp;</span> <span class="govar">offset</span></span>
+<span class="code-line" data-line="7">            <span class="govar">bitOn</span> <span class="goop">:=</span> <span class="govar">bitCheck</span> <span class="goop">!=</span> <span class="gonum">0</span></span>
+<span class="code-line" data-line="8">            <span class="gokw">if</span> <span class="govar">bitOn</span> <span class="gopunct\">{</span></span>
+<span class="code-line" data-line="9">                <span class="govar">c</span><span class="goop">++</span></span>
+<span class="code-line" data-line="10">            <span class="gopunct\">}</span></span>
+<span class="code-line" data-line="11">        <span class="gopunct\">}</span></span>
+<span class="code-line" data-line="12">    <span class="gopunct\">}</span></span>
+<span class="code-line" data-line="13">    <span class="gokw">return</span> <span class="gofn">reduce.Add</span><span class="gopunct\">(</span><span class="govar">c</span><span class="gopunct\">)</span></span>
+<span class="code-line" data-line="14"><span class="gopunct\">}</span></span>
+    </code></pre>
+        </div>
+
+        <div id="spmd-viz-pane_countbits">
+            <div id="spmd-lane-data-grid_countbits">
+                <!-- Row 1: Lane Titles -->
+                <div class="spmd-grid-label"></div>
+                <div class="spmd-grid-header">Lane 1</div>
+                <div class="spmd-grid-header">Lane 2</div>
+                <div class="spmd-grid-header">Lane 3</div>
+                <div class="spmd-grid-header">Lane 4</div>
+
+                <!-- New Row for mask values (MOVED HERE) -->
+                <div class="spmd-grid-label">mask:</div>
+                <div class="spmd-grid-cell" id="spmd-lane-0-mask_countbits">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-1-mask_countbits">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-2-mask_countbits">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-3-mask_countbits">-</div>
+
+                <!-- Row 2: v values -->
+                <div class="spmd-grid-label">v:</div>
+                <div class="spmd-grid-cell" id="spmd-lane-0-v_countbits">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-1-v_countbits">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-2-v_countbits">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-3-v_countbits">-</div>
+
+                <!-- Row 3: c values (bit counts) -->
+                <div class="spmd-grid-label">c:</div>
+                <div class="spmd-grid-cell" id="spmd-lane-0-c_countbits">0</div>
+                <div class="spmd-grid-cell" id="spmd-lane-1-c_countbits">0</div>
+                <div class="spmd-grid-cell" id="spmd-lane-2-c_countbits">0</div>
+                <div class="spmd-grid-cell" id="spmd-lane-3-c_countbits">0</div>
+
+                <!-- Row 4: offset values -->
+                <div class="spmd-grid-label">offset:</div>
+                <div class="spmd-grid-cell" id="spmd-lane-0-offset_countbits">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-1-offset_countbits">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-2-offset_countbits">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-3-offset_countbits">-</div>
+
+                <!-- Row 5: bitCheck values -->
+                <div class="spmd-grid-label">bitCheck:</div>
+                <div class="spmd-grid-cell" id="spmd-lane-0-bitCheck_countbits">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-1-bitCheck_countbits">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-2-bitCheck_countbits">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-3-bitCheck_countbits">-</div>
+
+                <!-- Row 6: bitOn values -->
+                <div class="spmd-grid-label">bitOn:</div>
+                <div class="spmd-grid-cell" id="spmd-lane-0-bitOn_countbits">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-1-bitOn_countbits">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-2-bitOn_countbits">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-3-bitOn_countbits">-</div>
+            </div>
+
+            <div id="spmd-final-result_countbits">
+                <h4>Final Result</h4>
+                <div class="result-lines-container">
+                    <div class="result-line">
+                        <span class="spmd-result-label">Total Bit Count:</span>
+                        <span class="spmd-result-value-group">
+                            <span id="spmd-summation-expression_countbits" class="spmd-summation-text"></span>
+                            <span class="spmd-equals-sign" id="spmd-equals-sign_countbits" style="display: none;">=</span>
+                            <span id="spmd-final-result-value_countbits" class="spmd-final-value-text">N/A</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div id="spmd-controls_countbits">
+                <button id="spmd-prev-step_countbits">Previous</button>
+                <button id="spmd-next-step_countbits">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="spmd-info-pane_countbits">
+        <h4>Execution Step:</h4>
+        <p id="spmd-step-description_countbits">Initializing visualization...</p>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const codeLines_countbits = document.querySelectorAll('#spmd-go-code_countbits .code-line');
+        const stepDescription_countbits = document.getElementById('spmd-step-description_countbits');
+
+        const laneVCells_countbits = [
+            document.getElementById('spmd-lane-0-v_countbits'),
+            document.getElementById('spmd-lane-1-v_countbits'),
+            document.getElementById('spmd-lane-2-v_countbits'),
+            document.getElementById('spmd-lane-3-v_countbits')
+        ];
+        const laneCCells_countbits = [
+            document.getElementById('spmd-lane-0-c_countbits'),
+            document.getElementById('spmd-lane-1-c_countbits'),
+            document.getElementById('spmd-lane-2-c_countbits'),
+            document.getElementById('spmd-lane-3-c_countbits')
+        ];
+        const laneOffsetCells_countbits = [
+            document.getElementById('spmd-lane-0-offset_countbits'),
+            document.getElementById('spmd-lane-1-offset_countbits'),
+            document.getElementById('spmd-lane-2-offset_countbits'),
+            document.getElementById('spmd-lane-3-offset_countbits')
+        ];
+        const laneBitCheckCells_countbits = [
+            document.getElementById('spmd-lane-0-bitCheck_countbits'),
+            document.getElementById('spmd-lane-1-bitCheck_countbits'),
+            document.getElementById('spmd-lane-2-bitCheck_countbits'),
+            document.getElementById('spmd-lane-3-bitCheck_countbits')
+        ];
+        const laneBitOnCells_countbits = [
+            document.getElementById('spmd-lane-0-bitOn_countbits'),
+            document.getElementById('spmd-lane-1-bitOn_countbits'),
+            document.getElementById('spmd-lane-2-bitOn_countbits'),
+            document.getElementById('spmd-lane-3-bitOn_countbits')
+        ];
+        const laneMaskCells_countbits = [
+            document.getElementById('spmd-lane-0-mask_countbits'),
+            document.getElementById('spmd-lane-1-mask_countbits'),
+            document.getElementById('spmd-lane-2-mask_countbits'),
+            document.getElementById('spmd-lane-3-mask_countbits')
+        ];
+
+        const finalResultValue_countbits = document.getElementById('spmd-final-result-value_countbits');
+        const summationExpressionElement_countbits = document.getElementById('spmd-summation-expression_countbits');
+        const equalsSignElement_countbits = document.getElementById('spmd-equals-sign_countbits');
+        const prevButton_countbits = document.getElementById('spmd-prev-step_countbits');
+        const nextButton_countbits = document.getElementById('spmd-next-step_countbits');
+
+        const numLanes_countbits = 4;
+        // Example byte array: 1 (0x01), 2 (0x02), 15 (0x0F), 255 (0xFF), 170 (0xAA), 85 (0x55)
+        const inputArray_countbits = [1, 2, 15, 255, 170, 85]; 
+
+        function onesCount8JS(n) { // Helper to count set bits in a byte
+            n = n & 0xFF; 
+            let count = 0;
+            for (let i = 0; i < 8; i++) {
+                if ((n & (1 << i)) !== 0) {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        function formatHex(value) {
+            if (typeof value === 'number') {
+                return '0x' + value.toString(16).padStart(2, '0').toUpperCase();
+            }
+            return value; 
+        }
+
+        function formatBinary(value, highlightBitPosition) {
+            if (typeof value === 'number') {
+                let binaryString = value.toString(2).padStart(8, '0');
+                if (typeof highlightBitPosition === 'number' && highlightBitPosition >= 0 && highlightBitPosition < 8) {
+                    const highlightIndex = 7 - highlightBitPosition; // Position from right (0-indexed) to array index
+                    if (highlightIndex >= 0 && highlightIndex < binaryString.length) {
+                        return binaryString.substring(0, highlightIndex) +
+                               '<span class="spmd-highlighted-bit">' +
+                               binaryString.charAt(highlightIndex) +
+                               '</span>' +
+                               binaryString.substring(highlightIndex + 1);
+                    }
+                }
+                return binaryString;
+            }
+            return value;
+        }
+        
+        const inputArrayHexFormatted = inputArray_countbits.map(b => formatHex(b)).join(',');
+        const totalSumOfBits = inputArray_countbits.reduce((sum, byteVal) => sum + onesCount8JS(byteVal), 0);
+
+        const lineNumbers = {
+            func: 1, varC: 2, goFor: 3,
+            forItRange: 4, offsetAssignment: 5, bitCheckAssignment: 6, bitOnAssignment: 7, ifBitOn: 8, cIncrement: 9, endInnerLoop: 11,
+            endGoFor: 12, reduceAdd: 13, funcEnd: 14
+        };
+
+        function generateInnerLoopSteps_countbits(batchNum, vValuesForBatch, initialCValuesForBatch, lineNumbers) {
+            let steps = [];
+            let currentCForLanes = [...initialCValuesForBatch];
+            const activeLanesInBatch = vValuesForBatch.map(v => v !== "-");
+
+            steps.push({
+                line: lineNumbers.forItRange,
+                description: `Batch ${batchNum}: Inner loop <span class=\"spmd-inline-code\"><span class=\"gokw\">for</span> <span class=\"govar\">it</span> <span class=\"goop\">:=</span> <span class=\"gokw\">range</span> <span class=\"gonum\">8</span></span> begins. Processing byte values: ${vValuesForBatch.map((v, i) => activeLanesInBatch[i] ? `L${i+1}:${formatBinary(v)} (hex: ${formatHex(v)})` : `L${i+1}:idle`).join(', ')}.`,
+                laneVDisplay: [...vValuesForBatch],
+                laneCDisplay: [...currentCForLanes],
+                laneOffsetDisplay: activeLanesInBatch.map(active => active ? "-" : "-"),
+                laneBitCheckDisplay: activeLanesInBatch.map(active => active ? "-" : "-"),
+                laneBitOnDisplay: activeLanesInBatch.map(active => active ? "-" : "-"),
+                laneMaskDisplay: activeLanesInBatch.map(active => active ? "true" : "false"), // Added mask display
+                finalResult: "N/A"
+            });
+
+            for (let it = 0; it < 8; it++) {
+                const offsetVal = 1 << it;
+                let stepOffsetDisplay = activeLanesInBatch.map(active => active ? offsetVal : "-");
+                let stepBitCheckDisplay = vValuesForBatch.map((v, i) => activeLanesInBatch[i] ? (v & offsetVal) : "-");
+                let stepBitOnDisplay = vValuesForBatch.map((v, i) => activeLanesInBatch[i] ? ((v & offsetVal) !== 0) : "-");
+
+                steps.push({
+                    line: lineNumbers.offsetAssignment,
+                    description: `Batch ${batchNum}, <span class=\"spmd-inline-code\"><span class=\"govar\">it</span> <span class=\"goop\"> = </span> <span class=\"gonum\">${it}</span></span>: Calculate <span class=\"spmd-inline-code\"><span class=\"govar\">offset</span> <span class=\"goop\">:=</span> <span class=\"gonum\">1</span> <span class=\"goop\">&lt;&lt;</span> <span class=\"govar\">it</span></span>. For active lanes, <span class=\"spmd-inline-code\"><span class=\"govar\">offset</span> <span class=\"goop\">=</span> ${formatBinary(offsetVal, it)}</span>.`,
+                    laneVDisplay: [...vValuesForBatch],
+                    laneCDisplay: [...currentCForLanes],
+                    laneOffsetDisplay: [...stepOffsetDisplay],
+                    laneBitCheckDisplay: activeLanesInBatch.map(active => active ? "-" : "-"),
+                    laneBitOnDisplay: activeLanesInBatch.map(active => active ? "-" : "-"),
+                    laneMaskDisplay: activeLanesInBatch.map(active => active ? "true" : "false"), // Added mask display
+                    finalResult: "N/A",
+                    itVal: it // Store current it value
+                });
+
+                steps.push({
+                    line: lineNumbers.bitCheckAssignment,
+                    description: `Batch ${batchNum}, <span class=\"spmd-inline-code\"><span class=\"govar\">it</span> <span class=\"goop\"> = </span> <span class=\"gonum\">${it}</span></span>: Calculate <span class=\"spmd-inline-code\"><span class=\"govar\">bitCheck</span> <span class=\"goop\">:=</span> <span class=\"govar\">v</span> <span class=\"goop\">&amp;</span> <span class=\"govar\">offset</span></span> for active lanes.`,
+                    laneVDisplay: [...vValuesForBatch],
+                    laneCDisplay: [...currentCForLanes],
+                    laneOffsetDisplay: [...stepOffsetDisplay],
+                    laneBitCheckDisplay: [...stepBitCheckDisplay],
+                    laneBitOnDisplay: activeLanesInBatch.map(active => active ? "-" : "-"),
+                    laneMaskDisplay: activeLanesInBatch.map(active => active ? "true" : "false"), // Added mask display
+                    finalResult: "N/A",
+                    itVal: it // Store current it value
+                });
+
+                steps.push({
+                    line: lineNumbers.bitOnAssignment,
+                    description: `Batch ${batchNum}, <span class=\"spmd-inline-code\"><span class=\"govar\">it</span> <span class=\"goop\"> = </span> <span class=\"gonum\">${it}</span></span>: Determine <span class=\"spmd-inline-code\"><span class=\"govar\">bitOn</span> <span class=\"goop\">:=</span> <span class=\"govar\">bitCheck</span> <span class=\"goop\">!=</span> <span class=\"gonum\">0</span></span> for active lanes.`,
+                    laneVDisplay: [...vValuesForBatch],
+                    laneCDisplay: [...currentCForLanes],
+                    laneOffsetDisplay: [...stepOffsetDisplay],
+                    laneBitCheckDisplay: [...stepBitCheckDisplay],
+                    laneBitOnDisplay: [...stepBitOnDisplay],
+                    laneMaskDisplay: activeLanesInBatch.map(active => active ? "true" : "false"), // Added mask display
+                    finalResult: "N/A",
+                    itVal: it // Store current it value
+                });
+
+                steps.push({
+                    line: lineNumbers.ifBitOn,
+                    description: `Batch ${batchNum}, <span class=\"spmd-inline-code\"><span class=\"govar\">it</span> <span class=\"goop\"> = </span> <span class=\"gonum\">${it}</span></span>: Conditional <span class=\"spmd-inline-code\"><span class=\"gokw\">if</span> <span class=\"govar\">bitOn</span></span> for active lanes.`,
+                    laneVDisplay: [...vValuesForBatch],
+                    laneCDisplay: [...currentCForLanes],
+                    laneOffsetDisplay: [...stepOffsetDisplay],
+                    laneBitCheckDisplay: [...stepBitCheckDisplay],
+                    laneBitOnDisplay: [...stepBitOnDisplay],
+                    laneMaskDisplay: activeLanesInBatch.map(active => active ? "true" : "false"), // Added mask display
+                    finalResult: "N/A",
+                    itVal: it // Store current it value
+                });
+                
+                let cIncrementDescriptionParts = [];
+                let cActuallyIncrementedThisSubStep = false;
+                for(let i=0; i<numLanes_countbits; i++) {
+                    if (activeLanesInBatch[i] && stepBitOnDisplay[i]) {
+                        currentCForLanes[i]++;
+                        cActuallyIncrementedThisSubStep = true;
+                        cIncrementDescriptionParts.push(`L${i+1}: <span class=\"spmd-inline-code\"><span class=\"govar\">c</span></span> increments to ${currentCForLanes[i]}`);
+                    } else if (activeLanesInBatch[i]) {
+                        cIncrementDescriptionParts.push(`L${i+1}: <span class=\"spmd-inline-code\"><span class=\"govar\">c</span></span> (${currentCForLanes[i]}) unchanged`);
+                    }
+                }
+
+                steps.push({
+                    line: lineNumbers.cIncrement,
+                    description: `Batch ${batchNum}, <span class=\"spmd-inline-code\"><span class=\"govar\">it</span> <span class=\"goop\"> = </span> <span class=\"gonum\">${it}</span></span>: ${cActuallyIncrementedThisSubStep ? 'Executing' : 'Skipping (or no active lanes had bitOn=true)'} <span class=\\"spmd-inline-code\\"><span class=\\"govar\\">c</span><span class=\\"goop\\">++</span></span>. ${cIncrementDescriptionParts.join('. ')}.`,
+                    laneVDisplay: [...vValuesForBatch],
+                    laneCDisplay: [...currentCForLanes],
+                    laneOffsetDisplay: [...stepOffsetDisplay],
+                    laneBitCheckDisplay: [...stepBitCheckDisplay],
+                    laneBitOnDisplay: [...stepBitOnDisplay],
+                    laneMaskDisplay: activeLanesInBatch.map(active => active ? "true" : "false"), // Added mask display
+                    finalResult: "N/A",
+                    itVal: it // Store current it value
+                });
+            }
+
+            steps.push({
+                line: lineNumbers.endInnerLoop,
+                description: `Batch ${batchNum}: Inner loop <span class=\"spmd-inline-code\"><span class=\"gokw\">for</span> <span class=\"govar\">it</span></span> (lines ${lineNumbers.forItRange}-${lineNumbers.endInnerLoop}) completes. Final <span class=\"spmd-inline-code\"><span class=\"govar\">c</span></span> values after this batch: ${currentCForLanes.map((c,i) => `L${i+1}:${c}`).join(', ')}.`,
+                laneVDisplay: [...vValuesForBatch],
+                laneCDisplay: [...currentCForLanes],
+                laneOffsetDisplay: activeLanesInBatch.map(active => active ? "-" : "-"),
+                laneBitCheckDisplay: activeLanesInBatch.map(active => active ? "-" : "-"),
+                laneBitOnDisplay: activeLanesInBatch.map(active => active ? "-" : "-"),
+                laneMaskDisplay: activeLanesInBatch.map(active => active ? "true" : "false"), // Added mask display
+                finalResult: "N/A"
+            });
+            return {steps, finalCValuesForBatch: currentCForLanes};
+        }
+
+        let cumulativeC_countbits = [0, 0, 0, 0];
+        const steps_countbits = [];
+
+        // 0: Initial Call
+        steps_countbits.push({
+            line: null,
+            description: `Calling <span class=\"spmd-inline-code\"><span class=\"gofn\">countBits</span><span class=\"gopunct\">(</span><span class=\"goty\">[]byte</span><span class=\"gopunct\">{</span>${inputArrayHexFormatted}<span class=\"gopunct\">}</span><span class=\"gopunct\">)</span></span>. Input <span class=\"spmd-inline-code\"><span class=\"govar\">a</span></span> is initialized. Four execution lanes available.`,
+            laneVDisplay: ["-", "-", "-", "-"],
+            laneCDisplay: [...cumulativeC_countbits],
+            laneOffsetDisplay: ["-", "-", "-", "-"],
+            laneBitCheckDisplay: ["-", "-", "-", "-"],
+            laneBitOnDisplay: ["-", "-", "-", "-"],
+            laneMaskDisplay: ["true", "true", "true", "true"], // Initial mask state set to true
+            finalResult: "N/A"
+        });
+
+        // 1: var c varying int
+        steps_countbits.push({
+            line: lineNumbers.varC,
+            description: `<span class=\"spmd-inline-code\"><span class=\"gokw\">var</span> <span class=\"govar\">c</span> <span class=\"gohypo\">varying</span> <span class=\"goty\">int</span></span>: Each lane gets its own <span class=\"spmd-inline-code\"><span class=\"govar\">c</span></span> (bit counter), initialized to 0.`,
+            laneVDisplay: ["-", "-", "-", "-"],
+            laneCDisplay: [...cumulativeC_countbits],
+            laneOffsetDisplay: ["-", "-", "-", "-"],
+            laneBitCheckDisplay: ["-", "-", "-", "-"],
+            laneBitOnDisplay: ["-", "-", "-", "-"],
+            laneMaskDisplay: ["true", "true", "true", "true"], // Mask state set to true
+            finalResult: "N/A"
+        });
+
+        const numBatches = Math.ceil(inputArray_countbits.length / numLanes_countbits);
+
+        for (let batchIdx = 0; batchIdx < numBatches; batchIdx++) {
+            const batch_v_values = [];
+            let hasActiveLaneInBatch = false;
+            for (let laneIdx = 0; laneIdx < numLanes_countbits; laneIdx++) {
+                const dataIdx = batchIdx * numLanes_countbits + laneIdx;
+                if (dataIdx < inputArray_countbits.length) {
+                    batch_v_values.push(inputArray_countbits[dataIdx]);
+                    hasActiveLaneInBatch = true;
+                } else {
+                    batch_v_values.push("-");
+                }
+            }
+
+            if (!hasActiveLaneInBatch && batchIdx > 0) continue; // Should not happen if numBatches is correct
+
+            // START: Add step for 'go for' distribution for the current batch
+            let batchNumText;
+            if (batchIdx === 0) batchNumText = "first";
+            else if (batchIdx === 1) batchNumText = "second";
+            else if (batchIdx === 2) batchNumText = "third";
+            else batchNumText = `batch ${batchIdx + 1}`;
+
+            const vAssignments = batch_v_values
+                .map((val, idx) => {
+                    if (val !== "-") {
+                        return `<span class="spmd-inline-code"><span class="govar">v</span></span>=${val} (L${idx + 1})`;
+                    }
+                    return null;
+                })
+                .filter(Boolean)
+                .join(', ');
+
+            const description = `<span class="spmd-inline-code"><span class="gokw">go</span> <span class="gokw">for</span> <span class="govar">_</span><span class="gopunct">,</span> <span class="govar">v</span> <span class="goop">:=</span> <span class="gokw">range</span> <span class="govar">a</span></span>: Distributing ${batchNumText} batch. ${vAssignments}.`;
+
+            steps_countbits.push({
+                line: lineNumbers.goFor,
+                description: description,
+                laneVDisplay: batch_v_values.map(v => v !== "-" ? v : "-"),
+                laneCDisplay: [...cumulativeC_countbits], // Show c values before this batch's processing
+                laneOffsetDisplay: batch_v_values.map(() => "-"),
+                laneBitCheckDisplay: batch_v_values.map(() => "-"),
+                laneBitOnDisplay: batch_v_values.map(() => "-"),
+                laneMaskDisplay: batch_v_values.map(v => v !== "-" ? "true" : "false"), // Mask active lanes for this batch
+                finalResult: "N/A"
+            });
+            // END: Add step for 'go for' distribution
+
+            const innerLoopResult = generateInnerLoopSteps_countbits(batchIdx + 1, batch_v_values, cumulativeC_countbits, lineNumbers);
+            steps_countbits.push(...innerLoopResult.steps);
+            cumulativeC_countbits = [...innerLoopResult.finalCValuesForBatch];
+        }
+
+        // End of 'go for' loop
+        steps_countbits.push({
+            line: lineNumbers.endGoFor,
+            description: `The <span class=\"spmd-inline-code\"><span class=\"gokw\">go</span> <span class=\"gokw\">for</span></span> loop (lines ${lineNumbers.goFor}-${lineNumbers.endGoFor}) finishes. All elements from <span class=\"spmd-inline-code\"><span class=\"govar\">a</span></span> processed. Final <span class=\"spmd-inline-code\"><span class=\"govar\">c</span></span> values per lane: ${cumulativeC_countbits.join(', ')}.`,
+            laneVDisplay: ["-", "-", "-", "-"],
+            laneCDisplay: [...cumulativeC_countbits],
+            laneOffsetDisplay: ["-", "-", "-", "-"],
+            laneBitCheckDisplay: ["-", "-", "-", "-"],
+            laneBitOnDisplay: ["-", "-", "-", "-"],
+            laneMaskDisplay: ["true", "true", "true", "true"], // Mask set to true for all lanes
+            finalResult: "N/A"
+        });
+
+        // reduce.Add(c)
+        steps_countbits.push({
+            line: lineNumbers.reduceAdd,
+            description: `Aggregating <span class=\"spmd-inline-code\"><span class=\"govar\">c</span></span> values from all lanes using <span class=\"spmd-inline-code\"><span class=\"gokw\">return</span> <span class=\"gofn\">reduce.Add</span><span class=\"gopunct\">(</span><span class=\"govar\">c</span><span class=\"gopunct\">)</span></span>. Summing: ${cumulativeC_countbits.join(' + ')}.`,
+            laneVDisplay: ["-", "-", "-", "-"],
+            laneCDisplay: [...cumulativeC_countbits],
+            laneOffsetDisplay: ["-", "-", "-", "-"],
+            laneBitCheckDisplay: ["-", "-", "-", "-"],
+            laneBitOnDisplay: ["-", "-", "-", "-"],
+            laneMaskDisplay: ["true", "true", "true", "true"], // Mask state during reduction
+            finalResult: totalSumOfBits
+        });
+
+        // Return
+        steps_countbits.push({
+            line: lineNumbers.funcEnd,
+            description: `Function returns the total bit count: <span class=\"spmd-inline-code\">${totalSumOfBits}</span>.`,
+            laneVDisplay: ["-", "-", "-", "-"],
+            laneCDisplay: [...cumulativeC_countbits],
+            laneOffsetDisplay: ["-", "-", "-", "-"],
+            laneBitCheckDisplay: ["-", "-", "-", "-"],
+            laneBitOnDisplay: ["-", "-", "-", "-"],
+            laneMaskDisplay: ["true", "true", "true", "true"], // Final mask state
+            finalResult: totalSumOfBits
+        });
+
+        let currentStep_countbits = 0;
+
+        function renderStep_countbits(stepIndex) {
+            const step = steps_countbits[stepIndex];
+
+            codeLines_countbits.forEach(line => line.classList.remove('highlight'));
+            if (step.line !== null) {
+                const lineToHighlight = document.querySelector(`#spmd-go-code_countbits .code-line[data-line="${step.line}"]`); // Corrected selector
+                if (lineToHighlight) {
+                    lineToHighlight.classList.add('highlight');
+                }
+            }
+
+            stepDescription_countbits.innerHTML = step.description;
+
+            const currentIt = (typeof step.itVal === 'number') ? step.itVal : null;
+
+            for (let i = 0; i < numLanes_countbits; i++) {
+                const isMaskActive = step.laneMaskDisplay[i] === "true"; // Determine if the lane is active based on mask
+
+                // Add or remove 'inactive-lane' class based on mask activity (excluding mask cells)
+                [laneVCells_countbits[i], laneCCells_countbits[i], laneOffsetCells_countbits[i], laneBitCheckCells_countbits[i], laneBitOnCells_countbits[i]].forEach(cell => {
+                    if (isMaskActive) {
+                        cell.classList.remove('inactive-lane');
+                    } else {
+                        cell.classList.add('inactive-lane');
+                    }
+                });
+                // Ensure mask cells are never greyed out, regardless of the mask value itself
+                laneMaskCells_countbits[i].classList.remove('inactive-lane');
+
+                // Wrap binary numbers in a span for specific styling, and highlight bit if currentIt is valid
+                const vText = (typeof step.laneVDisplay[i] === 'number') ? `<span class="spmd-binary-value">${formatBinary(step.laneVDisplay[i], currentIt)}</span>` : step.laneVDisplay[i];
+                laneVCells_countbits[i].innerHTML = vText;
+                laneCCells_countbits[i].textContent = step.laneCDisplay[i];
+                const offsetText = (typeof step.laneOffsetDisplay[i] === 'number') ? `<span class="spmd-binary-value">${formatBinary(step.laneOffsetDisplay[i], currentIt)}</span>` : step.laneOffsetDisplay[i];
+                laneOffsetCells_countbits[i].innerHTML = offsetText;
+                const bitCheckText = (typeof step.laneBitCheckDisplay[i] === 'number') ? `<span class="spmd-binary-value">${formatBinary(step.laneBitCheckDisplay[i], currentIt)}</span>` : step.laneBitCheckDisplay[i];
+                laneBitCheckCells_countbits[i].innerHTML = bitCheckText;
+                laneBitOnCells_countbits[i].textContent = (typeof step.laneBitOnDisplay[i] === 'boolean') ? step.laneBitOnDisplay[i].toString() : step.laneBitOnDisplay[i];
+                laneMaskCells_countbits[i].textContent = step.laneMaskDisplay[i]; // Update mask cell
+            }
+
+            if (step.finalResult !== "N/A") {
+                const validLaneCValues = step.laneCDisplay.filter(val => typeof val === 'number');
+                summationExpressionElement_countbits.textContent = validLaneCValues.join(' + ');
+                equalsSignElement_countbits.style.display = 'inline';
+                finalResultValue_countbits.textContent = step.finalResult;
+            } else {
+                summationExpressionElement_countbits.textContent = '';
+                equalsSignElement_countbits.style.display = 'none';
+                finalResultValue_countbits.textContent = "N/A";
+            }
+
+            prevButton_countbits.disabled = stepIndex === 0;
+            nextButton_countbits.disabled = stepIndex === steps_countbits.length - 1;
+        }
+
+        prevButton_countbits.addEventListener('click', () => {
+            if (currentStep_countbits > 0) {
+                currentStep_countbits--;
+                renderStep_countbits(currentStep_countbits);
+            }
+        });
+
+        nextButton_countbits.addEventListener('click', () => {
+            if (currentStep_countbits < steps_countbits.length - 1) {
+                currentStep_countbits++;
+                renderStep_countbits(currentStep_countbits);
+            }
+        });
+
+        renderStep_countbits(currentStep_countbits); // Initial render
+    });
+</script>
