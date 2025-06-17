@@ -12,11 +12,7 @@
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
-    #spmd-main-content_countbits {
-        display: flex;
-        width: 100%;
-        margin-bottom: 15px;
-    }
+    /* REMOVED #spmd-main-content_countbits style as it will use .spmd-demo */
 
     #spmd-code-pane_countbits {
         flex: 1;
@@ -44,15 +40,7 @@
         color: #555;
     }
 
-    #spmd-final-result_countbits {
-        margin-top: 20px;
-        padding: 15px;
-        background-color: #f0f4f8;
-        border: 1px solid #ced4da;
-        border-radius: 6px;
-        width: 100%;
-        font-size: 1em;
-    }
+    /* REMOVED #spmd-final-result_countbits style as it will use .spmd-final-result */
 
     #spmd-viz-pane_countbits {
         flex: 1.5;
@@ -102,12 +90,12 @@
         /* background-color: #f0f4f8; --- REMOVED for global style inheritance */
     }
 
-    #spmd-lane-data-grid_countbits .spmd-grid-cell[id*=\\\'-v\\\'] {
+    #spmd-lane-data-grid_countbits .spmd-grid-cell[id*=\'-v\'] {
         color: #28a745; /* Green */
         font-weight: bold;
     }
 
-    #spmd-lane-data-grid_countbits .spmd-grid-cell[id*=\\\'-c\\\'] {
+    #spmd-lane-data-grid_countbits .spmd-grid-cell[id*=\'-c\'] {
         color: #007bff; /* Blue */
         font-weight: bold;
     }
@@ -142,7 +130,7 @@
 </style>
 
 <div id="spmd-demo_countbits">
-    <div id="spmd-main-content_countbits">
+    <div id="spmd-main-content_countbits" class="spmd-demo"> <!-- Added class="spmd-demo" -->
         <div id="spmd-code-pane_countbits" class="spmd-code-pane"> <!-- Added class="spmd-code-pane" -->
             <pre><code id="spmd-go-code_countbits" class="language-go">
 <span class="code-line" data-line="1"><span class="gokw">func</span> <span class="gofn\">countBits</span><span class="gopunct\">(</span><span class="govar\">a</span> <span class="goty">[]byte</span><span class="gopunct\">)</span> <span class="goty">int</span> <span class="gopunct\">{</span></span>
@@ -162,8 +150,8 @@
     </code></pre>
         </div>
 
-        <div id="spmd-viz-pane_countbits">
-            <div id="spmd-lane-data-grid_countbits">
+        <div id="spmd-viz-pane_countbits" class="spmd-viz-pane"> <!-- Added class="spmd-viz-pane" -->
+            <div id="spmd-lane-data-grid_countbits" class="spmd-lane-data-grid"> <!-- Added class="spmd-lane-data-grid" -->
                 <!-- Row 1: Lane Titles -->
                 <div class="spmd-grid-label"></div>
                 <div class="spmd-grid-header">Lane 1</div>
@@ -214,7 +202,7 @@
                 <div class="spmd-grid-cell" id="spmd-lane-3-bitOn_countbits">-</div>
             </div>
 
-            <div id="spmd-final-result_countbits">
+            <div id="spmd-final-result_countbits" class="spmd-final-result"> <!-- Added class="spmd-final-result" -->
                 <h4>Final Result</h4>
                 <div class="result-lines-container">
                     <div class="result-line">
@@ -227,14 +215,14 @@
                     </div>
                 </div>
             </div>
-            <div id="spmd-controls_countbits">
+            <div id="spmd-controls_countbits" class="spmd-controls"> <!-- Added class="spmd-controls" -->
                 <button id="spmd-prev-step_countbits">Previous</button>
                 <button id="spmd-next-step_countbits">Next</button>
             </div>
         </div>
     </div>
 
-    <div id="spmd-info-pane_countbits">
+    <div id="spmd-info-pane_countbits" class="spmd-info-pane"> <!-- Added class="spmd-info-pane" -->
         <h4>Execution Step:</h4>
         <p id="spmd-step-description_countbits">Initializing visualization...</p>
     </div>

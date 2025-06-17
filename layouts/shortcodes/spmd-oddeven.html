@@ -13,13 +13,6 @@
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
-    #spmd-main-content_oddeven {
-        /* ID Suffix Added */
-        display: flex;
-        width: 100%;
-        margin-bottom: 15px;
-    }
-
     #spmd-code-pane_oddeven {
         /* ID Suffix Added */
         flex: 1;
@@ -78,17 +71,6 @@
         font-style: italic;
     }
 
-    #spmd-final-result_oddeven {
-        /* ID Suffix Added */
-        margin-top: 20px; 
-        padding: 15px; /* Kept as it's simpler than .spmd-final-result (missing bg, border etc) */
-        background-color: #f0f4f8; /* Added */
-        border: 1px solid #ced4da; /* Added */
-        border-radius: 6px; /* Added */
-        width: 100%; /* Added */
-        font-size: 1em; /* Added */
-    }
-
     #spmd-controls_oddeven {
         margin-top: 20px;
         text-align: center;
@@ -100,7 +82,7 @@
 </style>
 
 <div id="spmd-demo_oddeven"> <!-- ID Suffix Added -->
-    <div id="spmd-main-content_oddeven"> <!-- ID Suffix Added -->
+    <div id="spmd-main-content_oddeven" class="spmd-demo"> <!-- ID Suffix Added, CLASS ADDED -->
         <div id="spmd-code-pane_oddeven" class="spmd-code-pane spmd-code-pane-oddeven"> <!-- ID Suffix Added -->
             <pre><code id="spmd-go-code_oddeven"> <!-- ID Suffix Added -->
 <span class="code-line" data-line="1"><span class="gokw">func</span> <span class="gofn">oddEvenCount</span><span class="gopunct">(</span><span class="govar">a</span> <span class="goty">[]int</span><span class="gopunct">)</span> <span class="gopunct">(</span><span class="goty">int</span><span class="gopunct">,</span> <span class="goty">int</span><span class="gopunct">)</span> <span class="gopunct">{</span></span>
@@ -118,7 +100,7 @@
     </code></pre>
         </div>
 
-        <div id="spmd-viz-pane_oddeven"> <!-- ID Suffix Added -->
+        <div id="spmd-viz-pane_oddeven" class="spmd-viz-pane"> <!-- ID Suffix Added, CLASS ADDED -->
             <div id="spmd-lane-data-grid_oddeven"> <!-- ID Suffix Added -->
                 <!-- Row 1: Lane Titles -->
                 <div class="spmd-grid-label"></div>
@@ -186,7 +168,7 @@
         </div>
     </div>
 
-    <div id="spmd-info-pane_oddeven"> <!-- ID Suffix Added -->
+    <div id="spmd-info-pane_oddeven" class="spmd-info-pane"> <!-- ID Suffix Added, CLASS ADDED -->
         <h4>Execution Step:</h4>
         <p id="spmd-step-description_oddeven">Initializing...</p> <!-- ID Suffix Added -->
     </div>

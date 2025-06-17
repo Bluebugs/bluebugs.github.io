@@ -13,13 +13,6 @@
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
-    #spmd-main-content_sum {
-        /* ID Suffix Added */
-        display: flex;
-        width: 100%;
-        margin-bottom: 15px;
-    }
-
     #spmd-code-pane_sum {
         /* ID Suffix Added */
         flex: 1;
@@ -45,17 +38,6 @@
         /* Parent ID Suffix Reflected */
         margin-top: 0;
         color: #555; /* Kept as it's specific and simpler than .spmd-info-pane h4 */
-    }
-
-    #spmd-final-result_sum {
-        /* ID Suffix Added */
-        margin-top: 20px;
-        padding: 15px;
-        background-color: #f0f4f8;
-        border: 1px solid #ced4da;
-        border-radius: 6px;
-        width: 100%;
-        font-size: 1em;
     }
 
     #spmd-viz-pane_sum {
@@ -105,7 +87,7 @@
 </style>
 
 <div id="spmd-demo_sum"> <!-- ID Suffix Added -->
-    <div id="spmd-main-content_sum"> <!-- ID Suffix Added -->
+    <div id="spmd-main-content_sum" class="spmd-demo"> <!-- ID Suffix Added, CLASS ADDED -->
         <div id="spmd-code-pane_sum" class="spmd-code-pane"> <!-- ID Suffix Added, CLASS ADDED -->
             <pre><code id="spmd-go-code_sum"> <!-- ID Suffix Added -->
 <span class="code-line" data-line="1"><span class="gokw">func</span> <span class="gofn">sum</span><span class="gopunct">(</span><span class="govar">a</span> <span class="goty">[]int</span><span class="gopunct">)</span> <span class="goty">int</span> <span class="gopunct">{</span></span>
@@ -118,8 +100,8 @@
     </code></pre>
         </div>
 
-        <div id="spmd-viz-pane_sum"> <!-- ID Suffix Added -->
-            <div id="spmd-lane-data-grid_sum"> <!-- ID Suffix Added -->
+        <div id="spmd-viz-pane_sum" class="spmd-viz-pane"> <!-- ID Suffix Added, CLASS ADDED -->
+            <div id="spmd-lane-data-grid_sum" class="spmd-lane-data-grid"> <!-- ID Suffix Added, CLASS ADDED -->
                 <!-- Row 1: Lane Titles -->
                 <div class="spmd-grid-label"></div>
                 <div class="spmd-grid-header">Lane 1</div>
@@ -142,7 +124,7 @@
                 <div class="spmd-grid-cell" id="spmd-lane-3-s_sum">0</div> <!-- ID Suffix Added -->
             </div>
 
-            <div id="spmd-final-result_sum"> <!-- ID Suffix Added -->
+            <div id="spmd-final-result_sum" class="spmd-final-result"> <!-- ID Suffix Added, CLASS ADDED -->
                 <h4>Final Result</h4>
                 <div class="result-lines-container">
                     <div class="result-line">
@@ -162,7 +144,7 @@
         </div>
     </div>
 
-    <div id="spmd-info-pane_sum"> <!-- ID Suffix Added -->
+    <div id="spmd-info-pane_sum" class="spmd-info-pane"> <!-- ID Suffix Added, CLASS ADDED -->
         <h4>Execution Step:</h4>
         <p id="spmd-step-description_sum">Initialize `a` with `[]int{1,2,3,4,5,6}`. Four execution lanes available.</p>
         <!-- ID Suffix Added -->
