@@ -1,67 +1,66 @@
 +++
 date = '2024-11-13T18:48:59-07:00'
 draft = true
-title = 'Data Parallelism: simple solution for Golang to provide Single Program Multiple Data'
+title = 'Data Parallelism: simpler solution for Golang?'
 +++
 
-# Why?
+## Why Data Parallelism Matters in Go
 
-Go is fast, but it can't easily express data parallelism nor does it provides an access to low level _SIMD_, _Single Instruction Multiple Data_. This is why [base64](https://github.com/golang/go/issues/19636), [hex](https://github.com/golang/go/issues/68188), [utf8](https://github.com/golang/go/issues/63347), [json](https://github.com/golang/go/issues/53178), [jpeg](https://github.com/golang/go/issues/24499), [map](https://github.com/golang/go/issues/71255) are slow. Other language language ecosystem are more prone to adopt specialty fast library. This is why in some use case Node will outperform Go.
+Go is a fast language, but it lacks easy ways to express data parallelism and does not provide direct access to low-level SIMD (Single Instruction Multiple Data) instructions. As a result, standard libraries like [base64](https://github.com/golang/go/issues/19636), [hex](https://github.com/golang/go/issues/68188), [utf8](https://github.com/golang/go/issues/63347), [json](https://github.com/golang/go/issues/53178), [jpeg](https://github.com/golang/go/issues/24499), and [map](https://github.com/golang/go/issues/71255) can be slower compared to other languages. Other ecosystems are more likely to adopt specialized, high-performance libraries, which is why, in some cases, Node.js can outperform Go.
 
-The solution to this bottleneck is for the Go compiler to generate _SIMD_ instructions. There is three schools for that.
+The solution to this bottleneck is for the Go compiler to generate SIMD instructions. There are three main approaches to enabling SIMD in programming languages:
 
-1. The historic premise that one day somehow compiler will be able to have some magic heuristic that can auto vectorize algorithm and generate _SIMD_ instruction by themselves. I heard that during my compiler course in school in the very early 2000. We are in 2025 and nobody rely on auto vectorization. We still write assembly and link it to C or C++ code. Somehow, we never expected auto threading, but expected auto vectorization which is a very similar problem. And well, it didn't deliver. We sunk a lot of effort in it and the gain are marginal.
+1. **Automatic Vectorization:** Relying on the compiler to automatically generate SIMD instructions. Despite decades of research, this approach rarely delivers significant performance gains, and developers still often write assembly code for critical sections.
 
-2. Approach is to add a layer on top of your language ala [Google Highway](https://github.com/google/highway). This provide a small abstraction on top of direct assembly instruction, but leverage a lot of the complexity that C++ has, to make this work. Taking this approach in Go would be doable and is the current idea followed by the current [SIMD proposal](https://github.com/golang/go/issues/73787) with code that could look like [this](https://github.com/AndrewHarrisSPU/simd-demo-0/blob/main/sigmoid_simd.go).
+2. **Abstraction Libraries:** Using libraries like [Google Highway](https://github.com/google/highway) that provide a higher-level abstraction over SIMD instructions. This approach works well in languages like C++, but is less common in Go. The current [SIMD proposal](https://github.com/golang/go/issues/73787) for Go follows this idea, with code examples like [this](https://github.com/AndrewHarrisSPU/simd-demo-0/blob/main/sigmoid_simd.go).
 
-3. Approach is what **GPU** oriented language have done with shaders and compute kernel. Think about _CUDA_, _OpenGL_ and friends. Porting that logic to a high level language that run on **CPU** first and can also run on **GPU**, was done first with [ISPC](https://ispc.github.io/ispc.html) which basically took the C syntax and added data parallelism to it and a later by [Mojo](https://docs.modular.com/mojo/) which did the same but for the Python ecosystem.
+3. **Language-Level Support:** Integrating data parallelism directly into the language, as seen in GPU-oriented languages (e.g., CUDA, OpenGL shaders) and newer languages like [ISPC](https://ispc.github.io/ispc.html) and [Mojo](https://docs.modular.com/mojo/). This approach makes parallelism more accessible and portable.
 
-# What if Go trying to make it simpler
+## What if Go Made Data Parallelism Simpler?
 
-I do believe that the third approach, making it a core part of the language, would lead to a more accessible, simpler, readable and portable code. That is why I will dedicate this blog to what it would look like to add data parallelism. Hopefully if I succeed, you will even be able to write your own compute kernel or Mojo code, if Go never goes take this road.
+I believe that integrating data parallelism as a core language feature would make Go code more accessible, readable, and portable. In this blog, I explore what it might look like to add data parallelism to Go, inspired by languages like ISPC and Mojo. Even if Go never adopts this approach, understanding these concepts can help you write better compute kernels or Mojo code.
 
-The core feature missing in Golang is the ability to express data parallelism. We can express code flow parallelism by using the `go` keyword, but we can't tell the compiler where there is data parallelism. Language like ISPC, the grandfather in this domain, introduced `foreach` on top of a C syntax, while language like Mojo use `vectorize`. They both work in the same way and can enable the same code to run also on the GPU.
+The key feature missing in Go is the ability to express data parallelism. While Go supports concurrent execution with the `go` keyword, it does not let developers indicate where data can be processed in parallel. Languages like ISPC use `foreach`, and Mojo uses `vectorize` to express this. Both enable the same code to run on CPUs and GPUs.
 
-This language express what has been called _SPMD_, _Single Program Multiple Data_. These are different from C#, Zig or Rust, which only expose either too simple high level type or just lower level primitive, but doesn't enable the developer to tell the compiler when the code is actually able to manipulate data in parallel.
+This model is called SPMD (Single Program Multiple Data). Unlike languages like C#, Zig, or Rust, which offer only high-level abstractions or low-level primitives, SPMD lets developers explicitly mark code that can be parallelized.
 
-# Let's `go for it`
+## Let's `go for it`
 
-So how would we express in Go that there is data parallelism. In Go, we do not color function or indicate they are safe to call from a thread, we just use go and we get parallel code execution. To indicate we want to want to have data parallelism, we could just reuse the `go` keyword and follow it by `for`. This won't break any existing code as `go` can only be followed by a function today.
+How could we express data parallelism in Go? Currently, Go does not annotate functions as thread-safe; we simply use `go` to run them concurrently. Similarly, we could extend the `go` keyword with `for` to indicate data parallelism, e.g., `go for`. This would not break existing code, as `go` is currently only followed by a function call.
 
-Before using live example to better explain how this would work, let's introduce a bit of vocabulary. I will use `varying` are a representation of the _SIMD_ register that contain multiple value in it. Each of those value are in a `lane`. The number of lane will vary between process, instruction set and size of the data manipulated. Each lane will get applied the same instruction as all the other lane. One instruction, multiple lanes. To make it possible to implement complex algorithm, we will use a mask that can turn on and off any lane.
+Before diving into examples, let's define some vocabulary:
 
-On the other side, existing variable can only hold one value at a time and you need to assemble them in an array to get more than one. In shader vocabulary, this variable would be called `uniform` as there value would be uniform for all `lane`.
+- `varying`: Represents a SIMD register containing multiple values, one per "lane".
+- `lane`: Each value in a SIMD register.
+- `mask`: Used to enable or disable lanes during computation.
+- `uniform`: A variable with the same value across all lanes.
 
-We will need to use `varying` to indicate that a type is going to be used to fill value from multiple `lane`. This is going to be useful especially when outside of a `go for`. On the opposite, when inside a `go for` loop, we might need to declare a variable `uniform` to match the type of variable created outside of the `go for` or for optimization purpose.
+We use `varying` to indicate types that hold multiple values (across lanes), and `uniform` for single values. Inside a `go for` loop, you might need to declare variables as `uniform` for optimization or compatibility.
 
-# Simple example
+## Simple Example
 
-The example below is one of the most common case. A lot of language have started by just implementing it as a special type with operator overload and no need for anything else. That ended up limiting what was doable and most algorithm require more complex code structure. Still, let's start with the simple case.
+The following example demonstrates a simple sum operation using data parallelism:
 
 {{< spmd-sum >}}
 
-The example show why we need to be able to declare variable as `varying` and how the code flow. I hope it also clarify that some time at the end of a loop, you have your result in a `varying` when you want it as just one value. That's why this example introduce a `reduce` module that enable going from a `varying` to an `uniform`. `Add` is just one example. [ISPC](https://ispc.github.io/ispc.html#reductions) and [Mojo](https://docs.modular.com/mojo/stdlib/algorithm/reduction/) have a good amount of functions they provide as part of their equivalent `reduce` module. They are a great inspiration of what could be the content of a `reduce` package.
+Here, we declare variables as `varying` to operate on multiple data points in parallel. At the end of the loop, we use a `reduce` function to combine the results from all lanes into a single value. Libraries like [ISPC](https://ispc.github.io/ispc.html#reductions) and [Mojo](https://docs.modular.com/mojo/stdlib/algorithm/reduction/) provide a variety of reduction functions, which could inspire a similar package in Go.
 
-With this example, we also show how the mask can be used. If there is no data to be manipulated, the compiler can use a `mask` to ignore some lane and just move on. There is no requirement on the compiler on how to implement this. ISPC and Mojo have shown that this model can be match with a very large set of hardware. It also leave a lot of freedom to the compiler on how to implement this. This is just a mental model of what a pseudo compiler would do.
+With this example, we also show how the mask can be used. If there is no data to be manipulated, the compiler can use a `mask` to ignore some lanes and just move on. There is no requirement on the compiler for how to implement this. ISPC and Mojo have shown that this model can match a wide range of hardware. It also leaves a lot of freedom to the compiler on how to implement this. This is just a mental model of what a pseudo compiler would do.
 
-# How would _if_ work
+## How Would _if_ Work?
 
-We can use the masking concept used for the end of the loop and extend it further to implement `if`. Let's go with a small example.
+We can extend the masking concept to implement conditional logic (`if` statements) in data-parallel code:
 
 {{< spmd-oddeven >}}
 
-As you see with this example, we can now implement simple algorithm that process data in parallel, but with slightly different behavior depending on what those data are. The next code flow control, we are missing to be complete, is `for` in the context of data parallelism.
+This allows us to process data in parallel, with different behavior depending on the data in each lane. The next control flow construct we need is `for` in the context of data parallelism.
 
-# Extending to _for_
+## Extending to _for_
 
-Let's look at how `for` inside `go for` _SPMD_ context would work. Adding a bit of `if` inside to show that they can be stacked however we want.
+Let's look at how `for` inside a `go for` SPMD context would work. We'll add a bit of `if` inside to show that they can be stacked however we want.
 
 {{< spmd-countbits >}}
 
-For simplicity of the example and because I do not want everyone to have to click 32 times in the inner loop, I went with byte and uint8 type here. In a more practical implementation of this function, I would be manipulating int32 directly and write the inner loop test just inside the if  like so `if v & (1 << it) != 0 {`. The compiler could match this loop with a popcount instruction if the instruction set support it. Basically there is no reason that this would be any slower than a more direct to assembly approach, but it keep its readability in my opinion.
+## Summary
 
-# Conclusion
-
-Now we have a mental model of how data parallelism could be working in Go and ISPC along with Mojo have shown that we can get the performance we want from that information close to what assembly provide. I would actually argue that because in my opinion this is more accessible, readable and maintainable, it could be used by more people in more place leading to actually more speed improvement for the entire ecosystem.
-
-And even if Go does go a different way, you can likely understand Mojo, ISPC or even compute kernel now. Have fun!
+Adding data parallelism as a first-class feature in Go could make high-performance computing more accessible and portable. By learning from languages like ISPC and Mojo, we can imagine a future where Go code is both simple and fast, leveraging the full power of modern hardware. Even if Go never adopts these features, understanding them can help you write better, more efficient code in any language.
