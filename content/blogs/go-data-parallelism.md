@@ -57,3 +57,11 @@ As you see with this example, we can now implement simple algorithm that process
 Let's look at how `for` inside `go for` _SPMD_ context would work. Adding a bit of `if` inside to show that they can be stacked however we want.
 
 {{< spmd-countbits >}}
+
+For simplicity of the example and because I do not want everyone to have to click 32 times in the inner loop, I went with byte and uint8 type here. In a more practical implementation of this function, I would be manipulating int32 directly and write the inner loop test just inside the if  like so `if v & (1 << it) != 0 {`. The compiler could match this loop with a popcount instruction if the instruction set support it. Basically there is no reason that this would be any slower than a more direct to assembly approach, but it keep its readability in my opinion.
+
+# Conclusion
+
+Now we have a mental model of how data parallelism could be working in Go and ISPC along with Mojo have shown that we can get the performance we want from that information close to what assembly provide. I would actually argue that because in my opinion this is more accessible, readable and maintainable, it could be used by more people in more place leading to actually more speed improvement for the entire ecosystem.
+
+And even if Go does go a different way, you can likely understand Mojo, ISPC or even compute kernel now. Have fun!
