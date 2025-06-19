@@ -1,0 +1,181 @@
+<!--
+SPMD Demo: printfVerb
+-->
+<div id="spmd-demo-printf-verbs" class="spmd-demo">
+    <!-- Code Pane -->
+    <div class="spmd-code-pane">
+        <pre><code id="spmd-go-code_printf-verbs" class="language-go">
+<span class="code-line" id="line-1"><span class="gokw">func</span> <span class="gofn">printfVerb</span>(<span class="govar">format</span> <span class="goty">string</span>) <span class="goty">int</span> {</span>
+<span class="code-line" id="line-2">  <span class="gokw">go</span> <span class="gokw">for</span> <span class="govar">_</span>, <span class="govar">c</span> := <span class="gokw">range</span> <span class="govar">format</span> {</span>
+<span class="code-line" id="line-3">    <span class="govar">check</span> := <span class="govar">c</span> == <span class="gohypo">'%'</span></span>
+<span class="code-line" id="line-4">    <span class="gokw">if</span> <span class="gofn">reduce.Any</span>(<span class="govar">check</span>) {</span>
+<span class="code-line" id="line-5">        <span class="gokw">return</span> <span class="gofn">reduce.FindFirstSet</span>(<span class="govar">check</span>)</span>
+<span class="code-line" id="line-6">    }</span>
+<span class="code-line" id="line-7">  }</span>
+<span class="code-line" id="line-8">  <span class="gokw">return</span> <span class="gofn">len</span>(<span class="govar">format</span>)</span>
+<span class="code-line" id="line-9">}</span>
+        </code></pre>
+    </div>
+
+    <!-- Visualization Pane -->
+    <div class="spmd-viz-pane">
+        <div class="spmd-lane-data-grid">
+            <!-- Header -->
+            <div class="spmd-grid-label"></div>
+            <div class="spmd-grid-header">Lane 0</div>
+            <div class="spmd-grid-header">Lane 1</div>
+            <div class="spmd-grid-header">Lane 2</div>
+            <div class="spmd-grid-header">Lane 3</div>
+
+            <!-- c -->
+            <div class="spmd-grid-label">c</div>
+            <div id="val-c-0" class="spmd-grid-cell spmd-grid-cell-c"></div>
+            <div id="val-c-1" class="spmd-grid-cell spmd-grid-cell-c"></div>
+            <div id="val-c-2" class="spmd-grid-cell spmd-grid-cell-c"></div>
+            <div id="val-c-3" class="spmd-grid-cell spmd-grid-cell-c"></div>
+
+            <!-- check -->
+            <div class="spmd-grid-label">check</div>
+            <div id="val-check-0" class="spmd-grid-cell spmd-grid-cell-check"></div>
+            <div id="val-check-1" class="spmd-grid-cell spmd-grid-cell-check"></div>
+            <div id="val-check-2" class="spmd-grid-cell spmd-grid-cell-check"></div>
+            <div id="val-check-3" class="spmd-grid-cell spmd-grid-cell-check"></div>
+        </div>
+
+        <div class="spmd-final-result">
+            <h4>Final Result</h4>
+            <span class="spmd-result-label">First occurence of '%':</span>
+            <span id="final-result-printf-verbs" class="spmd-final-value-text">---</span>
+        </div>
+
+        <div class="spmd-controls">
+            <button id="prev-printf-verbs">Previous</button>
+            <button id="next-printf-verbs">Next</button>
+        </div>
+    </div>
+</div>
+<div id="info-pane-printf-verbs" class="spmd-info-pane">
+    <h4>Execution Step</h4>
+    <p id="info-printf-verbs">Click "Start" to begin the visualization.</p>
+</div>
+
+<style>
+    #spmd-demo-printf-verbs .spmd-lane-data-grid {
+        grid-template-columns: auto repeat(4, 1fr);
+    }
+
+    #spmd-demo-printf-verbs .inactive-lane {
+        background-color: #f0f0f0 !important;
+        color: #aaa;
+    }
+
+    #spmd-demo-printf-verbs .spmd-controls {
+        text-align: center;
+        margin-top: 20px;
+    }
+
+    #spmd-demo-printf-verbs .spmd-result-label {
+        margin-right: 8px;
+        font-weight: 500;
+        color: #333;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const prevBtn = document.getElementById('prev-printf-verbs');
+        const nextBtn = document.getElementById('next-printf-verbs');
+        const info = document.getElementById('info-printf-verbs');
+        const finalResult = document.getElementById('final-result-printf-verbs');
+        const codeLines = document.querySelectorAll('#spmd-go-code_printf-verbs .code-line');
+
+        const lanes = 4;
+        const format = "ab%d";
+        let currentStep = 0;
+
+        const steps = [
+            {
+                line: 1,
+                info: `Calling <code class="spmd-inline-code"><span class="gofn">printfVerb</span>(<span class="gohypo">"ab%d"</span>)</code>. Input <code class="spmd-inline-code">format</code> is initialized. Four execution lanes available.`,
+                c: ['—', '—', '—', '—'],
+                check: ['—', '—', '—', '—'],
+                result: '---'
+            },
+            {
+                line: 2,
+                info: `Loop starts. Each lane gets a character from <code class="spmd-inline-code">format</code>.`,
+                c: [`'a'`, `'b'`, `'%'`, `'d'`],
+                check: ['—', '—', '—', '—'],
+                result: '---'
+            },
+            {
+                line: 3,
+                info: `Each lane checks if its character <code class="spmd-inline-code">c</code> is equal to <code class="spmd-inline-code gokw">'%'</code>. The result is stored in the intermediate variable <code class="spmd-inline-code">check</code>.`,
+                c: [`'a'`, `'b'`, `'%'`, `'d'`],
+                check: ['false', 'false', 'true', 'false'],
+                result: '---'
+            },
+            {
+                line: 4,
+                info: `<code class="spmd-inline-code"><span class="gofn">reduce.Any</span>(<span class="govar">check</span>)</code> checks if any lane found a <code class="spmd-inline-code gokw">'%'</code>. Result is <code class="spmd-inline-code">true</code>.`,
+                c: [`'a'`, `'b'`, `'%'`, `'d'`],
+                check: ['false', 'false', 'true', 'false'],
+                result: '---'
+            },
+            {
+                line: 5,
+                info: `Since a <code class="spmd-inline-code gokw">'%'</code> was found, <code class="spmd-inline-code"><span class="gofn">reduce.FindFirstSet</span>(<span class="govar">check</span>)</code> finds the index of the first lane where <code class="spmd-inline-code">check</code> is true.`,
+                c: [`'a'`, `'b'`, `'%'`, `'d'`],
+                check: ['false', 'false', 'true', 'false'],
+                result: 2
+            },
+            {
+                line: 9,
+                info: `The function returns <code class="spmd-inline-code">2</code>. The visualization has ended.`,
+                c: [`'a'`, `'b'`, `'%'`, `'d'`],
+                check: ['false', 'false', 'true', 'false'],
+                result: 2
+            }
+        ];
+
+        function highlightLine(lineNum) {
+            codeLines.forEach(line => line.classList.remove('highlight'));
+            if (lineNum > 0) {
+                document.getElementById(`line-${lineNum}`).classList.add('highlight');
+            }
+        }
+
+        function renderStep(stepIndex) {
+            const step = steps[stepIndex];
+
+            highlightLine(step.line);
+            info.innerHTML = step.info;
+            finalResult.textContent = step.result;
+
+            for (let i = 0; i < lanes; i++) {
+                document.getElementById(`val-c-${i}`).textContent = step.c[i];
+                document.getElementById(`val-check-${i}`).textContent = step.check[i];
+            }
+
+            prevBtn.disabled = stepIndex === 0;
+            nextBtn.disabled = stepIndex === steps.length - 1;
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentStep > 0) {
+                currentStep--;
+                renderStep(currentStep);
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentStep < steps.length - 1) {
+                currentStep++;
+                renderStep(currentStep);
+            }
+        });
+
+        // Initial render
+        renderStep(0);
+    });
+</script>
