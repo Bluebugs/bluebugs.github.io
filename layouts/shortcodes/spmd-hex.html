@@ -1,0 +1,254 @@
+{{- $uid := .Ordinal -}}
+<div id="spmd-hex-container-{{ $uid }}" class="spmd-container">
+    <div id="spmd-demo-hex" class="spmd-demo">
+        <!-- Code Pane -->
+        <div class="spmd-code-pane">
+            <pre><code id="spmd-go-code_hex" class="language-go">
+<span class="code-line" id="line-1"><span class="gokw">func</span> <span class="gofn">Encode</span><span class="gopunct">(</span><span class="govar">dst</span><span class="gopunct">,</span> <span class="govar">src</span> <span class="goty">[]byte</span><span class="gopunct">)</span> <span class="goty">int</span> <span class="gopunct">{</span></span>
+<span class="code-line" id="line-2">  <span class="gokw">go</span> <span class="gokw">for</span> <span class="govar">i</span> <span class="goop">:=</span> <span class="gokw">range</span> <span class="gofn">len</span><span class="gopunct">(</span><span class="govar">src</span><span class="gopunct">)</span> <span class="goop">*</span> <span class="gonum">2</span> <span class="gopunct">{</span></span>
+<span class="code-line" id="line-3">    <span class="govar">v</span> <span class="goop">:=</span> <span class="govar">src</span><span class="gopunct">[</span><span class="govar">i</span><span class="goop">>></span><span class="gonum">1</span><span class="gopunct">]</span></span>
+<span class="code-line" id="line-4">    <span class="govar">shift</span> <span class="goop">:=</span> <span class="gopunct">(</span><span class="gonum">1</span> <span class="goop">-</span> <span class="gopunct">(</span><span class="govar">i</span> <span class="goop">&</span> <span class="gonum">1</span><span class="gopunct">))</span> <span class="goop">*</span> <span class="gonum">4</span></span>
+<span class="code-line" id="line-5">    <span class="govar">dst</span><span class="gopunct">[</span><span class="govar">i</span><span class="gopunct">]</span> <span class="goop">=</span> <span class="govar">hextable</span><span class="gopunct">[(</span><span class="govar">v</span><span class="goop">>></span><span class="govar">shift</span><span class="gopunct">)</span><span class="goop">&</span><span class="gonum">0x0f</span><span class="gopunct">]</span></span>
+<span class="code-line" id="line-6">  <span class="gopunct">}</span></span>
+<span class="code-line" id="line-7">  <span class="gokw">return</span> <span class="gofn">len</span><span class="gopunct">(</span><span class="govar">src</span><span class="gopunct">)</span> <span class="goop">*</span> <span class="gonum">2</span></span>
+<span class="code-line" id="line-8"><span class="gopunct">}</span></span>
+            </code></pre>
+        </div>
+
+        <!-- Visualization Pane -->
+        <div class="spmd-viz-pane">
+            <div class="spmd-lane-data-grid">
+                <!-- Header -->
+                <div class="spmd-grid-label"></div>
+                <div class="spmd-grid-header">Lane 0</div>
+                <div class="spmd-grid-header">Lane 1</div>
+                <div class="spmd-grid-header">Lane 2</div>
+                <div class="spmd-grid-header">Lane 3</div>
+
+                <!-- i -->
+                <div class="spmd-grid-label">i</div>
+                <div id="val-i-0" class="spmd-grid-cell"></div>
+                <div id="val-i-1" class="spmd-grid-cell"></div>
+                <div id="val-i-2" class="spmd-grid-cell"></div>
+                <div id="val-i-3" class="spmd-grid-cell"></div>
+
+                <!-- v -->
+                <div class="spmd-grid-label">v</div>
+                <div id="val-v-0" class="spmd-grid-cell"></div>
+                <div id="val-v-1" class="spmd-grid-cell"></div>
+                <div id="val-v-2" class="spmd-grid-cell"></div>
+                <div id="val-v-3" class="spmd-grid-cell"></div>
+
+                <!-- shift -->
+                <div class="spmd-grid-label">shift</div>
+                <div id="val-shift-0" class="spmd-grid-cell"></div>
+                <div id="val-shift-1" class="spmd-grid-cell"></div>
+                <div id="val-shift-2" class="spmd-grid-cell"></div>
+                <div id="val-shift-3" class="spmd-grid-cell"></div>
+
+                <!-- dst[i] -->
+                <div class="spmd-grid-label">dst[i]</div>
+                <div id="val-dst-0" class="spmd-grid-cell"></div>
+                <div id="val-dst-1" class="spmd-grid-cell"></div>
+                <div id="val-dst-2" class="spmd-grid-cell"></div>
+                <div id="val-dst-3" class="spmd-grid-cell"></div>
+            </div>
+
+            <div class="spmd-final-result">
+                <h4>dst content</h4>
+                <span id="final-result-hex" class="spmd-final-value-text">---</span>
+            </div>
+
+            <div class="spmd-controls">
+                <button id="prev-hex">Previous</button>
+                <button id="next-hex">Next</button>
+            </div>
+        </div>
+    </div>
+    <div id="info-pane-hex" class="spmd-info-pane">
+        <h4>Execution Step</h4>
+        <p id="info-hex">Click "Next" to begin the visualization.</p>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const container = document.getElementById('spmd-hex-container-{{ $uid }}');
+        if (!container) return;
+
+        const prevBtn = container.querySelector('#prev-hex');
+        const nextBtn = container.querySelector('#next-hex');
+        const info = container.querySelector('#info-hex');
+        const finalResult = container.querySelector('#final-result-hex');
+        const codeContainer = container.querySelector('#spmd-go-code_hex');
+        const codeLines = codeContainer.querySelectorAll('.code-line');
+
+        const lanes = 4; // Keep visualization to 4 lanes
+        const srcString = "Hello world";
+        const src = Array.from(srcString).map(c => c.charCodeAt(0));
+        const hextable = "0123456789abcdef";
+        let currentStep = 0;
+        const finalDst = [];
+
+        const steps = [];
+
+        // Initial Step
+        steps.push({
+            line: 0,
+            info: `Calling <code class="spmd-inline-code"><span class="gofn">Encode</span>(<span class="govar">dst</span>, []<span class="goty">byte</span>("Hello world"))</code>. Input <code class="spmd-inline-code"><span class="govar">src</span></code> is initialized, <code class="spmd-inline-code"><span class="govar">dst</span></code> is expected to have the right allocate length. Four execution lanes available.`,
+            lanes: {},
+            result: "''"
+        });
+
+        // Go For Step
+        steps.push({
+            line: 2,
+            info: `The <code class="spmd-inline-code"><span class="gokw">go</span> <span class="gokw">for</span></code> loop begins. It will execute <code class="spmd-inline-code"><span class="gofn">len</span>(<span class="govar">src</span>) * 2</code> (22) iterations in parallel across the available lanes. The first four iterations (i=0, 1, 2, 3) are assigned to the lanes.`,
+            lanes: {
+                i: [0, 1, 2, 3],
+                v: Array(4).fill(null),
+                shift: Array(4).fill(null),
+                dst: Array(4).fill(null)
+            },
+            result: "''"
+        });
+
+        const totalIterations = src.length * 2;
+
+        for (let base = 0; base < totalIterations; base += lanes) {
+            const i_vals = [], v_vals = [], shift_vals = [], dst_vals = [];
+            const activeLanes = Math.min(lanes, totalIterations - base);
+
+            // Step 1: Calculate v
+            for (let l = 0; l < lanes; l++) {
+                if (l < activeLanes) {
+                    const i = base + l;
+                    i_vals[l] = i;
+                    const srcIndex = i >> 1;
+                    v_vals[l] = `'${srcString[srcIndex]}' (0x${src[srcIndex].toString(16)})`;
+                } else {
+                    i_vals[l] = '---'; v_vals[l] = '---';
+                }
+            }
+            steps.push({
+                line: 3,
+                info: `Processing indices ${base}-${base + activeLanes - 1}. For each lane, we "gather" the corresponding byte from <code class="spmd-inline-code"><span class="govar">src</span></code>. For example, lanes for <code class="spmd-inline-code">i=0</code> and <code class="spmd-inline-code">i=1</code> both read from <code class="spmd-inline-code"><span class="govar">src</span>[0]</code>.`,
+                lanes: { i: i_vals, v: v_vals, shift: Array(lanes).fill(null), dst: Array(lanes).fill(null) },
+                result: `'${finalDst.join('')}'`
+            });
+
+            // Step 2: Calculate shift
+            for (let l = 0; l < lanes; l++) {
+                if (l < activeLanes) {
+                    const i = base + l;
+                    shift_vals[l] = (1 - (i & 1)) * 4;
+                } else {
+                    shift_vals[l] = '---';
+                }
+            }
+            steps.push({
+                line: 4,
+                info: `Calculate the <code class="spmd-inline-code"><span class="govar">shift</span></code> amount. For even indices, we need the high nibble (shift by 4). For odd indices, we need the low nibble (shift by 0).`,
+                lanes: { i: i_vals, v: v_vals, shift: shift_vals, dst: Array(lanes).fill(null) },
+                result: `'${finalDst.join('')}'`
+            });
+
+            // Step 3: Calculate dst[i]
+            for (let l = 0; l < lanes; l++) {
+                if (l < activeLanes) {
+                    const i = base + l;
+                    const v = src[i >> 1];
+                    const shift = (1 - (i & 1)) * 4;
+                    const char = hextable[(v >> shift) & 0x0f];
+                    dst_vals[l] = `'${char}'`;
+                    finalDst[i] = char;
+                } else {
+                    dst_vals[l] = '---';
+                }
+            }
+            steps.push({
+                line: 5,
+                info: `The resulting hex character is written to <code class="spmd-inline-code"><span class="govar">dst</span></code>. This is a "scatter" operation, as each active lane writes to a unique position.`,
+                lanes: { i: i_vals, v: v_vals, shift: shift_vals, dst: dst_vals },
+                result: `'${finalDst.join('')}'`
+            });
+        }
+
+        // Final Step
+        steps.push({
+            line: 7,
+            info: "Loop finished. The final encoded string is complete.",
+            lanes: {
+                i: Array(lanes).fill('---'),
+                v: Array(lanes).fill('---'),
+                shift: Array(lanes).fill('---'),
+                dst: Array(lanes).fill('---')
+            },
+            result: `'${finalDst.join('')}'`
+        });
+
+
+        function highlightLine(lineNum) {
+            codeLines.forEach(line => line.classList.remove('highlight'));
+            if (lineNum > 0) {
+                const lineToHighlight = codeContainer.querySelector(`#line-${lineNum}`);
+                if (lineToHighlight) {
+                    lineToHighlight.classList.add('highlight');
+                }
+            }
+        }
+
+        function renderStep(stepIndex) {
+            const step = steps[stepIndex];
+
+            highlightLine(step.line);
+            info.innerHTML = step.info;
+            finalResult.textContent = step.result;
+
+            for (let i = 0; i < lanes; i++) {
+                const laneI = (step.lanes.i && step.lanes.i[i] != null) ? step.lanes.i[i] : '---';
+                container.querySelector(`#val-i-${i}`).textContent = laneI;
+                container.querySelector(`#val-v-${i}`).textContent = (step.lanes.v && step.lanes.v[i] != null) ? step.lanes.v[i] : '---';
+                container.querySelector(`#val-shift-${i}`).textContent = (step.lanes.shift && step.lanes.shift[i] != null) ? step.lanes.shift[i] : '---';
+                container.querySelector(`#val-dst-${i}`).textContent = (step.lanes.dst && step.lanes.dst[i] != null) ? step.lanes.dst[i] : '---';
+
+                const cell_i = container.querySelector(`#val-i-${i}`);
+                const cell_v = container.querySelector(`#val-v-${i}`);
+                const cell_shift = container.querySelector(`#val-shift-${i}`);
+                const cell_dst = container.querySelector(`#val-dst-${i}`);
+
+                if (laneI === '---') {
+                    cell_i.classList.add('inactive-lane');
+                    cell_v.classList.add('inactive-lane');
+                    cell_shift.classList.add('inactive-lane');
+                    cell_dst.classList.add('inactive-lane');
+                } else {
+                    cell_i.classList.remove('inactive-lane');
+                    cell_v.classList.remove('inactive-lane');
+                    cell_shift.classList.remove('inactive-lane');
+                    cell_dst.classList.remove('inactive-lane');
+                }
+            }
+
+            prevBtn.disabled = stepIndex === 0;
+            nextBtn.disabled = stepIndex === steps.length - 1;
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentStep > 0) {
+                currentStep--;
+                renderStep(currentStep);
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentStep < steps.length - 1) {
+                currentStep++;
+                renderStep(currentStep);
+            }
+        });
+
+        // Initial render
+        renderStep(0);
+    });
+</script>

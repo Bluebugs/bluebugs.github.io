@@ -11,6 +11,8 @@ description = 'Using an hypothetical go for construct to implement hex.go'
 
 In my previous article, we looked at how we could introduce a more readable and maintainable way to express data parallelism in Go and used it for a quick `Sum` example. In this article, I will look at implementing `hex.Encode` and `hex.Decode` with it to start a discussion based on some more practical example.
 
+{{< spmd-hex >}}
+
 # Encode
 
 Current implementation for hex.Encode looks like:
