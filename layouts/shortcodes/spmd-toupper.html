@@ -1,0 +1,618 @@
+{{- $uid := .Ordinal -}}
+<div id="spmd-toupper-container-{{ $uid }}" class="spmd-container">
+    <div id="spmd-demo-toupper" class="spmd-demo">
+        <!-- Code Pane -->
+        <div class="spmd-code-pane">
+            <pre><code id="spmd-go-code_toupper" class="language-go">
+<span class="code-line" id="line-1"><span class="gokw">func</span> <span class="gofn">ToUpper</span><span class="gopunct">(</span><span class="govar">s</span> <span class="goty">[]byte</span><span class="gopunct">)</span> <span class="goty">[]byte</span> <span class="gopunct">{</span></span>
+<span class="code-line" id="line-2">    <span class="gokw">var</span> <span class="govar">hasLower</span> <span class="gohypo">varying</span> <span class="goty">bool</span></span>
+<span class="code-line" id="line-3">    <span class="govar">isASCII</span> <span class="goop">:=</span> <span class="gonum">true</span></span>
+<span class="code-line" id="line-4">    <span class="gokw">go</span> <span class="gokw">for</span> <span class="govar">_</span><span class="gopunct">,</span> <span class="govar">c</span> <span class="goop">:=</span> <span class="gokw">range</span> <span class="govar">s</span> <span class="gopunct">{</span></span>
+<span class="code-line" id="line-5">        <span class="gokw">if</span> <span class="gofn">reduce.Any</span><span class="gopunct">(</span><span class="govar">c</span> <span class="goop">>=</span> <span class="govar">utf8.RuneSelf</span><span class="gopunct">)</span> <span class="gopunct">{</span></span>
+<span class="code-line" id="line-6">            <span class="govar">isASCII</span> <span class="goop">=</span> <span class="gonum">false</span></span>
+<span class="code-line" id="line-7">            <span class="gokw">break</span></span>
+<span class="code-line" id="line-8">        <span class="gopunct">}</span></span>
+<span class="code-line" id="line-9">        <span class="govar">hasLower</span> <span class="goop">=</span> <span class="govar">hasLower</span> <span class="goop">||</span> <span class="gopunct">(</span><span class="gohypo">'a'</span> <span class="goop"><=</span> <span class="govar">c</span> <span class="goop">&&</span> <span class="govar">c</span> <span class="goop"><=</span> <span class="gohypo">'z'</span><span class="gopunct">)</span></span>
+<span class="code-line" id="line-10">    <span class="gopunct">}</span></span>
+<span class="code-line" id="line-11">    <span class="gokw">if</span> <span class="govar">isASCII</span> <span class="gopunct">{</span> <span class="gocomment">// optimize for ASCII-only byte slices.</span></span>
+<span class="code-line" id="line-12">        <span class="gokw">if</span> <span class="gofn">reduce.All</span><span class="gopunct">(</span><span class="goop">!</span><span class="govar">hasLower</span><span class="gopunct">)</span> <span class="gopunct">{</span></span>
+<span class="code-line" id="line-13">            <span class="gokw">return</span> <span class="gofn">append</span><span class="gopunct">(</span><span class="goty">[]byte</span><span class="gopunct">(</span><span class="gohypo">""</span><span class="gopunct">),</span> <span class="govar">s</span><span class="gopunct">...)</span></span>
+<span class="code-line" id="line-14">        <span class="gopunct">}</span></span>
+<span class="code-line" id="line-15">        <span class="govar">b</span> <span class="goop">:=</span> <span class="gofn">bytealg.MakeNoZero</span><span class="gopunct">(</span><span class="gofn">len</span><span class="gopunct">(</span><span class="govar">s</span><span class="gopunct">))[:</span><span class="gofn">len</span><span class="gopunct">(</span><span class="govar">s</span><span class="gopunct">):</span><span class="gofn">len</span><span class="gopunct">(</span><span class="govar">s</span><span class="gopunct">)]</span></span>
+<span class="code-line" id="line-16">        <span class="gokw">go</span> <span class="gokw">for</span> <span class="govar">i</span><span class="gopunct">,</span> <span class="govar">c</span> <span class="goop">:=</span> <span class="gokw">range</span> <span class="govar">s</span> <span class="gopunct">{</span></span>
+<span class="code-line" id="line-17">            <span class="gokw">if</span> <span class="gohypo">'a'</span> <span class="goop"><=</span> <span class="govar">c</span> <span class="goop">&&</span> <span class="govar">c</span> <span class="goop"><=</span> <span class="gohypo">'z'</span> <span class="gopunct">{</span></span>
+<span class="code-line" id="line-18">                <span class="govar">c</span> <span class="goop">-=</span> <span class="gohypo">'a'</span> <span class="goop">-</span> <span class="gohypo">'A'</span></span>
+<span class="code-line" id="line-19">            <span class="gopunct">}</span></span>
+<span class="code-line" id="line-20">            <span class="govar">b</span><span class="gopunct">[</span><span class="govar">i</span><span class="gopunct">]</span> <span class="goop">=</span> <span class="govar">c</span></span>
+<span class="code-line" id="line-21">        <span class="gopunct">}</span></span>
+<span class="code-line" id="line-22">        <span class="gokw">return</span> <span class="govar">b</span></span>
+<span class="code-line" id="line-23">    <span class="gopunct">}</span></span>
+<span class="code-line" id="line-24">    <span class="gokw">return</span> <span class="gofn">Map</span><span class="gopunct">(</span><span class="govar">unicode.ToUpper</span><span class="gopunct">,</span> <span class="govar">s</span><span class="gopunct">)</span></span>
+<span class="code-line" id="line-25"><span class="gopunct">}</span></span>
+            </code></pre>
+        </div>
+
+        <!-- Visualization Pane -->
+        <div class="spmd-viz-pane">
+            <div class="spmd-lane-data-grid">
+                <!-- Header -->
+                <div class="spmd-grid-label"></div>
+                <div class="spmd-grid-header">Lane 0</div>
+                <div class="spmd-grid-header">Lane 1</div>
+                <div class="spmd-grid-header">Lane 2</div>
+                <div class="spmd-grid-header">Lane 3</div>
+
+                <!-- mask -->
+                <div class="spmd-grid-label">mask</div>
+                <div id="val-mask-0" class="spmd-grid-cell">true</div>
+                <div id="val-mask-1" class="spmd-grid-cell">true</div>
+                <div id="val-mask-2" class="spmd-grid-cell">true</div>
+                <div id="val-mask-3" class="spmd-grid-cell">true</div>
+
+                <!-- c -->
+                <div class="spmd-grid-label">c</div>
+                <div id="val-c-0" class="spmd-grid-cell"></div>
+                <div id="val-c-1" class="spmd-grid-cell"></div>
+                <div id="val-c-2" class="spmd-grid-cell"></div>
+                <div id="val-c-3" class="spmd-grid-cell"></div>
+
+                <!-- hasLower -->
+                <div class="spmd-grid-label">hasLower</div>
+                <div id="val-hasLower-0" class="spmd-grid-cell"></div>
+                <div id="val-hasLower-1" class="spmd-grid-cell"></div>
+                <div id="val-hasLower-2" class="spmd-grid-cell"></div>
+                <div id="val-hasLower-3" class="spmd-grid-cell"></div>
+
+                <!-- 'a' <= c && c <= 'z' -->
+                <div class="spmd-grid-label">'a' <= c && c <= 'z'</div>
+                <div id="val-isLower-0" class="spmd-grid-cell"></div>
+                <div id="val-isLower-1" class="spmd-grid-cell"></div>
+                <div id="val-isLower-2" class="spmd-grid-cell"></div>
+                <div id="val-isLower-3" class="spmd-grid-cell"></div>
+
+                <!-- upperC -->
+                <div class="spmd-grid-label">upperC</div>
+                <div id="val-upperC-0" class="spmd-grid-cell"></div>
+                <div id="val-upperC-1" class="spmd-grid-cell"></div>
+                <div id="val-upperC-2" class="spmd-grid-cell"></div>
+                <div id="val-upperC-3" class="spmd-grid-cell"></div>
+            </div>
+
+            <div class="spmd-final-result">
+                <h4>Result</h4>
+                <span class="spmd-result-label">isASCII:</span>
+                <span id="isASCII-result" class="spmd-final-value-text">true</span>
+                <br>
+                <span class="spmd-result-label">Result:</span>
+                <span id="final-result-toupper" class="spmd-final-value-text">---</span>
+            </div>
+
+            <div class="spmd-controls">
+                <button id="prev-toupper">Previous</button>
+                <button id="next-toupper">Next</button>
+            </div>
+        </div>
+    </div>
+    <div id="info-pane-toupper" class="spmd-info-pane">
+        <h4>Execution Step</h4>
+        <p id="info-toupper">Click "Next" to begin the visualization.</p>
+    </div>
+</div>
+
+<style>
+    .spmd-container {
+        border: 1px solid #ccc;
+        padding: 10px;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        max-width: 900px;
+        margin: 20px auto;
+    }
+
+    #spmd-demo-toupper {
+        border: none;
+        box-shadow: none;
+        margin-bottom: 10px;
+    }
+
+    #spmd-demo-toupper .spmd-lane-data-grid {
+        font-size: 0.85em;
+    }
+
+    #spmd-demo-toupper .spmd-grid-label {
+        font-size: 0.8em;
+    }
+
+    #spmd-demo-toupper .spmd-grid-cell {
+        font-size: 0.8em;
+        padding: 6px 3px;
+    }
+
+    #spmd-demo-toupper .spmd-grid-header {
+        font-size: 0.85em;
+    }
+
+    #spmd-demo-toupper .inactive-lane {
+        background-color: #f0f0f0 !important;
+        color: #aaa;
+    }
+
+    #spmd-demo-toupper .spmd-controls {
+        text-align: center;
+        margin-top: 20px;
+    }
+
+    #spmd-demo-toupper .spmd-result-label {
+        margin-right: 8px;
+        font-weight: 500;
+        color: #333;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const container = document.getElementById('spmd-toupper-container-{{ $uid }}');
+        if (!container) return;
+
+        const prevBtn = container.querySelector('#prev-toupper');
+        const nextBtn = container.querySelector('#next-toupper');
+        const info = container.querySelector('#info-toupper');
+        const finalResult = container.querySelector('#final-result-toupper');
+        const isASCIIResult = container.querySelector('#isASCII-result');
+        const codeContainer = container.querySelector('#spmd-go-code_toupper');
+        const codeLines = codeContainer.querySelectorAll('.code-line');
+
+        const lanes = 4;
+        const inputString = "Hello";
+        const input = Array.from(inputString).map(c => c.charCodeAt(0));
+        let currentStep = 0;
+        let isASCII = true;
+        let hasAnyLower = false;
+        const finalOutput = [];
+
+        // Cell references
+        const maskCells = [
+            container.querySelector('#val-mask-0'),
+            container.querySelector('#val-mask-1'),
+            container.querySelector('#val-mask-2'),
+            container.querySelector('#val-mask-3')
+        ];
+
+        const steps = [];
+
+        // Initial Step
+        steps.push({
+            line: 0,
+            info: `Calling <code class="spmd-inline-code"><span class="gofn">ToUpper</span>([]<span class="goty">byte</span>("${inputString}"))</code>. Input string contains ${inputString.length} characters. Four execution lanes available.`,
+            lanes: {},
+            laneMask: [false, false, false, false],
+            result: "---",
+            isASCII: true,
+            hasLower: false
+        });
+
+        // Variable initialization
+        steps.push({
+            line: 2,
+            info: `Variables are initialized: <code class="spmd-inline-code"><span class="govar">hasLower</span></code> is a <code class="spmd-inline-code"><span class="gohypo">varying</span> <span class="goty">bool</span></code> (starts as false in all lanes), <code class="spmd-inline-code"><span class="govar">isASCII</span></code> is initialized to true.`,
+            lanes: {
+                c: Array(4).fill('---'),
+                hasLower: Array(4).fill('false'),
+                isLower: Array(4).fill('---'),
+                upperC: Array(4).fill('---')
+            },
+            laneMask: [false, false, false, false],
+            result: "---",
+            isASCII: true,
+            hasLower: false
+        });
+
+        // First go for loop - iteration 1 (characters 0-3: "Hell")
+        steps.push({
+            line: 4,
+            info: `First <code class="spmd-inline-code"><span class="gokw">go</span> <span class="gokw">for</span></code> loop begins. Iteration 1: Each lane processes one character in parallel (H, e, l, l).`,
+            lanes: {
+                c: input.slice(0, 4).map(code => `'${String.fromCharCode(code)}' (${code})`),
+                hasLower: Array(4).fill('false'),
+                isLower: Array(4).fill('---'),
+                upperC: Array(4).fill('---')
+            },
+            laneMask: [true, true, true, true],
+            result: "---",
+            isASCII: true,
+            hasLower: false
+        });
+
+        // Check for ASCII in iteration 1
+        steps.push({
+            line: 5,
+            info: `Check if any character is non-ASCII (>= 128). All characters are ASCII, so <code class="spmd-inline-code"><span class="gofn">reduce.Any</span>()</code> returns false and we continue.`,
+            lanes: {
+                c: input.slice(0, 4).map(code => `'${String.fromCharCode(code)}' (${code})`),
+                hasLower: Array(4).fill('false'),
+                isLower: Array(4).fill('---'),
+                upperC: Array(4).fill('---')
+            },
+            laneMask: [true, true, true, true],
+            result: "---",
+            isASCII: true,
+            hasLower: false
+        });
+
+        // Check for lowercase in iteration 1
+        const hasLowerVals1 = input.slice(0, 4).map(code => {
+            const char = String.fromCharCode(code);
+            return char >= 'a' && char <= 'z' ? 'true' : 'false';
+        });
+
+        steps.push({
+            line: 9,
+            info: `Check for lowercase characters in iteration 1. Lanes 1, 2, and 3 (e, l, l) detect lowercase characters and update <code class="spmd-inline-code"><span class="govar">hasLower</span></code>.`,
+            lanes: {
+                c: input.slice(0, 4).map(code => `'${String.fromCharCode(code)}' (${code})`),
+                hasLower: hasLowerVals1,
+                isLower: hasLowerVals1,
+                upperC: Array(4).fill('---')
+            },
+            laneMask: [true, true, true, true],
+            result: "---",
+            isASCII: true,
+            hasLower: true
+        });
+
+        // First go for loop - iteration 2 (character 4: "o")
+        const hasLowerVals2 = ['false', 'false', 'false', 'true']; // Only lane 0 gets 'o', others inactive
+        
+        steps.push({
+            line: 4,
+            info: `Iteration 2: Only lane 0 processes the remaining character 'o'. Other lanes are masked out.`,
+            lanes: {
+                c: [`'o' (${input[4]})`, '---', '---', '---'],
+                hasLower: hasLowerVals2,
+                isLower: ['true', '---', '---', '---'],
+                upperC: Array(4).fill('---')
+            },
+            laneMask: [true, false, false, false],
+            result: "---",
+            isASCII: true,
+            hasLower: true
+        });
+
+        // Check for ASCII in iteration 2
+        steps.push({
+            line: 5,
+            info: `Check ASCII for remaining character. 'o' is ASCII, so we continue.`,
+            lanes: {
+                c: [`'o' (${input[4]})`, '---', '---', '---'],
+                hasLower: hasLowerVals2,
+                isLower: ['true', '---', '---', '---'],
+                upperC: Array(4).fill('---')
+            },
+            laneMask: [true, false, false, false],
+            result: "---",
+            isASCII: true,
+            hasLower: true
+        });
+
+        // Check for lowercase in iteration 2
+        steps.push({
+            line: 9,
+            info: `Check for lowercase in iteration 2. Lane 0 detects 'o' is lowercase and updates <code class="spmd-inline-code"><span class="govar">hasLower</span></code>.`,
+            lanes: {
+                c: [`'o' (${input[4]})`, '---', '---', '---'],
+                hasLower: hasLowerVals2,
+                isLower: ['true', '---', '---', '---'],
+                upperC: Array(4).fill('---')
+            },
+            laneMask: [true, false, false, false],
+            result: "---",
+            isASCII: true,
+            hasLower: true
+        });
+
+        hasAnyLower = true;
+
+        // End of first loop
+        steps.push({
+            line: 11,
+            info: `First loop completes. Since all characters are ASCII, we proceed to the optimization path.`,
+            lanes: {
+                c: Array(4).fill('---'),
+                hasLower: Array(4).fill('---'),
+                isLower: Array(4).fill('---'),
+                upperC: Array(4).fill('---')
+            },
+            laneMask: [false, false, false, false],
+            result: "---",
+            isASCII: true,
+            hasLower: hasAnyLower
+        });
+
+        // Check if any lowercase was found
+        steps.push({
+            line: 12,
+            info: `Check if any lowercase characters were found using <code class="spmd-inline-code"><span class="gofn">reduce.All</span>(<span class="goop">!</span><span class="govar">hasLower</span>)</code>. This returns true only if ALL lanes have <code class="spmd-inline-code"><span class="govar">hasLower</span></code> set to false. ${hasAnyLower ? 'Since we found lowercase characters, this returns false and we proceed to convert.' : 'Since no lowercase was found, this returns true and we can just return a copy.'}`,
+            lanes: {
+                c: Array(4).fill('---'),
+                hasLower: ['true', 'true', 'true', 'true'], // Final accumulated state
+                isLower: Array(4).fill('---'),
+                upperC: Array(4).fill('---')
+            },
+            laneMask: [false, false, false, false],
+            result: "---",
+            isASCII: true,
+            hasLower: hasAnyLower
+        });
+
+        if (hasAnyLower) {
+            // Allocate buffer
+            steps.push({
+                line: 15,
+                info: `Since we found lowercase characters, allocate a new buffer and proceed to the second <code class="spmd-inline-code"><span class="gokw">go</span> <span class="gokw">for</span></code> loop to convert characters.`,
+                lanes: {
+                    c: Array(4).fill('---'),
+                    hasLower: Array(4).fill('---'),
+                    isLower: Array(4).fill('---'),
+                    upperC: Array(4).fill('---')
+                },
+                laneMask: [false, false, false, false],
+                result: "---",
+                isASCII: true,
+                hasLower: hasAnyLower
+            });
+
+            // Second go for loop - iteration 1 (characters 0-3: "Hell")
+            steps.push({
+                line: 16,
+                info: `Second <code class="spmd-inline-code"><span class="gokw">go</span> <span class="gokw">for</span></code> loop begins. Iteration 1: Each lane processes one character for uppercase conversion (H, e, l, l).`,
+                lanes: {
+                    c: input.slice(0, 4).map(code => `'${String.fromCharCode(code)}' (${code})`),
+                    hasLower: Array(4).fill('---'),
+                    isLower: Array(4).fill('---'),
+                    upperC: Array(4).fill('---')
+                },
+                laneMask: [true, true, true, true],
+                result: "---",
+                isASCII: true,
+                hasLower: hasAnyLower
+            });
+
+            // Check if lowercase and convert - iteration 1
+            const isLowerVals1 = input.slice(0, 4).map(code => {
+                const char = String.fromCharCode(code);
+                return char >= 'a' && char <= 'z' ? 'true' : 'false';
+            });
+
+            steps.push({
+                line: 17,
+                info: `Check if each character is lowercase and needs conversion in iteration 1. Each lane evaluates <code class="spmd-inline-code">'a' <= c && c <= 'z'</code>.`,
+                lanes: {
+                    c: input.slice(0, 4).map(code => `'${String.fromCharCode(code)}' (${code})`),
+                    hasLower: Array(4).fill('---'),
+                    isLower: isLowerVals1,
+                    upperC: Array(4).fill('---')
+                },
+                laneMask: [true, true, true, true],
+                result: "---",
+                isASCII: true,
+                hasLower: hasAnyLower
+            });
+
+            // Convert to uppercase - iteration 1
+            const upperCVals1 = input.slice(0, 4).map(code => {
+                const char = String.fromCharCode(code);
+                if (char >= 'a' && char <= 'z') {
+                    const upperCode = code - ('a'.charCodeAt(0) - 'A'.charCodeAt(0));
+                    finalOutput.push(String.fromCharCode(upperCode));
+                    return `'${String.fromCharCode(upperCode)}' (${upperCode})`;
+                } else {
+                    finalOutput.push(char);
+                    return `'${char}' (${code})`;
+                }
+            });
+
+            // Create mask for only lowercase lanes that need conversion
+            const conversionMask1 = isLowerVals1.map(val => val === 'true');
+
+            steps.push({
+                line: 18,
+                info: `Convert lowercase characters to uppercase in iteration 1. Only lanes 1, 2, 3 (e→E, l→L, l→L) perform conversion (masked execution).`,
+                lanes: {
+                    c: input.slice(0, 4).map(code => `'${String.fromCharCode(code)}' (${code})`),
+                    hasLower: Array(4).fill('---'),
+                    isLower: isLowerVals1,
+                    upperC: upperCVals1
+                },
+                laneMask: conversionMask1,
+                result: finalOutput.join(''),
+                isASCII: true,
+                hasLower: hasAnyLower
+            });
+
+            // Store result - iteration 1
+            steps.push({
+                line: 20,
+                info: `Store the converted (or original) characters from iteration 1 in the output buffer.`,
+                lanes: {
+                    c: input.slice(0, 4).map(code => `'${String.fromCharCode(code)}' (${code})`),
+                    hasLower: Array(4).fill('---'),
+                    isLower: Array(4).fill('---'),
+                    upperC: upperCVals1
+                },
+                laneMask: [true, true, true, true],
+                result: finalOutput.join(''),
+                isASCII: true,
+                hasLower: hasAnyLower
+            });
+
+            // Second go for loop - iteration 2 (character 4: "o")
+            steps.push({
+                line: 16,
+                info: `Iteration 2: Only lane 0 processes the remaining character 'o'. Other lanes are masked out.`,
+                lanes: {
+                    c: [`'o' (${input[4]})`, '---', '---', '---'],
+                    hasLower: Array(4).fill('---'),
+                    isLower: Array(4).fill('---'),
+                    upperC: Array(4).fill('---')
+                },
+                laneMask: [true, false, false, false],
+                result: finalOutput.join(''),
+                isASCII: true,
+                hasLower: hasAnyLower
+            });
+
+            // Check if lowercase and convert - iteration 2
+            steps.push({
+                line: 17,
+                info: `Check if 'o' is lowercase and needs conversion in iteration 2. Lane 0 evaluates <code class="spmd-inline-code">'a' <= c && c <= 'z'</code>.`,
+                lanes: {
+                    c: [`'o' (${input[4]})`, '---', '---', '---'],
+                    hasLower: Array(4).fill('---'),
+                    isLower: ['true', '---', '---', '---'],
+                    upperC: Array(4).fill('---')
+                },
+                laneMask: [true, false, false, false],
+                result: finalOutput.join(''),
+                isASCII: true,
+                hasLower: hasAnyLower
+            });
+
+            // Convert to uppercase - iteration 2
+            const upperO = String.fromCharCode(input[4] - ('a'.charCodeAt(0) - 'A'.charCodeAt(0)));
+            finalOutput.push(upperO);
+
+            steps.push({
+                line: 18,
+                info: `Convert 'o' to uppercase (o→O) in iteration 2. Only lane 0 performs the conversion.`,
+                lanes: {
+                    c: [`'o' (${input[4]})`, '---', '---', '---'],
+                    hasLower: Array(4).fill('---'),
+                    isLower: ['true', '---', '---', '---'],
+                    upperC: [`'${upperO}' (${upperO.charCodeAt(0)})`, '---', '---', '---']
+                },
+                laneMask: [true, false, false, false],
+                result: finalOutput.join(''),
+                isASCII: true,
+                hasLower: hasAnyLower
+            });
+
+            // Store result - iteration 2
+            steps.push({
+                line: 20,
+                info: `Store the final converted character in the output buffer.`,
+                lanes: {
+                    c: [`'o' (${input[4]})`, '---', '---', '---'],
+                    hasLower: Array(4).fill('---'),
+                    isLower: Array(4).fill('---'),
+                    upperC: [`'${upperO}' (${upperO.charCodeAt(0)})`, '---', '---', '---']
+                },
+                laneMask: [true, false, false, false],
+                result: finalOutput.join(''),
+                isASCII: true,
+                hasLower: hasAnyLower
+            });
+        } else {
+            // No lowercase found
+            steps.push({
+                line: 13,
+                info: `No lowercase characters found. Return a copy of the original string without modification.`,
+                lanes: {
+                    c: Array(4).fill('---'),
+                    hasLower: Array(4).fill('---'),
+                    isLower: Array(4).fill('---'),
+                    upperC: Array(4).fill('---')
+                },
+                laneMask: [false, false, false, false],
+                result: inputString,
+                isASCII: true,
+                hasLower: hasAnyLower
+            });
+        }
+
+        // Final result
+        steps.push({
+            line: hasAnyLower ? 22 : 13,
+            info: `Function completes and returns the ${hasAnyLower ? 'converted' : 'copied'} string.`,
+            lanes: {
+                c: Array(4).fill('---'),
+                hasLower: Array(4).fill('---'),
+                isLower: Array(4).fill('---'),
+                upperC: Array(4).fill('---')
+            },
+            laneMask: [false, false, false, false],
+            result: hasAnyLower ? finalOutput.join('') : inputString,
+            isASCII: true,
+            hasLower: hasAnyLower
+        });
+
+        function highlightLine(lineNum) {
+            codeLines.forEach(line => line.classList.remove('highlight'));
+            if (lineNum > 0) {
+                const lineToHighlight = codeContainer.querySelector(`#line-${lineNum}`);
+                if (lineToHighlight) {
+                    lineToHighlight.classList.add('highlight');
+                }
+            }
+        }
+
+        function renderStep(stepIndex) {
+            const step = steps[stepIndex];
+
+            highlightLine(step.line);
+            info.innerHTML = step.info;
+            finalResult.textContent = step.result;
+            isASCIIResult.textContent = step.isASCII;
+
+            for (let i = 0; i < lanes; i++) {
+                const cVal = (step.lanes.c && step.lanes.c[i] != null) ? step.lanes.c[i] : '---';
+                const hasLowerVal = (step.lanes.hasLower && step.lanes.hasLower[i] != null) ? step.lanes.hasLower[i] : '---';
+                const isLowerVal = (step.lanes.isLower && step.lanes.isLower[i] != null) ? step.lanes.isLower[i] : '---';
+                const upperCVal = (step.lanes.upperC && step.lanes.upperC[i] != null) ? step.lanes.upperC[i] : '---';
+                const maskVal = step.laneMask ? step.laneMask[i] : false;
+
+                // Update cell values
+                container.querySelector(`#val-c-${i}`).textContent = cVal;
+                container.querySelector(`#val-hasLower-${i}`).textContent = hasLowerVal;
+                container.querySelector(`#val-isLower-${i}`).textContent = isLowerVal;
+                container.querySelector(`#val-upperC-${i}`).textContent = upperCVal;
+                maskCells[i].textContent = maskVal ? 'true' : 'false';
+
+                const cells = [
+                    container.querySelector(`#val-c-${i}`),
+                    container.querySelector(`#val-hasLower-${i}`),
+                    container.querySelector(`#val-isLower-${i}`),
+                    container.querySelector(`#val-upperC-${i}`),
+                    maskCells[i]
+                ];
+
+                // Apply inactive-lane class based on mask
+                if (!maskVal) {
+                    cells.forEach(cell => cell.classList.add('inactive-lane'));
+                } else {
+                    cells.forEach(cell => cell.classList.remove('inactive-lane'));
+                }
+            }
+
+            prevBtn.disabled = stepIndex === 0;
+            nextBtn.disabled = stepIndex === steps.length - 1;
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentStep > 0) {
+                currentStep--;
+                renderStep(currentStep);
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentStep < steps.length - 1) {
+                currentStep++;
+                renderStep(currentStep);
+            }
+        });
+
+        // Initial render
+        renderStep(0);
+    });
+</script>
