@@ -3,6 +3,8 @@ date = '2025-06-21T14:38:38-07:00'
 draft = true
 title = 'What if? Readable, SIMD hex conversion'
 description = 'Using a hypothetical go for construct to implement hex.go'
+featured_image = 'images/lakelouise.jpg'
+featured_image_class = 'cover bg-center'
 +++
 
 ## Printf helper
