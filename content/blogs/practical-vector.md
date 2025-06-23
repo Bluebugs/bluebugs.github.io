@@ -11,6 +11,8 @@ featured_image_class = 'cover bg-center'
 
 One of the first and most repetitive tasks for [doPrintf](https://github.com/golang/go/blob/master/src/fmt/print.go#L1028) is to find `%` in a string. Right now, this is just iterating one character after another. This is very simple to parallelize using data parallelism and would look like the code below.
 
+<!--more-->
+
 {{< spmd-printf-verbs >}}
 
 One of the important bit of this example is the use `reduce.Any` inside a `go for` loop. This make the `if` act like a normal `if` with a jump and enable a quick exit as soon as at least one `%` is found. This is still readable and maintainable. I would think this could be acceptable in the Go standard library codebase once this feature is properly ready for prime time.
