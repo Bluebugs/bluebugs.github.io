@@ -1,8 +1,8 @@
 +++
 date = '2025-06-21T14:38:38-07:00'
 draft = true
-title = 'What if? Readable, SIMD hex conversion'
-description = 'Using a hypothetical go for construct to implement hex.go'
+title = 'What if? Practical parallel data.'
+description = 'Using a hypothetical `go for` construct to implement a variety of string operation'
 featured_image = 'images/lakelouise.jpg'
 featured_image_class = 'cover bg-center'
 +++
@@ -13,7 +13,7 @@ One of the first and most repetitive tasks for [doPrintf](https://github.com/gol
 
 {{< spmd-printf-verbs >}}
 
-This is still readable and maintainable. I think it would be acceptable in the Go standard library codebase once this feature is properly ready for prime time.
+One of the important bit of this example is the use `reduce.Any` inside a `go for` loop. This make the `if` act like a normal `if` with a jump and enable a quick exit as soon as at least one `%` is found. This is still readable and maintainable. I would think this could be acceptable in the Go standard library codebase once this feature is properly ready for prime time.
 
 ## Encode hexadecimal
 
@@ -61,6 +61,6 @@ These three practical examples demonstrate how a hypothetical `go for` construct
 
 ### Real-World Impact
 
-These optimizations could significantly improve Go's standard library performance. String processing, encoding/decoding, and mathematical operations are fundamental building blocks that appear in virtually every Go application. Making them faster through data parallelism would benefit the entire ecosystem without requiring developers to learn complex SIMD programming.
+These optimizations could significantly improve Go's standard library performance and any Go application. String processing, encoding/decoding, parsing, and mathematical operations are fundamental building blocks that appear in virtually every Go application. Making them faster through data parallelism would benefit the entire ecosystem without requiring developers to learn complex SIMD programming.
 
 The `go for` construct bridges the gap between Go's accessibility and the performance demands of modern applications, proving, in my opinion, that readable code and high performance don't have to be mutually exclusive.
