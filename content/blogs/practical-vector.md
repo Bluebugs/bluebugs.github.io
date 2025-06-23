@@ -1,6 +1,6 @@
 +++
 date = '2025-06-21T14:38:38-07:00'
-draft = true
+draft = false
 title = 'What if? Practical parallel data.'
 description = 'Using a hypothetical `go for` construct to implement a variety of string operation'
 featured_image = 'images/lakelouise.jpg'

@@ -1,6 +1,6 @@
 +++
 date = '2025-06-19T18:48:59-07:00'
-draft = true
+draft = false
 featured_image = 'images/banff.jpg'
 featured_image_class = 'cover bg-center'
 title = 'Data Parallelism: simpler solution for Golang?'
