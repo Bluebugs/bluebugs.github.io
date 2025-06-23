@@ -309,3 +309,352 @@
     /* Example: make 'v' values slightly bolder */
     color: #2a2a2a;
 }
+
+/* ===== RESPONSIVE MOBILE STYLES ===== */
+
+/* Tablet and small laptop breakpoint */
+@media screen and (max-width: 1024px) {
+    .spmd-container {
+        max-width: 100%;
+        margin: 10px;
+        padding: 8px;
+    }
+
+    .spmd-code-pane .code-line {
+        font-size: 13px;
+    }
+
+    .spmd-code-pane code[id^="spmd-go-code_"] {
+        font-size: 13px;
+    }
+}
+
+/* Mobile and portrait tablet breakpoint */
+@media screen and (max-width: 768px) {
+    .spmd-container {
+        margin: 5px;
+        padding: 5px;
+    }
+
+    /* Stack panes vertically on mobile */
+    .spmd-demo {
+        flex-direction: column;
+        /* Change from row to column layout */
+    }
+
+    .spmd-code-pane {
+        border-right: none;
+        border-bottom: 1px solid #e0e0e0;
+        border-radius: 4px 4px 0 0;
+        /* Adjust border radius for stacked layout */
+        padding: 10px;
+    }
+
+    .spmd-viz-pane {
+        flex: none;
+        /* Remove flex sizing, use natural height */
+        padding: 10px;
+        border-radius: 0 0 4px 4px;
+        /* Adjust border radius for stacked layout */
+    }
+
+    /* Reduce code font size on mobile */
+    .spmd-code-pane .code-line {
+        font-size: 12px;
+        line-height: 1.3;
+    }
+
+    .spmd-code-pane code[id^="spmd-go-code_"] {
+        font-size: 12px;
+        line-height: 1.3;
+    }
+
+    .spmd-code-pane pre {
+        padding: 0 5px;
+    }
+
+    /* Adjust grid for mobile - make cells smaller */
+    .spmd-lane-data-grid {
+        gap: 3px;
+        padding: 8px;
+        margin-bottom: 10px;
+    }
+
+    .spmd-grid-cell {
+        padding: 4px 2px;
+        font-size: 0.85em;
+        min-height: 1.2em;
+    }
+
+    .spmd-grid-header {
+        padding: 3px;
+        font-size: 0.9em;
+    }
+
+    .spmd-grid-label {
+        padding-right: 5px;
+        font-size: 0.9em;
+    }
+
+    /* Adjust info pane for mobile */
+    .spmd-info-pane {
+        padding: 10px;
+        font-size: 0.9em;
+    }
+
+    .spmd-info-pane h4 {
+        font-size: 1.1em;
+        margin-bottom: 8px;
+    }
+
+    /* Adjust final result for mobile */
+    .spmd-final-result {
+        padding: 10px;
+        margin-top: 15px;
+    }
+
+    .spmd-final-result h4 {
+        font-size: 1.1em;
+        margin-bottom: 8px;
+    }
+
+    .spmd-summation-text {
+        font-size: 1em;
+    }
+
+    .spmd-final-value-text {
+        font-size: 1.2em;
+    }
+
+    /* Adjust controls for mobile */
+    .spmd-controls {
+        margin-top: 15px;
+    }
+
+    .spmd-controls button {
+        padding: 6px 12px;
+        margin: 0 3px;
+        font-size: 0.9em;
+    }
+}
+
+/* Small mobile breakpoint */
+@media screen and (max-width: 480px) {
+    .spmd-container {
+        margin: 2px;
+        padding: 3px;
+    }
+
+    /* Further reduce code font size on very small screens */
+    .spmd-code-pane .code-line {
+        font-size: 11px;
+        line-height: 1.4;
+    }
+
+    .spmd-code-pane code[id^="spmd-go-code_"] {
+        font-size: 11px;
+        line-height: 1.4;
+    }
+
+    .spmd-code-pane {
+        padding: 8px;
+    }
+
+    .spmd-viz-pane {
+        padding: 8px;
+    }
+
+    /* Make grid even more compact */
+    .spmd-lane-data-grid {
+        gap: 2px;
+        padding: 6px;
+    }
+
+    .spmd-grid-cell {
+        padding: 3px 1px;
+        font-size: 0.8em;
+        min-height: 1em;
+    }
+
+    .spmd-grid-header {
+        padding: 2px;
+        font-size: 0.8em;
+    }
+
+    .spmd-grid-label {
+        padding-right: 3px;
+        font-size: 0.8em;
+    }
+
+    /* Stack controls vertically on very small screens if needed */
+    .spmd-controls {
+        text-align: center;
+    }
+
+    .spmd-controls button {
+        display: inline-block;
+        margin: 2px;
+        padding: 5px 10px;
+        font-size: 0.85em;
+    }
+}
+
+/* ===== SHORTCODE-SPECIFIC RESPONSIVE OVERRIDES ===== */
+
+/* Mobile responsive overrides for specific shortcode IDs */
+@media screen and (max-width: 768px) {
+
+    /* Override specific grid layouts in shortcodes */
+    #spmd-lane-data-grid_sum,
+    #spmd-lane-data-grid_oddeven,
+    #spmd-lane-data-grid_countbits,
+    #spmd-demo-printf-verbs .spmd-lane-data-grid,
+    #spmd-demo-hex .spmd-lane-data-grid,
+    #spmd-demo-toupper .spmd-lane-data-grid {
+        grid-template-columns: auto repeat(4, 1fr) !important;
+        gap: 3px !important;
+        padding: 8px !important;
+        margin-bottom: 10px !important;
+    }
+
+    /* Override specific viz pane styles */
+    #spmd-viz-pane_sum,
+    #spmd-viz-pane_oddeven,
+    #spmd-viz-pane_countbits {
+        flex: none !important;
+        padding: 10px !important;
+    }
+
+    /* Override specific code pane styles */
+    #spmd-code-pane_sum,
+    #spmd-code-pane_oddeven,
+    #spmd-code-pane_countbits {
+        padding: 10px !important;
+        border-right: none !important;
+        border-bottom: 1px solid #e0e0e0 !important;
+        border-radius: 4px 4px 0 0 !important;
+    }
+
+    /* Override specific info pane styles */
+    #spmd-info-pane_sum,
+    #spmd-info-pane_oddeven,
+    #spmd-info-pane_countbits,
+    #info-pane-printf-verbs,
+    #info-pane-hex,
+    #info-pane-toupper {
+        padding: 10px !important;
+        font-size: 0.9em !important;
+    }
+
+    /* Override specific controls */
+    #spmd-controls_sum,
+    #spmd-controls_oddeven,
+    #spmd-controls_countbits {
+        margin-top: 15px !important;
+    }
+
+    #spmd-controls_sum button,
+    #spmd-controls_oddeven button,
+    #spmd-controls_countbits button {
+        padding: 6px 12px !important;
+        margin: 0 3px !important;
+        font-size: 0.9em !important;
+    }
+}
+
+@media screen and (max-width: 480px) {
+
+    /* Further mobile-specific overrides for very small screens */
+    #spmd-lane-data-grid_sum,
+    #spmd-lane-data-grid_oddeven,
+    #spmd-lane-data-grid_countbits,
+    #spmd-demo-printf-verbs .spmd-lane-data-grid,
+    #spmd-demo-hex .spmd-lane-data-grid,
+    #spmd-demo-toupper .spmd-lane-data-grid {
+        gap: 2px !important;
+        padding: 6px !important;
+    }
+
+    /* Additional small screen overrides */
+    #spmd-viz-pane_sum,
+    #spmd-viz-pane_oddeven,
+    #spmd-viz-pane_countbits {
+        padding: 8px !important;
+    }
+
+    #spmd-code-pane_sum,
+    #spmd-code-pane_oddeven,
+    #spmd-code-pane_countbits {
+        padding: 8px !important;
+    }
+}
+
+/* ===== ADDITIONAL RESPONSIVE STYLES FOR SPECIFIC CONTAINERS ===== */
+
+/* Mobile responsive styles for specific container classes used in some shortcodes */
+@media screen and (max-width: 1024px) {
+
+    .spmd-container-printf-verbs,
+    [id^="spmd-hex-container-"],
+    [id^="spmd-toupper-container-"] {
+        max-width: 100%;
+        margin: 10px;
+        padding: 8px;
+    }
+}
+
+@media screen and (max-width: 768px) {
+
+    .spmd-container-printf-verbs,
+    [id^="spmd-hex-container-"],
+    [id^="spmd-toupper-container-"] {
+        margin: 5px;
+        padding: 5px;
+    }
+
+    /* Ensure demos inside these containers also stack vertically */
+    .spmd-container-printf-verbs .spmd-demo,
+    [id^="spmd-hex-container-"] .spmd-demo,
+    [id^="spmd-toupper-container-"] .spmd-demo {
+        flex-direction: column !important;
+    }
+
+    .spmd-container-printf-verbs .spmd-code-pane,
+    [id^="spmd-hex-container-"] .spmd-code-pane,
+    [id^="spmd-toupper-container-"] .spmd-code-pane {
+        border-right: none !important;
+        border-bottom: 1px solid #e0e0e0 !important;
+        border-radius: 4px 4px 0 0 !important;
+        padding: 10px !important;
+    }
+
+    .spmd-container-printf-verbs .spmd-viz-pane,
+    [id^="spmd-hex-container-"] .spmd-viz-pane,
+    [id^="spmd-toupper-container-"] .spmd-viz-pane {
+        flex: none !important;
+        padding: 10px !important;
+        border-radius: 0 0 4px 4px !important;
+    }
+}
+
+@media screen and (max-width: 480px) {
+
+    .spmd-container-printf-verbs,
+    [id^="spmd-hex-container-"],
+    [id^="spmd-toupper-container-"] {
+        margin: 2px;
+        padding: 3px;
+    }
+
+    .spmd-container-printf-verbs .spmd-code-pane,
+    [id^="spmd-hex-container-"] .spmd-code-pane,
+    [id^="spmd-toupper-container-"] .spmd-code-pane {
+        padding: 8px !important;
+    }
+
+    .spmd-container-printf-verbs .spmd-viz-pane,
+    [id^="spmd-hex-container-"] .spmd-viz-pane,
+    [id^="spmd-toupper-container-"] .spmd-viz-pane {
+        padding: 8px !important;
+    }
+}
