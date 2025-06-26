@@ -67,6 +67,18 @@ Let's look at how **`for`** inside a **`go for`** SPMD context would work. We'll
 
 This was a fairly simple **`for`** loop that operate on uniform with the same value for all lanes, but it shows how manipulating the mask enable all the complexity in behavior we could want. We can nest loop, if. We can also implement **`break`** and **`continue`** using just mask.
 
+## Divergent Control Flow
+
+The previous example showed lanes executing the same loop with uniform iteration counts. But what happens when different lanes need to execute loops of different lengths? This is where SPMD really shines - it can handle **divergent control flow** where each lane follows a different execution path.
+
+Consider this example where we sum arrays of different lengths:
+
+{{< spmd-countarray >}}
+
+This example demonstrates a key SPMD concept: **lanes can finish their work at different times**. Lane 2 finishes after processing just one element `[4]`, while Lane 3 continues processing three elements `[5,6,7]`. The SPMD execution model handles this gracefully by using masks - when a lane finishes its inner loop, it becomes inactive (masked out) while other lanes continue executing.
+
+This is fundamentally different from traditional SIMD where all lanes must execute the same instruction. In our SPMD model, the compiler can generate efficient code that handles divergent control flow, making it practical for real-world algorithms where data doesn't always fit neat, uniform patterns.
+
 ## Summary
 
 And we have shown that it is possible to extend Go with just a few keyword and make writing data parallel algorithm approachable, more readable and maintainable in my opinion. Let me know if there is anything that need clarification.

@@ -1,0 +1,402 @@
+<style>
+    /* All text in active lane cells should be black */
+    #spmd-lane-data-grid_countarray .spmd-grid-cell:not(.inactive-lane) {
+        color: #000 !important;
+    }
+
+    /* Keep font styling but remove colors for specific variables */
+    #spmd-lane-data-grid_countarray .spmd-grid-cell[id*='-secondLevel']:not(.inactive-lane) {
+        font-weight: bold;
+        font-size: 0.8em;
+    }
+
+    #spmd-lane-data-grid_countarray .spmd-grid-cell[id*='-t']:not(.inactive-lane) {
+        font-weight: bold;
+    }
+
+    #spmd-lane-data-grid_countarray .spmd-grid-cell[id*='-v']:not(.inactive-lane) {
+        font-weight: bold;
+    }
+</style>
+
+<div class="spmd-container">
+    <div id="spmd-demo_countarray" class="spmd-demo">
+        <div class="spmd-code-pane">
+            <pre><code id="spmd-go-code_countarray" class="language-go">
+<span class="code-line" data-line="1"><span class="gokw">func</span> <span class="gofn">CountArray</span><span class="gopunct">(</span><span class="govar">a</span> <span class="goty">[][]int</span><span class="gopunct">)</span> <span class="goty">[]int</span> <span class="gopunct">{</span></span>
+<span class="code-line" data-line="2">    <span class="govar">r</span> <span class="goop">:=</span> <span class="gofn">make</span><span class="gopunct">(</span><span class="goty">[]int</span><span class="gopunct">,</span> <span class="gofn">len</span><span class="gopunct">(</span><span class="govar">a</span><span class="gopunct">))</span></span>
+<span class="code-line" data-line="3">    <span class="gokw">go</span> <span class="gokw">for</span> <span class="govar">i</span><span class="gopunct">,</span> <span class="govar">secondLevel</span> <span class="goop">:=</span> <span class="gokw">range</span> <span class="govar">a</span> <span class="gopunct">{</span></span>
+<span class="code-line" data-line="4">        <span class="govar">t</span> <span class="goop">:=</span> <span class="gonum">0</span></span>
+<span class="code-line" data-line="5">        <span class="gokw">for</span> <span class="govar">_</span><span class="gopunct">,</span> <span class="govar">v</span> <span class="goop">:=</span> <span class="gokw">range</span> <span class="govar">secondLevel</span> <span class="gopunct">{</span></span>
+<span class="code-line" data-line="6">            <span class="govar">t</span> <span class="goop">+=</span> <span class="govar">v</span></span>
+<span class="code-line" data-line="7">        <span class="gopunct">}</span></span>
+<span class="code-line" data-line="8">        <span class="govar">r</span><span class="gopunct">[</span><span class="govar">i</span><span class="gopunct">]</span> <span class="goop">=</span> <span class="govar">t</span></span>
+<span class="code-line" data-line="9">    <span class="gopunct">}</span></span>
+<span class="code-line" data-line="10">    <span class="gokw">return</span> <span class="govar">r</span></span>
+<span class="code-line" data-line="11"><span class="gopunct">}</span></span>
+            </code></pre>
+        </div>
+
+        <div class="spmd-viz-pane">
+            <div id="spmd-lane-data-grid_countarray" class="spmd-lane-data-grid">
+                <!-- Row 1: Lane Titles -->
+                <div class="spmd-grid-label"></div>
+                <div class="spmd-grid-header">Lane 1</div>
+                <div class="spmd-grid-header">Lane 2</div>
+                <div class="spmd-grid-header">Lane 3</div>
+                <div class="spmd-grid-header">Lane 4</div>
+
+                <!-- Row 2: mask values -->
+                <div class="spmd-grid-label">mask:</div>
+                <div class="spmd-grid-cell" id="spmd-lane-0-mask_countarray">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-1-mask_countarray">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-2-mask_countarray">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-3-mask_countarray">-</div>
+
+                <!-- Row 3: i values -->
+                <div class="spmd-grid-label">i:</div>
+                <div class="spmd-grid-cell" id="spmd-lane-0-i_countarray">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-1-i_countarray">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-2-i_countarray">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-3-i_countarray">-</div>
+
+                <!-- Row 4: secondLevel values -->
+                <div class="spmd-grid-label">secondLevel:</div>
+                <div class="spmd-grid-cell" id="spmd-lane-0-secondLevel_countarray">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-1-secondLevel_countarray">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-2-secondLevel_countarray">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-3-secondLevel_countarray">-</div>
+
+                <!-- Row 5: t values -->
+                <div class="spmd-grid-label">t:</div>
+                <div class="spmd-grid-cell" id="spmd-lane-0-t_countarray">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-1-t_countarray">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-2-t_countarray">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-3-t_countarray">-</div>
+
+                <!-- Row 6: current v values -->
+                <div class="spmd-grid-label">v:</div>
+                <div class="spmd-grid-cell" id="spmd-lane-0-v_countarray">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-1-v_countarray">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-2-v_countarray">-</div>
+                <div class="spmd-grid-cell" id="spmd-lane-3-v_countarray">-</div>
+            </div>
+
+            <div class="spmd-final-result">
+                <h4>Final Result</h4>
+                <div class="result-lines-container">
+                    <div class="result-line">
+                        <span class="spmd-result-label">r:</span>
+                        <span class="spmd-result-value-group">
+                            <span id="spmd-final-result-value_countarray" class="spmd-final-value-text">N/A</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="spmd-controls">
+                <button id="spmd-prev-step_countarray">Previous</button>
+                <button id="spmd-next-step_countarray">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="spmd-info-pane">
+        <h4>Execution Step:</h4>
+        <p id="spmd-step-description_countarray">Initializing visualization...</p>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const codeLines_countarray = document.querySelectorAll('#spmd-go-code_countarray .code-line');
+        const stepDescription_countarray = document.getElementById('spmd-step-description_countarray');
+
+        const laneICells_countarray = [
+            document.getElementById('spmd-lane-0-i_countarray'),
+            document.getElementById('spmd-lane-1-i_countarray'),
+            document.getElementById('spmd-lane-2-i_countarray'),
+            document.getElementById('spmd-lane-3-i_countarray')
+        ];
+        const laneSecondLevelCells_countarray = [
+            document.getElementById('spmd-lane-0-secondLevel_countarray'),
+            document.getElementById('spmd-lane-1-secondLevel_countarray'),
+            document.getElementById('spmd-lane-2-secondLevel_countarray'),
+            document.getElementById('spmd-lane-3-secondLevel_countarray')
+        ];
+        const laneTCells_countarray = [
+            document.getElementById('spmd-lane-0-t_countarray'),
+            document.getElementById('spmd-lane-1-t_countarray'),
+            document.getElementById('spmd-lane-2-t_countarray'),
+            document.getElementById('spmd-lane-3-t_countarray')
+        ];
+        const laneVCells_countarray = [
+            document.getElementById('spmd-lane-0-v_countarray'),
+            document.getElementById('spmd-lane-1-v_countarray'),
+            document.getElementById('spmd-lane-2-v_countarray'),
+            document.getElementById('spmd-lane-3-v_countarray')
+        ];
+        const laneMaskCells_countarray = [
+            document.getElementById('spmd-lane-0-mask_countarray'),
+            document.getElementById('spmd-lane-1-mask_countarray'),
+            document.getElementById('spmd-lane-2-mask_countarray'),
+            document.getElementById('spmd-lane-3-mask_countarray')
+        ];
+
+        const finalResultValue_countarray = document.getElementById('spmd-final-result-value_countarray');
+        const prevButton_countarray = document.getElementById('spmd-prev-step_countarray');
+        const nextButton_countarray = document.getElementById('spmd-next-step_countarray');
+
+        const numLanes_countarray = 4;
+        // Input: [][]int with arrays [1,2,3], [4], [5,6,7], [8,9]
+        const inputArray_countarray = [[1,2,3], [4], [5,6,7], [8,9]];
+        const expectedResults = [6, 4, 18, 17]; // Sum of each sub-array
+
+        function formatArray(arr) {
+            if (Array.isArray(arr)) {
+                return '[' + arr.join(',') + ']';
+            }
+            return arr;
+        }
+
+        const lineNumbers = {
+            func: 1, 
+            makeR: 2, 
+            goFor: 3,
+            tInit: 4, 
+            forV: 5, 
+            tIncrement: 6, 
+            endInnerLoop: 7, 
+            rAssignment: 8,
+            endGoFor: 9, 
+            returnR: 10, 
+            funcEnd: 11
+        };
+
+        function generateInnerLoopSteps_countarray(laneStates) {
+            let steps = [];
+            
+            // Track which lanes are still active
+            let maxIterations = Math.max(...laneStates.map(state => state.array.length));
+            
+            for (let iteration = 0; iteration < maxIterations; iteration++) {
+                // Check which lanes are still active
+                let activeLanes = laneStates.map((state, idx) => iteration < state.array.length);
+                
+                if (!activeLanes.some(active => active)) break; // No more active lanes
+                
+                // Start of inner loop iteration
+                steps.push({
+                    line: lineNumbers.forV,
+                    description: `Inner loop iteration ${iteration + 1}: <span class="spmd-inline-code"><span class="gokw">for</span> <span class="govar">_</span><span class="gopunct">,</span> <span class="govar">v</span> <span class="goop">:=</span> <span class="gokw">range</span> <span class="govar">secondLevel</span></span>. Active lanes get their next values.`,
+                    laneStates: laneStates.map((state, idx) => ({
+                        ...state,
+                        currentV: activeLanes[idx] ? state.array[iteration] : undefined,
+                        currentIndex: iteration,
+                        finished: !activeLanes[idx]
+                    }))
+                });
+
+                // Update t values for active lanes
+                for (let laneIdx = 0; laneIdx < numLanes_countarray; laneIdx++) {
+                    if (activeLanes[laneIdx]) {
+                        laneStates[laneIdx].t += laneStates[laneIdx].array[iteration];
+                        laneStates[laneIdx].currentV = laneStates[laneIdx].array[iteration];
+                        laneStates[laneIdx].currentIndex = iteration;
+                    } else {
+                        laneStates[laneIdx].currentV = undefined;
+                        laneStates[laneIdx].finished = true;
+                    }
+                }
+
+                // t += v step
+                steps.push({
+                    line: lineNumbers.tIncrement,
+                    description: `<span class="spmd-inline-code"><span class="govar">t</span> <span class="goop">+=</span> <span class="govar">v</span></span>: Adding current <span class="spmd-inline-code"><span class="govar">v</span></span> to running total <span class="spmd-inline-code"><span class="govar">t</span></span> in active lanes. ${activeLanes.map((active, idx) => active ? `Lane ${idx+1}: t=${laneStates[idx].t}` : `Lane ${idx+1}: finished`).join(', ')}.`,
+                    laneStates: JSON.parse(JSON.stringify(laneStates))
+                });
+            }
+
+            // End of inner loop
+            steps.push({
+                line: lineNumbers.endInnerLoop,
+                description: `Inner loop completes. All lanes have finished processing their respective <span class="spmd-inline-code"><span class="govar">secondLevel</span></span> arrays. Final totals: ${laneStates.map((state, idx) => `Lane ${idx+1}: ${state.t}`).join(', ')}.`,
+                laneStates: JSON.parse(JSON.stringify(laneStates))
+            });
+
+            return steps;
+        }
+
+        const steps_countarray = [];
+
+        // 0: Initial Call
+        steps_countarray.push({
+            line: null,
+            description: `Calling <span class="spmd-inline-code"><span class="gofn">CountArray</span><span class="gopunct">(</span><span class="goty">[][]int</span><span class="gopunct">{</span>{1,2,3},{4},{5,6,7},{8,9}<span class="gopunct">}</span><span class="gopunct">)</span></span>. Input <span class="spmd-inline-code"><span class="govar">a</span></span> contains 4 sub-arrays of different lengths.`,
+            laneStates: null
+        });
+
+        // 1: make([]int, len(a))
+        steps_countarray.push({
+            line: lineNumbers.makeR,
+            description: `<span class="spmd-inline-code"><span class="govar">r</span> <span class="goop">:=</span> <span class="gofn">make</span><span class="gopunct">(</span><span class="goty">[]int</span><span class="gopunct">,</span> <span class="gofn">len</span><span class="gopunct">(</span><span class="govar">a</span><span class="gopunct">))</span></span>: Creating result slice with length 4 to store the sums.`,
+            laneStates: null
+        });
+
+        // 2: go for distribution
+        let initialLaneStates = [];
+        for (let i = 0; i < numLanes_countarray; i++) {
+            initialLaneStates.push({
+                i: i,
+                array: inputArray_countarray[i],
+                t: 0,
+                currentIndex: 0,
+                currentV: undefined,
+                finished: false
+            });
+        }
+
+        steps_countarray.push({
+            line: lineNumbers.goFor,
+            description: `<span class="spmd-inline-code"><span class="gokw">go</span> <span class="gokw">for</span> <span class="govar">i</span><span class="gopunct">,</span> <span class="govar">secondLevel</span> <span class="goop">:=</span> <span class="gokw">range</span> <span class="govar">a</span></span>: Distributing 4 sub-arrays across 4 lanes. Lane 1 gets [1,2,3], Lane 2 gets [4], Lane 3 gets [5,6,7], Lane 4 gets [8,9].`,
+            laneStates: JSON.parse(JSON.stringify(initialLaneStates))
+        });
+
+        // 3: t := 0
+        steps_countarray.push({
+            line: lineNumbers.tInit,
+            description: `<span class="spmd-inline-code"><span class="govar">t</span> <span class="goop">:=</span> <span class="gonum">0</span></span>: Initializing accumulator <span class="spmd-inline-code"><span class="govar">t</span></span> to 0 in each lane.`,
+            laneStates: JSON.parse(JSON.stringify(initialLaneStates))
+        });
+
+        // 4: Inner loop steps
+        const innerLoopSteps = generateInnerLoopSteps_countarray(JSON.parse(JSON.stringify(initialLaneStates)));
+        steps_countarray.push(...innerLoopSteps);
+
+        // Update final lane states with final t values, and keep them active for remaining operations
+        for (let i = 0; i < numLanes_countarray; i++) {
+            initialLaneStates[i].t = expectedResults[i];
+            initialLaneStates[i].currentV = undefined;
+            initialLaneStates[i].finished = false; // Keep active for r[i] = t assignment
+        }
+
+        // 5: r[i] = t
+        steps_countarray.push({
+            line: lineNumbers.rAssignment,
+            description: `<span class="spmd-inline-code"><span class="govar">r</span><span class="gopunct">[</span><span class="govar">i</span><span class="gopunct">]</span> <span class="goop">=</span> <span class="govar">t</span></span>: Storing final sums in result array. This is a <strong>scatter operation</strong> - uniform pointer <span class="spmd-inline-code"><span class="govar">r</span></span> with varying offsets <span class="spmd-inline-code"><span class="govar">i</span></span> (0,1,2,3). All lanes active: r[0]=6, r[1]=4, r[2]=18, r[3]=17.`,
+            laneStates: JSON.parse(JSON.stringify(initialLaneStates))
+        });
+
+        // Keep lanes active for remaining steps
+
+        // 6: End go for
+        steps_countarray.push({
+            line: lineNumbers.endGoFor,
+            description: `The <span class="spmd-inline-code"><span class="gokw">go</span> <span class="gokw">for</span></span> loop completes. All lanes have finished processing their respective sub-arrays.`,
+            laneStates: JSON.parse(JSON.stringify(initialLaneStates)),
+            finalResult: "[6, 4, 18, 17]"
+        });
+
+        // 7: return r
+        steps_countarray.push({
+            line: lineNumbers.returnR,
+            description: `<span class="spmd-inline-code"><span class="gokw">return</span> <span class="govar">r</span></span>: Function returns the result array [6, 4, 18, 17].`,
+            laneStates: JSON.parse(JSON.stringify(initialLaneStates)),
+            finalResult: "[6, 4, 18, 17]"
+        });
+
+        let currentStep_countarray = 0;
+
+        function renderStep_countarray(stepIndex) {
+            const step = steps_countarray[stepIndex];
+
+            codeLines_countarray.forEach(line => line.classList.remove('highlight'));
+            if (step.line !== null) {
+                const lineToHighlight = document.querySelector(`#spmd-go-code_countarray .code-line[data-line="${step.line}"]`);
+                if (lineToHighlight) {
+                    lineToHighlight.classList.add('highlight');
+                }
+            }
+
+            stepDescription_countarray.innerHTML = step.description;
+
+            // Handle lane state display
+            if (step.laneStates) {
+                for (let i = 0; i < numLanes_countarray; i++) {
+                    const laneState = step.laneStates[i];
+                    const isActive = !laneState.finished && (laneState.currentIndex === undefined || laneState.currentIndex < laneState.array.length);
+                    const isCompleted = laneState.finished;
+
+                    // Update mask
+                    laneMaskCells_countarray[i].textContent = isActive ? "true" : "false";
+                    
+                    // Update i
+                    laneICells_countarray[i].textContent = laneState.i;
+                    
+                    // Update secondLevel
+                    laneSecondLevelCells_countarray[i].textContent = formatArray(laneState.array);
+                    
+                    // Update t
+                    laneTCells_countarray[i].textContent = laneState.t;
+                    
+                    // Update v
+                    laneVCells_countarray[i].textContent = laneState.currentV !== undefined ? laneState.currentV : "-";
+
+                    // Apply styling based on lane state
+                    const cells = [laneICells_countarray[i], laneSecondLevelCells_countarray[i], 
+                                 laneTCells_countarray[i], laneVCells_countarray[i]];
+                    
+                    cells.forEach(cell => {
+                        cell.classList.remove('inactive-lane');
+                        if (!isActive) {
+                            cell.classList.add('inactive-lane');
+                        }
+                    });
+                    
+                    // Ensure mask cells are never greyed out
+                    laneMaskCells_countarray[i].classList.remove('inactive-lane');
+                }
+            } else {
+                // Handle initial states
+                for (let i = 0; i < numLanes_countarray; i++) {
+                    laneMaskCells_countarray[i].textContent = "-";
+                    laneICells_countarray[i].textContent = "-";
+                    laneSecondLevelCells_countarray[i].textContent = "-";
+                    laneTCells_countarray[i].textContent = "-";
+                    laneVCells_countarray[i].textContent = "-";
+                    
+                    const cells = [laneICells_countarray[i], laneSecondLevelCells_countarray[i], 
+                                 laneTCells_countarray[i], laneVCells_countarray[i]];
+                    cells.forEach(cell => {
+                        cell.classList.remove('inactive-lane');
+                    });
+                }
+            }
+
+            // Update final result
+            if (step.finalResult) {
+                finalResultValue_countarray.textContent = step.finalResult;
+            } else {
+                finalResultValue_countarray.textContent = "N/A";
+            }
+
+            prevButton_countarray.disabled = stepIndex === 0;
+            nextButton_countarray.disabled = stepIndex === steps_countarray.length - 1;
+        }
+
+        prevButton_countarray.addEventListener('click', () => {
+            if (currentStep_countarray > 0) {
+                currentStep_countarray--;
+                renderStep_countarray(currentStep_countarray);
+            }
+        });
+
+        nextButton_countarray.addEventListener('click', () => {
+            if (currentStep_countarray < steps_countarray.length - 1) {
+                currentStep_countarray++;
+                renderStep_countarray(currentStep_countarray);
+            }
+        });
+
+        renderStep_countarray(currentStep_countarray); // Initial render
+    });
+</script>
