@@ -65,7 +65,7 @@ Let's look at how **`for`** inside a **`go for`** SPMD context would work. We'll
 
 > NOTE: For simplicity of the example and because I do not want everyone to have to click 32 times in the inner loop, I went with byte and uint8 type here. In a more practical implementation of this function, I should be manipulating int32 directly and write the inner loop test just inside the if  like so **`if v & (1 << it) != 0 {`**. The compiler should be able to match this loop with a popcount instruction if the hardware support it. Basically there is no reason that this would be any slower than a more direct to assembly approach, but it keep its readability in my opinion.
 
-This was a fairly simple **`for`** loop, but it shows how manipulating the mask enable all the complexity in behavior we could want. We can nest loop, if. We can also implement **`break`** and **`continue`** using just mask.
+This was a fairly simple **`for`** loop that operate on uniform with the same value for all lanes, but it shows how manipulating the mask enable all the complexity in behavior we could want. We can nest loop, if. We can also implement **`break`** and **`continue`** using just mask.
 
 ## Summary
 

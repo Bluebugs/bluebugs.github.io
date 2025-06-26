@@ -127,6 +127,55 @@
         color: #adb5bd;           /* Muted text color */
         font-style: italic;
     }
+
+    /* Uniform values section */
+    #spmd-uniform-values_countbits {
+        margin: 20px 0;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    #spmd-uniform-values_countbits h4 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        color: #495057;
+        font-size: 1em;
+    }
+
+    .uniform-values-container {
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        flex-wrap: wrap;
+    }
+
+    .uniform-value-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .uniform-label {
+        font-weight: bold;
+        color: #6c757d;
+        font-size: 0.9em;
+    }
+
+    .uniform-value {
+        font-family: monospace;
+        font-size: 1.1em;
+        font-weight: bold;
+        color: #333;
+        background-color: white;
+        padding: 8px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        min-width: 80px;
+    }
 </style>
 
 <div id="spmd-demo_countbits">
@@ -180,26 +229,33 @@
                 <div class="spmd-grid-cell" id="spmd-lane-2-c_countbits">0</div>
                 <div class="spmd-grid-cell" id="spmd-lane-3-c_countbits">0</div>
 
-                <!-- Row 4: offset values -->
-                <div class="spmd-grid-label">offset:</div>
-                <div class="spmd-grid-cell" id="spmd-lane-0-offset_countbits">-</div>
-                <div class="spmd-grid-cell" id="spmd-lane-1-offset_countbits">-</div>
-                <div class="spmd-grid-cell" id="spmd-lane-2-offset_countbits">-</div>
-                <div class="spmd-grid-cell" id="spmd-lane-3-offset_countbits">-</div>
-
-                <!-- Row 5: bitCheck values -->
+                <!-- Row 4: bitCheck values -->
                 <div class="spmd-grid-label">bitCheck:</div>
                 <div class="spmd-grid-cell" id="spmd-lane-0-bitCheck_countbits">-</div>
                 <div class="spmd-grid-cell" id="spmd-lane-1-bitCheck_countbits">-</div>
                 <div class="spmd-grid-cell" id="spmd-lane-2-bitCheck_countbits">-</div>
                 <div class="spmd-grid-cell" id="spmd-lane-3-bitCheck_countbits">-</div>
 
-                <!-- Row 6: bitOn values -->
+                <!-- Row 5: bitOn values -->
                 <div class="spmd-grid-label">bitOn:</div>
                 <div class="spmd-grid-cell" id="spmd-lane-0-bitOn_countbits">-</div>
                 <div class="spmd-grid-cell" id="spmd-lane-1-bitOn_countbits">-</div>
                 <div class="spmd-grid-cell" id="spmd-lane-2-bitOn_countbits">-</div>
                 <div class="spmd-grid-cell" id="spmd-lane-3-bitOn_countbits">-</div>
+            </div>
+
+            <div id="spmd-uniform-values_countbits" class="spmd-uniform-values">
+                <h4>Uniform Values</h4>
+                <div class="uniform-values-container">
+                    <div class="uniform-value-item">
+                        <span class="uniform-label">it:</span>
+                        <span id="spmd-it-value_countbits" class="uniform-value">-</span>
+                    </div>
+                    <div class="uniform-value-item">
+                        <span class="uniform-label">offset (binary):</span>
+                        <span id="spmd-offset-binary_countbits" class="uniform-value">-</span>
+                    </div>
+                </div>
             </div>
 
             <div id="spmd-final-result_countbits" class="spmd-final-result"> <!-- Added class="spmd-final-result" -->
@@ -245,12 +301,6 @@
             document.getElementById('spmd-lane-2-c_countbits'),
             document.getElementById('spmd-lane-3-c_countbits')
         ];
-        const laneOffsetCells_countbits = [
-            document.getElementById('spmd-lane-0-offset_countbits'),
-            document.getElementById('spmd-lane-1-offset_countbits'),
-            document.getElementById('spmd-lane-2-offset_countbits'),
-            document.getElementById('spmd-lane-3-offset_countbits')
-        ];
         const laneBitCheckCells_countbits = [
             document.getElementById('spmd-lane-0-bitCheck_countbits'),
             document.getElementById('spmd-lane-1-bitCheck_countbits'),
@@ -273,6 +323,8 @@
         const finalResultValue_countbits = document.getElementById('spmd-final-result-value_countbits');
         const summationExpressionElement_countbits = document.getElementById('spmd-summation-expression_countbits');
         const equalsSignElement_countbits = document.getElementById('spmd-equals-sign_countbits');
+        const itValueElement_countbits = document.getElementById('spmd-it-value_countbits');
+        const offsetBinaryElement_countbits = document.getElementById('spmd-offset-binary_countbits');
         const prevButton_countbits = document.getElementById('spmd-prev-step_countbits');
         const nextButton_countbits = document.getElementById('spmd-next-step_countbits');
 
@@ -332,14 +384,15 @@
 
             steps.push({
                 line: lineNumbers.forItRange,
-                description: `Batch ${batchNum}: Inner loop <span class=\"spmd-inline-code\"><span class=\"gokw\">for</span> <span class=\"govar\">it</span> <span class=\"goop\">:=</span> <span class=\"gokw\">range</span> <span class=\"gonum\">8</span></span> begins. Processing byte values: ${vValuesForBatch.map((v, i) => activeLanesInBatch[i] ? `L${i+1}:${formatBinary(v)} (hex: ${formatHex(v)})` : `L${i+1}:idle`).join(', ')}.`,
+                description: `Batch ${batchNum}: Inner loop <span class=\"spmd-inline-code\"><span class=\"gokw\">for</span> <span class=\"govar\">it</span> <span class=\"goop\">:=</span> <span class=\"gokw\">range</span> <span class=\"gonum\">8</span></span> begins. This loop operates on uniform values - <span class=\"spmd-inline-code\"><span class=\"govar\">it</span></span> will have the same value across all lanes in each iteration.`,
                 laneVDisplay: [...vValuesForBatch],
                 laneCDisplay: [...currentCForLanes],
-                laneOffsetDisplay: activeLanesInBatch.map(active => active ? "-" : "-"),
                 laneBitCheckDisplay: activeLanesInBatch.map(active => active ? "-" : "-"),
                 laneBitOnDisplay: activeLanesInBatch.map(active => active ? "-" : "-"),
                 laneMaskDisplay: activeLanesInBatch.map(active => active ? "true" : "false"), // Added mask display
-                finalResult: "N/A"
+                finalResult: "N/A",
+                uniformIt: "-",
+                uniformOffset: "-"
             });
 
             for (let it = 0; it < 8; it++) {
@@ -350,28 +403,30 @@
 
                 steps.push({
                     line: lineNumbers.offsetAssignment,
-                    description: `Batch ${batchNum}, <span class=\"spmd-inline-code\"><span class=\"govar\">it</span> <span class=\"goop\"> = </span> <span class=\"gonum\">${it}</span></span>: Calculate <span class=\"spmd-inline-code\"><span class=\"govar\">offset</span> <span class=\"goop\">:=</span> <span class=\"gonum\">1</span> <span class=\"goop\">&lt;&lt;</span> <span class=\"govar\">it</span></span>. For active lanes, <span class=\"spmd-inline-code\"><span class=\"govar\">offset</span> <span class=\"goop\">=</span> ${formatBinary(offsetVal, it)}</span>.`,
+                    description: `Batch ${batchNum}, <span class=\"spmd-inline-code\"><span class=\"govar\">it</span> <span class=\"goop\"> = </span> <span class=\"gonum\">${it}</span></span>: Calculate <span class=\"spmd-inline-code\"><span class=\"govar\">offset</span> <span class=\"goop\">:=</span> <span class=\"gonum\">1</span> <span class=\"goop\">&lt;&lt;</span> <span class=\"govar\">it</span></span>. Since <span class=\"spmd-inline-code\"><span class=\"govar\">it</span></span> is uniform, <span class=\"spmd-inline-code\"><span class=\"govar\">offset</span></span> is also uniform: <span class=\"spmd-inline-code\"><span class=\"govar\">offset</span> <span class=\"goop\">=</span> ${formatBinary(offsetVal, it)}</span> (same value for all active lanes).`,
                     laneVDisplay: [...vValuesForBatch],
                     laneCDisplay: [...currentCForLanes],
-                    laneOffsetDisplay: [...stepOffsetDisplay],
                     laneBitCheckDisplay: activeLanesInBatch.map(active => active ? "-" : "-"),
                     laneBitOnDisplay: activeLanesInBatch.map(active => active ? "-" : "-"),
                     laneMaskDisplay: activeLanesInBatch.map(active => active ? "true" : "false"), // Added mask display
                     finalResult: "N/A",
-                    itVal: it // Store current it value
+                    itVal: it, // Store current it value
+                    uniformIt: it,
+                    uniformOffset: formatBinary(offsetVal, it)
                 });
 
                 steps.push({
                     line: lineNumbers.bitCheckAssignment,
-                    description: `Batch ${batchNum}, <span class=\"spmd-inline-code\"><span class=\"govar\">it</span> <span class=\"goop\"> = </span> <span class=\"gonum\">${it}</span></span>: Calculate <span class=\"spmd-inline-code\"><span class=\"govar\">bitCheck</span> <span class=\"goop\">:=</span> <span class=\"govar\">v</span> <span class=\"goop\">&amp;</span> <span class=\"govar\">offset</span></span> for active lanes.`,
+                    description: `Batch ${batchNum}, <span class=\"spmd-inline-code\"><span class=\"govar\">it</span> <span class=\"goop\"> = </span> <span class=\"gonum\">${it}</span></span>: Calculate <span class=\"spmd-inline-code\"><span class=\"govar\">bitCheck</span> <span class=\"goop\">:=</span> <span class=\"govar\">v</span> <span class=\"goop\">&amp;</span> <span class=\"govar\">offset</span></span>. Since <span class=\"spmd-inline-code\"><span class=\"govar\">offset</span></span> is uniform (${formatBinary(offsetVal, it)}), each lane performs the same bitwise AND operation with its varying <span class=\"spmd-inline-code\"><span class=\"govar\">v</span></span> value.`,
                     laneVDisplay: [...vValuesForBatch],
                     laneCDisplay: [...currentCForLanes],
-                    laneOffsetDisplay: [...stepOffsetDisplay],
                     laneBitCheckDisplay: [...stepBitCheckDisplay],
                     laneBitOnDisplay: activeLanesInBatch.map(active => active ? "-" : "-"),
                     laneMaskDisplay: activeLanesInBatch.map(active => active ? "true" : "false"), // Added mask display
                     finalResult: "N/A",
-                    itVal: it // Store current it value
+                    itVal: it, // Store current it value
+                    uniformIt: it,
+                    uniformOffset: formatBinary(offsetVal, it)
                 });
 
                 steps.push({
@@ -379,12 +434,13 @@
                     description: `Batch ${batchNum}, <span class=\"spmd-inline-code\"><span class=\"govar\">it</span> <span class=\"goop\"> = </span> <span class=\"gonum\">${it}</span></span>: Determine <span class=\"spmd-inline-code\"><span class=\"govar\">bitOn</span> <span class=\"goop\">:=</span> <span class=\"govar\">bitCheck</span> <span class=\"goop\">!=</span> <span class=\"gonum\">0</span></span> for active lanes.`,
                     laneVDisplay: [...vValuesForBatch],
                     laneCDisplay: [...currentCForLanes],
-                    laneOffsetDisplay: [...stepOffsetDisplay],
                     laneBitCheckDisplay: [...stepBitCheckDisplay],
                     laneBitOnDisplay: [...stepBitOnDisplay],
                     laneMaskDisplay: activeLanesInBatch.map(active => active ? "true" : "false"), // Added mask display
                     finalResult: "N/A",
-                    itVal: it // Store current it value
+                    itVal: it, // Store current it value
+                    uniformIt: it,
+                    uniformOffset: formatBinary(offsetVal, it)
                 });
 
                 steps.push({
@@ -392,12 +448,13 @@
                     description: `Batch ${batchNum}, <span class=\"spmd-inline-code\"><span class=\"govar\">it</span> <span class=\"goop\"> = </span> <span class=\"gonum\">${it}</span></span>: Conditional <span class=\"spmd-inline-code\"><span class=\"gokw\">if</span> <span class=\"govar\">bitOn</span></span> for active lanes.`,
                     laneVDisplay: [...vValuesForBatch],
                     laneCDisplay: [...currentCForLanes],
-                    laneOffsetDisplay: [...stepOffsetDisplay],
                     laneBitCheckDisplay: [...stepBitCheckDisplay],
                     laneBitOnDisplay: [...stepBitOnDisplay],
                     laneMaskDisplay: activeLanesInBatch.map(active => active ? "true" : "false"), // Added mask display
                     finalResult: "N/A",
-                    itVal: it // Store current it value
+                    itVal: it, // Store current it value
+                    uniformIt: it,
+                    uniformOffset: formatBinary(offsetVal, it)
                 });
                 
                 let cIncrementDescriptionParts = [];
@@ -417,13 +474,14 @@
                     description: `Batch ${batchNum}, <span class="spmd-inline-code"><span class="govar">it</span> <span class="goop"> = </span> <span class="gonum">${it}</span></span>: ${cActuallyIncrementedThisSubStep ? 'Executing' : 'Skipping (or no active lanes had bitOn=true)'} <span class="spmd-inline-code"><span class="govar">c</span><span class="goop">++</span></span>. ${cIncrementDescriptionParts.join('. ')}.`,
                     laneVDisplay: [...vValuesForBatch],
                     laneCDisplay: [...currentCForLanes],
-                    laneOffsetDisplay: [...stepOffsetDisplay],
                     laneBitCheckDisplay: [...stepBitCheckDisplay],
                     laneBitOnDisplay: [...stepBitOnDisplay],
                     // Correctly update mask: if lane was active AND bitOn is true, it remains active for c++; otherwise, it's effectively masked for this c++ op
                     laneMaskDisplay: activeLanesInBatch.map((isActiveLane, laneIdx) => isActiveLane && stepBitOnDisplay[laneIdx] ? "true" : (isActiveLane ? "false" : "false")),
                     finalResult: "N/A",
-                    itVal: it // Store current it value
+                    itVal: it, // Store current it value
+                    uniformIt: it,
+                    uniformOffset: formatBinary(offsetVal, it)
                 });
             }
 
@@ -432,11 +490,12 @@
                 description: `Batch ${batchNum}: Inner loop <span class=\"spmd-inline-code\"><span class=\"gokw\">for</span> <span class=\"govar\">it</span></span> (lines ${lineNumbers.forItRange}-${lineNumbers.endInnerLoop}) completes. Final <span class=\"spmd-inline-code\"><span class=\"govar\">c</span></span> values after this batch: ${currentCForLanes.map((c,i) => `L${i+1}:${c}`).join(', ')}.`,
                 laneVDisplay: [...vValuesForBatch],
                 laneCDisplay: [...currentCForLanes],
-                laneOffsetDisplay: activeLanesInBatch.map(active => active ? "-" : "-"),
                 laneBitCheckDisplay: activeLanesInBatch.map(active => active ? "-" : "-"),
                 laneBitOnDisplay: activeLanesInBatch.map(active => active ? "-" : "-"),
                 laneMaskDisplay: activeLanesInBatch.map(active => active ? "true" : "false"), // Added mask display
-                finalResult: "N/A"
+                finalResult: "N/A",
+                uniformIt: "-",
+                uniformOffset: "-"
             });
             return {steps, finalCValuesForBatch: currentCForLanes};
         }
@@ -450,11 +509,12 @@
             description: `Calling <span class=\"spmd-inline-code\"><span class=\"gofn\">countBits</span><span class=\"gopunct\">(</span><span class=\"goty\">[]byte</span><span class=\"gopunct\">{</span>${inputArrayHexFormatted}<span class=\"gopunct\">}</span><span class=\"gopunct\">)</span></span>. Input <span class=\"spmd-inline-code\"><span class=\"govar\">a</span></span> is initialized. Four execution lanes available.`,
             laneVDisplay: ["-", "-", "-", "-"],
             laneCDisplay: [...cumulativeC_countbits],
-            laneOffsetDisplay: ["-", "-", "-", "-"],
             laneBitCheckDisplay: ["-", "-", "-", "-"],
             laneBitOnDisplay: ["-", "-", "-", "-"],
             laneMaskDisplay: ["true", "true", "true", "true"], // Initial mask state set to true
-            finalResult: "N/A"
+            finalResult: "N/A",
+            uniformIt: "-",
+            uniformOffset: "-"
         });
 
         // 1: var c varying int
@@ -463,11 +523,12 @@
             description: `<span class=\"spmd-inline-code\"><span class=\"gokw\">var</span> <span class=\"govar\">c</span> <span class=\"gohypo\">varying</span> <span class=\"goty\">uint8</span></span>: Each lane gets its own <span class=\"spmd-inline-code\"><span class=\"govar\">c</span></span> (bit counter), initialized to 0.`,
             laneVDisplay: ["-", "-", "-", "-"],
             laneCDisplay: [...cumulativeC_countbits],
-            laneOffsetDisplay: ["-", "-", "-", "-"],
             laneBitCheckDisplay: ["-", "-", "-", "-"],
             laneBitOnDisplay: ["-", "-", "-", "-"],
             laneMaskDisplay: ["true", "true", "true", "true"], // Mask state set to true
-            finalResult: "N/A"
+            finalResult: "N/A",
+            uniformIt: "-",
+            uniformOffset: "-"
         });
 
         const numBatches = Math.ceil(inputArray_countbits.length / numLanes_countbits);
@@ -511,11 +572,12 @@
                 description: description,
                 laneVDisplay: batch_v_values.map(v => v !== "-" ? v : "-"),
                 laneCDisplay: [...cumulativeC_countbits], // Show c values before this batch's processing
-                laneOffsetDisplay: batch_v_values.map(() => "-"),
                 laneBitCheckDisplay: batch_v_values.map(() => "-"),
                 laneBitOnDisplay: batch_v_values.map(() => "-"),
                 laneMaskDisplay: batch_v_values.map(v => v !== "-" ? "true" : "false"), // Mask active lanes for this batch
-                finalResult: "N/A"
+                finalResult: "N/A",
+                uniformIt: "-",
+                uniformOffset: "-"
             });
             // END: Add step for 'go for' distribution
 
@@ -530,11 +592,12 @@
             description: `The <span class=\"spmd-inline-code\"><span class=\"gokw\">go</span> <span class=\"gokw\">for</span></span> loop (lines ${lineNumbers.goFor}-${lineNumbers.endGoFor}) finishes. All elements from <span class=\"spmd-inline-code\"><span class=\"govar\">a</span></span> processed. Final <span class=\"spmd-inline-code\"><span class=\"govar\">c</span></span> values per lane: ${cumulativeC_countbits.join(', ')}.`,
             laneVDisplay: ["-", "-", "-", "-"],
             laneCDisplay: [...cumulativeC_countbits],
-            laneOffsetDisplay: ["-", "-", "-", "-"],
             laneBitCheckDisplay: ["-", "-", "-", "-"],
             laneBitOnDisplay: ["-", "-", "-", "-"],
             laneMaskDisplay: ["true", "true", "true", "true"], // Mask set to true for all lanes
-            finalResult: "N/A"
+            finalResult: "N/A",
+            uniformIt: "-",
+            uniformOffset: "-"
         });
 
         // reduce.Add(c)
@@ -543,11 +606,12 @@
             description: `Aggregating <span class=\"spmd-inline-code\"><span class=\"govar\">c</span></span> values from all lanes using <span class=\"spmd-inline-code\"><span class=\"gokw\">return</span> <span class=\"gofn\">reduce.Add</span><span class=\"gopunct\">(</span><span class=\"govar\">c</span><span class=\"gopunct\">)</span></span>. Summing: ${cumulativeC_countbits.join(' + ')}.`,
             laneVDisplay: ["-", "-", "-", "-"],
             laneCDisplay: [...cumulativeC_countbits],
-            laneOffsetDisplay: ["-", "-", "-", "-"],
             laneBitCheckDisplay: ["-", "-", "-", "-"],
             laneBitOnDisplay: ["-", "-", "-", "-"],
             laneMaskDisplay: ["true", "true", "true", "true"], // Mask state during reduction
-            finalResult: totalSumOfBits
+            finalResult: totalSumOfBits,
+            uniformIt: "-",
+            uniformOffset: "-"
         });
 
         // Return
@@ -556,11 +620,12 @@
             description: `Function returns the total bit count: <span class=\"spmd-inline-code\">${totalSumOfBits}</span>.`,
             laneVDisplay: ["-", "-", "-", "-"],
             laneCDisplay: [...cumulativeC_countbits],
-            laneOffsetDisplay: ["-", "-", "-", "-"],
             laneBitCheckDisplay: ["-", "-", "-", "-"],
             laneBitOnDisplay: ["-", "-", "-", "-"],
             laneMaskDisplay: ["true", "true", "true", "true"], // Final mask state
-            finalResult: totalSumOfBits
+            finalResult: totalSumOfBits,
+            uniformIt: "-",
+            uniformOffset: "-"
         });
 
         let currentStep_countbits = 0;
@@ -584,7 +649,7 @@
                 const isMaskActive = step.laneMaskDisplay[i] === "true"; // Determine if the lane is active based on mask
 
                 // Add or remove 'inactive-lane' class based on mask activity (excluding mask cells)
-                [laneVCells_countbits[i], laneCCells_countbits[i], laneOffsetCells_countbits[i], laneBitCheckCells_countbits[i], laneBitOnCells_countbits[i]].forEach(cell => {
+                [laneVCells_countbits[i], laneCCells_countbits[i], laneBitCheckCells_countbits[i], laneBitOnCells_countbits[i]].forEach(cell => {
                     if (isMaskActive) {
                         cell.classList.remove('inactive-lane');
                     } else {
@@ -598,12 +663,18 @@
                 const vText = (typeof step.laneVDisplay[i] === 'number') ? `<span class="spmd-binary-value">${formatBinary(step.laneVDisplay[i], currentIt)}</span>` : step.laneVDisplay[i];
                 laneVCells_countbits[i].innerHTML = vText;
                 laneCCells_countbits[i].textContent = step.laneCDisplay[i];
-                const offsetText = (typeof step.laneOffsetDisplay[i] === 'number') ? `<span class="spmd-binary-value">${formatBinary(step.laneOffsetDisplay[i], currentIt)}</span>` : step.laneOffsetDisplay[i];
-                laneOffsetCells_countbits[i].innerHTML = offsetText;
                 const bitCheckText = (typeof step.laneBitCheckDisplay[i] === 'number') ? `<span class="spmd-binary-value">${formatBinary(step.laneBitCheckDisplay[i], currentIt)}</span>` : step.laneBitCheckDisplay[i];
                 laneBitCheckCells_countbits[i].innerHTML = bitCheckText;
                 laneBitOnCells_countbits[i].textContent = (typeof step.laneBitOnDisplay[i] === 'boolean') ? step.laneBitOnDisplay[i].toString() : step.laneBitOnDisplay[i];
                 laneMaskCells_countbits[i].textContent = step.laneMaskDisplay[i]; // Update mask cell
+            }
+
+            // Update uniform values display
+            if (step.uniformIt !== undefined) {
+                itValueElement_countbits.textContent = step.uniformIt;
+            }
+            if (step.uniformOffset !== undefined) {
+                offsetBinaryElement_countbits.innerHTML = (typeof step.uniformOffset === 'string' && step.uniformOffset.includes('<span')) ? step.uniformOffset : step.uniformOffset;
             }
 
             if (step.finalResult !== "N/A") {
