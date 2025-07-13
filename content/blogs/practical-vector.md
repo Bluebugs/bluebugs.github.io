@@ -17,6 +17,8 @@ One of the first and most repetitive tasks for [doPrintf](https://github.com/gol
 
 One of the important bit of this example is the use `reduce.Any` inside a `go for` loop. This make the `if` act like a normal `if` with a jump and enable a quick exit as soon as at least one `%` is found. This is still readable and maintainable. I would think this could be acceptable in the Go standard library codebase once this feature is properly ready for prime time.
 
+A crucial detail in this example is the use of `lanes.Count(c)` to increment the uniform `i` variable. Since SPMD execution processes data in chunks equal to the number of available lanes, we need to track our position in the overall data stream. The `lanes.Count()` function returns the number of lanes that actually processed data in the current iteration — typically equal to the hardware's lane count, but potentially fewer when nearing the end of the data. This allows us to correctly calculate absolute positions: when `reduce.FindFirstSet()` returns a lane-relative index (0-3 in our 4-lane example), adding it to the uniform base index `i` gives us the correct position in the original string. Without this uniform tracking, we'd only know which lane found the `%`, not where it actually appears in the input.
+
 ## Encode hexadecimal
 
 Hexadecimal encoding and decoding are relatively [slow](https://github.com/golang/go/issues/68188) and would benefit from using SIMD instructions. If we look at the current implementation for hex.Encode in Go's standard library:

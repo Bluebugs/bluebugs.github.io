@@ -7,14 +7,16 @@ SPMD Demo: printfVerb
         <div class="spmd-code-pane">
             <pre><code id="spmd-go-code_printf-verbs" class="language-go">
 <span class="code-line" id="line-1"><span class="gokw">func</span> <span class="gofn">printfVerb</span>(<span class="govar">format</span> <span class="goty">string</span>) <span class="goty">int</span> {</span>
-<span class="code-line" id="line-2">  <span class="gokw">go</span> <span class="gokw">for</span> <span class="govar">_</span>, <span class="govar">c</span> := <span class="gokw">range</span> <span class="govar">format</span> {</span>
-<span class="code-line" id="line-3">    <span class="govar">check</span> := <span class="govar">c</span> == <span class="gohypo">'%'</span></span>
-<span class="code-line" id="line-4">    <span class="gokw">if</span> <span class="gofn">reduce.Any</span>(<span class="govar">check</span>) {</span>
-<span class="code-line" id="line-5">        <span class="gokw">return</span> <span class="gofn">reduce.FindFirstSet</span>(<span class="govar">check</span>)</span>
-<span class="code-line" id="line-6">    }</span>
-<span class="code-line" id="line-7">  }</span>
-<span class="code-line" id="line-8">  <span class="gokw">return</span> <span class="gofn">len</span>(<span class="govar">format</span>)</span>
-<span class="code-line" id="line-9">}</span>
+<span class="code-line" id="line-2">  <span class="govar">i</span> := 0</span>
+<span class="code-line" id="line-3">  <span class="gokw">go</span> <span class="gokw">for</span> <span class="govar">_</span>, <span class="govar">c</span> := <span class="gokw">range</span> <span class="govar">format</span> {</span>
+<span class="code-line" id="line-4">    <span class="govar">check</span> := <span class="govar">c</span> == <span class="gohypo">'%'</span></span>
+<span class="code-line" id="line-5">    <span class="gokw">if</span> <span class="gofn">reduce.Any</span>(<span class="govar">check</span>) {</span>
+<span class="code-line" id="line-6">        <span class="gokw">return</span> <span class="govar">i</span> + <span class="gofn">reduce.FindFirstSet</span>(<span class="govar">check</span>)</span>
+<span class="code-line" id="line-7">    }</span>
+<span class="code-line" id="line-8">    <span class="govar">i</span> += <span class="gofn">lanes.Count</span>(<span class="govar">c</span>)</span>
+<span class="code-line" id="line-9">  }</span>
+<span class="code-line" id="line-10">  <span class="gokw">return</span> <span class="gofn">len</span>(<span class="govar">format</span>)</span>
+<span class="code-line" id="line-11">}</span>
             </code></pre>
         </div>
 
@@ -27,6 +29,10 @@ SPMD Demo: printfVerb
                 <div class="spmd-grid-header">Lane 1</div>
                 <div class="spmd-grid-header">Lane 2</div>
                 <div class="spmd-grid-header">Lane 3</div>
+
+                <!-- i (uniform) -->
+                <div class="spmd-grid-label">i (uniform)</div>
+                <div id="val-i-uniform" class="spmd-grid-cell spmd-grid-cell-uniform">---</div>
 
                 <!-- c -->
                 <div class="spmd-grid-label">c</div>
@@ -97,6 +103,14 @@ SPMD Demo: printfVerb
         font-weight: 500;
         color: #333;
     }
+
+    .spmd-grid-cell-uniform {
+        background-color: #e8f4fd !important;
+        font-weight: bold;
+        color: #1a73e8;
+        text-align: center;
+        grid-column: span 4;
+    }
 </style>
 
 <script>
@@ -108,53 +122,131 @@ SPMD Demo: printfVerb
         const codeLines = document.querySelectorAll('#spmd-go-code_printf-verbs .code-line');
 
         const lanes = 4;
-        const format = "ab%d";
+        const format = "Hello %s world";
         let currentStep = 0;
 
-        const steps = [
-            {
-                line: 1,
-                info: `Calling <code class="spmd-inline-code"><span class="gofn">printfVerb</span>(<span class="gohypo">"ab%d"</span>)</code>. Input <code class="spmd-inline-code">format</code> is initialized. Four execution lanes available.`,
-                c: ['—', '—', '—', '—'],
-                check: ['—', '—', '—', '—'],
-                result: '---'
-            },
-            {
-                line: 2,
-                info: `Loop starts. Each lane gets a character from <code class="spmd-inline-code">format</code>.`,
-                c: [`'a'`, `'b'`, `'%'`, `'d'`],
-                check: ['—', '—', '—', '—'],
-                result: '---'
-            },
-            {
-                line: 3,
-                info: `Each lane checks if its character <code class="spmd-inline-code">c</code> is equal to <code class="spmd-inline-code gokw">'%'</code>. The result is stored in the intermediate variable <code class="spmd-inline-code">check</code>.`,
-                c: [`'a'`, `'b'`, `'%'`, `'d'`],
-                check: ['false', 'false', 'true', 'false'],
-                result: '---'
-            },
-            {
-                line: 4,
-                info: `<code class="spmd-inline-code"><span class="gofn">reduce.Any</span>(<span class="govar">check</span>)</code> checks if any lane found a <code class="spmd-inline-code gokw">'%'</code>. Result is <code class="spmd-inline-code">true</code>.`,
-                c: [`'a'`, `'b'`, `'%'`, `'d'`],
-                check: ['false', 'false', 'true', 'false'],
-                result: '---'
-            },
-            {
-                line: 5,
-                info: `Since a <code class="spmd-inline-code gokw">'%'</code> was found, <code class="spmd-inline-code"><span class="gofn">reduce.FindFirstSet</span>(<span class="govar">check</span>)</code> finds the index of the first lane where <code class="spmd-inline-code">check</code> is true.`,
-                c: [`'a'`, `'b'`, `'%'`, `'d'`],
-                check: ['false', 'false', 'true', 'false'],
-                result: 2
-            },
-            {
-                line: 9,
-                info: `The function returns <code class="spmd-inline-code">2</code>. The visualization has ended.`,
-                c: [`'a'`, `'b'`, `'%'`, `'d'`],
-                check: ['false', 'false', 'true', 'false'],
-                result: 2
+        const steps = [];
+
+        // Initial step
+        steps.push({
+            line: 1,
+            info: `Calling <code class="spmd-inline-code"><span class="gofn">printfVerb</span>(<span class="gohypo">"Hello %s world"</span>)</code>. Input <code class="spmd-inline-code">format</code> is initialized. Four execution lanes available.`,
+            c: ['—', '—', '—', '—'],
+            check: ['—', '—', '—', '—'],
+            iUniform: '---',
+            result: '---'
+        });
+
+        // Initialize i uniform
+        steps.push({
+            line: 2,
+            info: `Initialize uniform variable <code class="spmd-inline-code"><span class="govar">i</span></code> to 0. This tracks the base index for each iteration.`,
+            c: ['—', '—', '—', '—'],
+            check: ['—', '—', '—', '—'],
+            iUniform: 0,
+            result: '---'
+        });
+
+        // Generate iterations
+        let currentI = 0;
+        for (let iteration = 0; iteration < Math.ceil(format.length / lanes); iteration++) {
+            const start = iteration * lanes;
+            const end = Math.min(start + lanes, format.length);
+            const chars = format.slice(start, end);
+            
+            // Pad with empty entries if needed
+            const c = Array(lanes).fill('—');
+            const check = Array(lanes).fill('—');
+            
+            for (let i = 0; i < chars.length; i++) {
+                c[i] = `'${chars[i]}'`;
             }
-        ];
+
+            // Start of iteration
+            steps.push({
+                line: 3,
+                info: `Iteration ${iteration + 1}: <code class="spmd-inline-code"><span class="gokw">go</span> <span class="gokw">for</span></code> processes characters ${start}-${end-1}. Each lane gets a character from <code class="spmd-inline-code">format</code>.`,
+                c: c,
+                check: Array(lanes).fill('—'),
+                iUniform: currentI,
+                result: '---'
+            });
+
+            // Check for '%'
+            for (let i = 0; i < chars.length; i++) {
+                check[i] = chars[i] === '%' ? 'true' : 'false';
+            }
+
+            steps.push({
+                line: 4,
+                info: `Each lane checks if its character <code class="spmd-inline-code">c</code> is equal to <code class="spmd-inline-code gokw">'%'</code>. The result is stored in <code class="spmd-inline-code">check</code>.`,
+                c: c,
+                check: check,
+                iUniform: currentI,
+                result: '---'
+            });
+
+            // Check if any '%' found
+            const foundPercent = check.includes('true');
+            
+            steps.push({
+                line: 5,
+                info: `<code class="spmd-inline-code"><span class="gofn">reduce.Any</span>(<span class="govar">check</span>)</code> checks if any lane found a <code class="spmd-inline-code gokw">'%'</code>. Result is <code class="spmd-inline-code">${foundPercent}</code>.`,
+                c: c,
+                check: check,
+                iUniform: currentI,
+                result: '---'
+            });
+
+            if (foundPercent) {
+                // Found '%', calculate final result
+                const laneIndex = check.indexOf('true');
+                const finalResult = currentI + laneIndex;
+                
+                steps.push({
+                    line: 6,
+                    info: `Since a <code class="spmd-inline-code gokw">'%'</code> was found, return <code class="spmd-inline-code"><span class="govar">i</span> + <span class="gofn">reduce.FindFirstSet</span>(<span class="govar">check</span>)</code> = <code class="spmd-inline-code">${currentI} + ${laneIndex}</code> = <code class="spmd-inline-code">${finalResult}</code>.`,
+                    c: c,
+                    check: check,
+                    iUniform: currentI,
+                    result: finalResult
+                });
+
+                steps.push({
+                    line: 11,
+                    info: `The function returns <code class="spmd-inline-code">${finalResult}</code>. The visualization has ended.`,
+                    c: c,
+                    check: check,
+                    iUniform: currentI,
+                    result: finalResult
+                });
+                break;
+            } else {
+                // Increment i by lanes.Count()
+                steps.push({
+                    line: 8,
+                    info: `No <code class="spmd-inline-code gokw">'%'</code> found in this iteration. Increment <code class="spmd-inline-code"><span class="govar">i</span></code> by <code class="spmd-inline-code"><span class="gofn">lanes.Count</span>(<span class="govar">c</span>)</code> = ${lanes}.`,
+                    c: c,
+                    check: check,
+                    iUniform: currentI,
+                    result: '---'
+                });
+                
+                currentI += lanes;
+            }
+        }
+
+        // If no '%' found in entire string
+        if (!steps.some(step => step.result !== '---' && step.result !== format.length)) {
+            steps.push({
+                line: 10,
+                info: `No <code class="spmd-inline-code gokw">'%'</code> found in entire string. Return <code class="spmd-inline-code"><span class="gofn">len</span>(<span class="govar">format</span>)</code> = <code class="spmd-inline-code">${format.length}</code>.`,
+                c: Array(lanes).fill('—'),
+                check: Array(lanes).fill('—'),
+                iUniform: '---',
+                result: format.length
+            });
+        }
 
         function highlightLine(lineNum) {
             codeLines.forEach(line => line.classList.remove('highlight'));
@@ -169,6 +261,9 @@ SPMD Demo: printfVerb
             highlightLine(step.line);
             info.innerHTML = step.info;
             finalResult.textContent = step.result;
+
+            // Update uniform i value
+            document.getElementById('val-i-uniform').textContent = step.iUniform;
 
             for (let i = 0; i < lanes; i++) {
                 document.getElementById(`val-c-${i}`).textContent = step.c[i];
