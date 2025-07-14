@@ -1,7 +1,7 @@
 ---
-title: "Putting It All Together: Fast IPv4 Parsing with SPMD Go"
+title: "Putting It All Together"
 date: 2025-07-13T14:00:00-07:00
-description: "Combining cross-lane communication, reduction operations, and SIMD-inspired techniques to build a high-performance IPv4 address parser"
+description: "Fast IPv4 Parsing with SPMD Go"
 featured_image: 'images/lakelouise.jpg'
 featured_image_class: 'cover bg-center'
 tags: ["golang", "performance", "networking", "SIMD", "SPMD"]
@@ -270,6 +270,8 @@ While this SPMD approach offers significant performance benefits, it also raises
 - **Maintenance overhead**: Requires understanding of SIMD concepts
 
 However, in this example, the resulting code is readable and maintainable. If it did come with a proper benchmark and the go profiler was able to track the result properly, it should be quite manageable for a lot of developers to write this code, I would think. This is the main justification potential for such an addition. If most developers can write data parallel code and we democratize writing high-performance code, it is worth it. If not, leaving intrinsic and assembly to engineer that can do it might be actually the better way forward. What do you think?
+
+**[View Complete Source Code](../../examples/ipv4-parser/)** - Full implementation with usage examples and detailed comments.
 
 ## References
 

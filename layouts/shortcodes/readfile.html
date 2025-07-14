@@ -1,0 +1,7 @@
+{{ $file := .Get "file" }}
+{{ $path := printf "%s/%s" hugo.WorkingDir $file }}
+{{ with readFile $path }}
+{{ highlight . "go" "" }}
+{{ else }}
+File not found: {{ $file }}
+{{ end }}

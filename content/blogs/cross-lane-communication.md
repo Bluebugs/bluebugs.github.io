@@ -210,4 +210,6 @@ The base64 example shows what's possible with full cross-lane communication, but
 
 The question isn't just technical—it's about whether Go developers would adopt and correctly use these more complex operations, or if the cognitive overhead outweighs the performance benefits.
 
+**[View Complete Source Code](../../examples/base64-decoder/)** - Full implementation with usage examples and detailed algorithm explanations.
+
 *Implementation inspired by Miguel Young de la Sota's excellent analysis in ["Designing a SIMD Algorithm from Scratch"](https://mcyoung.xyz/2023/11/27/simd-base64/), adapted for hypothetical SPMD Go extension.*
