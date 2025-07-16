@@ -84,3 +84,7 @@ This is fundamentally different from traditional SIMD where all lanes must execu
 And we have shown that it is possible to extend Go with just a few keyword and make writing data parallel algorithm approachable, more readable and maintainable in my opinion. Let me know if there is anything that need clarification.
 
 Adding data parallelism as a first-class feature in Go could make high-performance computing more accessible and portable. By learning from languages like ISPC and Mojo, we can imagine a future where Go code is simple, fast and leverage the full power of modern hardware. Even if Go never adopts these features, understanding them can help you write shader, compute kernel and code for Mojo or ISPC.
+
+---
+
+**Next in series:** [What if? Practical parallel data.](../practical-vector/) - See how to apply these SPMD concepts to real string operations.

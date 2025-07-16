@@ -213,3 +213,9 @@ The question isn't just technical—it's about whether Go developers would adopt
 **[View Complete Source Code](../../examples/base64-decoder/)** - Full implementation with usage examples and detailed algorithm explanations.
 
 *Implementation inspired by Miguel Young de la Sota's excellent analysis in ["Designing a SIMD Algorithm from Scratch"](https://mcyoung.xyz/2023/11/27/simd-base64/), adapted for hypothetical SPMD Go extension.*
+
+---
+
+**Previous in series:** [What if? Practical parallel data.](../practical-vector/) - Learn basic SPMD patterns with simple string operations.
+
+**Next in series:** [Putting It All Together](../go-spmd-ipv4-parser/) - See SPMD concepts applied to real-world IPv4 parsing performance.

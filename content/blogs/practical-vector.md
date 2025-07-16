@@ -68,3 +68,9 @@ These three practical examples demonstrate how a hypothetical `go for` construct
 These optimizations could significantly improve Go's standard library performance and any Go application. String processing, encoding/decoding, parsing, and mathematical operations are fundamental building blocks that appear in virtually every Go application. Making them faster through data parallelism would benefit the entire ecosystem without requiring developers to learn complex SIMD programming.
 
 The `go for` construct bridges the gap between Go's accessibility and the performance demands of modern applications, proving, in my opinion, that readable code and high performance don't have to be mutually exclusive.
+
+---
+
+**Previous in series:** [Data Parallelism: simpler solution for Golang?](../go-data-parallelism/) - Introduction to SPMD concepts and the `go for` construct.
+
+**Next in series:** [Cross-Lane Communication: When Lanes Need to Talk](../cross-lane-communication/) - Learn how to handle data dependencies between lanes.

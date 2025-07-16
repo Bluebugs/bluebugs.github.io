@@ -280,3 +280,9 @@ However, in this example, the resulting code is readable and maintainable. If it
 - [Practical Vector Processing in Go](../practical-vector/) - Introduction to SPMD concepts and `reduce` operations
 - [Cross-Lane Communication](../cross-lane-communication/) - Deep dive into advanced SPMD patterns and race condition solutions
 - [Go's net/netip package](https://github.com/golang/go/blob/master/src/net/netip/netip.go) - The traditional IPv4 parsing implementation
+
+---
+
+**Previous in series:** [Cross-Lane Communication: When Lanes Need to Talk](../cross-lane-communication/) - Understanding complex cross-lane operations and their trade-offs.
+
+This concludes our SPMD Go blog series. We've explored the theoretical foundations, practical applications, advanced communication patterns, and real-world performance implementations.
