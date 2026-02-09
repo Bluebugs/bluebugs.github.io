@@ -86,8 +86,8 @@
         <div id="spmd-code-pane_oddeven" class="spmd-code-pane spmd-code-pane-oddeven"> <!-- ID Suffix Added -->
             <pre><code id="spmd-go-code_oddeven"> <!-- ID Suffix Added -->
 <span class="code-line" data-line="1"><span class="gokw">func</span> <span class="gofn">oddEvenCount</span><span class="gopunct">(</span><span class="govar">a</span> <span class="goty">[]int</span><span class="gopunct">)</span> <span class="gopunct">(</span><span class="goty">int</span><span class="gopunct">,</span> <span class="goty">int</span><span class="gopunct">)</span> <span class="gopunct">{</span></span>
-<span class="code-line" data-line="2">  <span class="gokw">var</span> <span class="govar">odd</span> <span class="gohypo">varying</span> <span class="goty">int</span></span>
-<span class="code-line" data-line="3">  <span class="gokw">var</span> <span class="govar">even</span> <span class="gohypo">varying</span> <span class="goty">int</span></span>
+<span class="code-line" data-line="2">  <span class="gokw">var</span> <span class="govar">odd</span> <span class="gofn">lanes.Varying</span><span class="gopunct">[</span><span class="goty">int</span><span class="gopunct">]</span></span>
+<span class="code-line" data-line="3">  <span class="gokw">var</span> <span class="govar">even</span> <span class="gofn">lanes.Varying</span><span class="gopunct">[</span><span class="goty">int</span><span class="gopunct">]</span></span>
 <span class="code-line" data-line="4">  <span class="gokw">go</span> <span class="gokw">for</span> <span class="govar">_</span><span class="gopunct">,</span> <span class="govar">v</span> <span class="goop">:=</span> <span class="gokw">range</span> <span class="govar">a</span> <span class="gopunct">{</span></span>
 <span class="code-line" data-line="5">    <span class="gokw">if</span> <span class="govar">v</span><span class="goop">&amp;</span><span class="gonum">1</span> <span class="goop">==</span> <span class="gonum">1</span> <span class="gopunct">{</span> <span class="gocomment">// Check if odd</span></span>
 <span class="code-line" data-line="6">        <span class="govar">odd</span><span class="goop">++</span></span>
@@ -233,7 +233,7 @@
             },
             { // 1: var odd
                 line: 2,
-                description: "<span class='spmd-inline-code'><span class='gokw'>var</span> <span class='govar'>odd</span> <span class='gohypo'>varying</span> <span class='goty'>int</span></span>: Each lane gets its own <span class='spmd-inline-code'><span class='govar'>odd</span></span> counter, initialized to 0.",
+                description: "<span class='spmd-inline-code'><span class='gokw'>var</span> <span class='govar'>odd</span> <span class='gofn'>lanes.Varying</span><span class='gopunct'>[</span><span class='goty'>int</span><span class='gopunct'>]</span></span>: Each lane gets its own <span class='spmd-inline-code'><span class='govar'>odd</span></span> counter, initialized to 0.",
                 laneMaskDisplay: [true, true, true, true],
                 laneVDisplay: ["-", "-", "-", "-"],
                 laneOddDisplay: [0, 0, 0, 0],
@@ -243,7 +243,7 @@
             },
             { // 2: var even
                 line: 3,
-                description: "<span class='spmd-inline-code'><span class='gokw'>var</span> <span class='govar'>even</span> <span class='gohypo'>varying</span> <span class='goty'>int</span></span>: Each lane gets its own <span class='spmd-inline-code'><span class='govar'>even</span></span> counter, initialized to 0.",
+                description: "<span class='spmd-inline-code'><span class='gokw'>var</span> <span class='govar'>even</span> <span class='gofn'>lanes.Varying</span><span class='gopunct'>[</span><span class='goty'>int</span><span class='gopunct'>]</span></span>: Each lane gets its own <span class='spmd-inline-code'><span class='govar'>even</span></span> counter, initialized to 0.",
                 laneMaskDisplay: [true, true, true, true],
                 laneVDisplay: ["-", "-", "-", "-"],
                 laneOddDisplay: [0, 0, 0, 0],

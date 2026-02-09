@@ -32,12 +32,14 @@ How could we express data parallelism in Go? Currently, Go does not annotate fun
 
 Before diving into examples, let's define some vocabulary:
 
-- **`varying`**: Represents a SIMD register containing multiple values, one per "lane".
+- **`lanes.Varying[T]`**: Represents a SIMD register containing multiple values of type T, one per "lane". This type lives in the `lanes` package since lanes are what make values vary.
 - **`lane`**: Each value in a SIMD register.
 - **`mask`**: Used to enable or disable lanes during computation.
 - **`uniform`**: A variable with the same value across all lanes, aka a normal variable like all the variable you have in Go today.
 
-We use **`varying`** to indicate types that hold multiple values (across lanes), and **`uniform`** for single values. Inside a **`go for`** loop, you might need to declare variables as **`uniform`** for optimization or compatibility.
+We use **`lanes.Varying[T]`** to indicate types that hold multiple values (across lanes). Regular Go variables are uniform by default. Inside a **`go for`** loop, the loop variable is implicitly varying while other variables follow normal Go rules.
+
+> **Why types in packages instead of keywords?** During early exploration of this idea, `varying` and `uniform` were envisioned as new Go keywords. But adding keywords to Go is nearly impossible without breaking existing code - any package that uses `varying` or `uniform` as variable or function names would stop compiling. By making them generic types in the `lanes` and `reduce` packages, we avoid any backward compatibility issue while keeping the syntax clean and Go-idiomatic.
 
 ## Simple Example
 
@@ -45,7 +47,7 @@ An example is always better than a long discourse. Let start with the following 
 
 {{< spmd-sum >}}
 
-Here, we declare a variables **`s`** as **`varying`** to operate on multiple data points in parallel. At the end of the loop, we use a **`reduce`** function to combine the results from all lanes into a single value. Libraries like [ISPC](https://ispc.github.io/ispc.html#reductions) and [Mojo](https://docs.modular.com/mojo/stdlib/algorithm/reduction/) provide a variety of reduction functions, which could inspire a similar package in Go.
+Here, we declare a variable **`s`** as **`lanes.Varying[int]`** to operate on multiple data points in parallel. At the end of the loop, we use a **`reduce`** function to combine the results from all lanes into a single value. Libraries like [ISPC](https://ispc.github.io/ispc.html#reductions) and [Mojo](https://docs.modular.com/mojo/stdlib/algorithm/reduction/) provide a variety of reduction functions, which could inspire a similar package in Go.
 
 With this example, we also show how the mask can be used. If there is no data to be manipulated, the compiler can use a mask to ignore some lanes and just move on. There is no requirement on the compiler for how to implement this. ISPC and Mojo have shown that this model can match a wide range of hardware, while CUDA, OpenCL and friends have shown it deliver well on GPU. It also leaves a lot of freedom to the compiler on how to implement it. This is just a mental model of what a pseudo compiler would do.
 
@@ -65,7 +67,7 @@ Let's look at how **`for`** inside a **`go for`** SPMD context would work. We'll
 
 > NOTE: For simplicity of the example and because I do not want everyone to have to click 32 times in the inner loop, I went with byte and uint8 type here. In a more practical implementation of this function, I should be manipulating int32 directly and write the inner loop test just inside the if  like so **`if v & (1 << it) != 0 {`**. The compiler should be able to match this loop with a popcount instruction if the hardware support it. Basically there is no reason that this would be any slower than a more direct to assembly approach, but it keep its readability in my opinion.
 
-This was a fairly simple **`for`** loop that operate on uniform with the same value for all lanes, but it shows how manipulating the mask enable all the complexity in behavior we could want. We can nest loop, if. We can also implement **`break`** and **`continue`** using just mask.
+This was a fairly simple **`for`** loop that operate on a uniform variable (same value for all lanes), but it shows how manipulating the mask enable all the complexity in behavior we could want. We can nest loop, if. We can also implement **`break`** and **`continue`** using just mask.
 
 ## Divergent Control Flow
 
@@ -81,7 +83,7 @@ This is fundamentally different from traditional SIMD where all lanes must execu
 
 ## Summary
 
-And we have shown that it is possible to extend Go with just a few keyword and make writing data parallel algorithm approachable, more readable and maintainable in my opinion. Let me know if there is anything that need clarification.
+And we have shown that it is possible to extend Go with just a few types in a package and the **`go for`** construct to make writing data parallel algorithm approachable, more readable and maintainable in my opinion. Let me know if there is anything that need clarification.
 
 Adding data parallelism as a first-class feature in Go could make high-performance computing more accessible and portable. By learning from languages like ISPC and Mojo, we can imagine a future where Go code is simple, fast and leverage the full power of modern hardware. Even if Go never adopts these features, understanding them can help you write shader, compute kernel and code for Mojo or ISPC.
 

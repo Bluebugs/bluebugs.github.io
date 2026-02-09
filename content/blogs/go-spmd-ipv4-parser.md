@@ -76,10 +76,10 @@ func parseIPv4(s string) ([4]byte, error) {
     copy(input[:], s)
 
     // Process all 16 lanes in parallel
-    var dotMaskTotal varying[16] uint8
-    var dotMask varying[16] bool
-    var digitMask varying[16] bool
-    var validChars varying[16] bool
+    var dotMaskTotal lanes.Varying[uint8, 16]
+    var dotMask lanes.Varying[bool, 16]
+    var digitMask lanes.Varying[bool, 16]
+    var validChars lanes.Varying[bool, 16]
 
     go for i, c := range[16] input {
         dotMask[i] = c == '.'
@@ -164,7 +164,7 @@ Now we process all four IPv4 octets in parallel, with each lane handling one fie
     // Process all four fields in parallel
     var ip [4]byte
     var errors [4]parseAddrError
-    var hasError varying[4] bool
+    var hasError lanes.Varying[bool, 4]
 
     go for field, start := range starts {
         end := ends[field]

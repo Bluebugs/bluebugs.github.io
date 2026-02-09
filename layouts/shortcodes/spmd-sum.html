@@ -91,7 +91,7 @@
         <div id="spmd-code-pane_sum" class="spmd-code-pane"> <!-- ID Suffix Added, CLASS ADDED -->
             <pre><code id="spmd-go-code_sum"> <!-- ID Suffix Added -->
 <span class="code-line" data-line="1"><span class="gokw">func</span> <span class="gofn">sum</span><span class="gopunct">(</span><span class="govar">a</span> <span class="goty">[]int</span><span class="gopunct">)</span> <span class="goty">int</span> <span class="gopunct">{</span></span>
-<span class="code-line" data-line="2">    <span class="gokw">var</span> <span class="govar">s</span> <span class="gohypo">varying</span> <span class="goty">int</span></span>
+<span class="code-line" data-line="2">    <span class="gokw">var</span> <span class="govar">s</span> <span class="gofn">lanes.Varying</span><span class="gopunct">[</span><span class="goty">int</span><span class="gopunct">]</span></span>
 <span class="code-line" data-line="3">    <span class="gokw">go</span> <span class="gokw">for</span> <span class="govar">_</span><span class="gopunct">,</span> <span class="govar">v</span> <span class="goop">:=</span> <span class="gokw">range</span> <span class="govar">a</span> <span class="gopunct">{</span></span>
 <span class="code-line" data-line="4">        <span class="govar">s</span> <span class="goop">+=</span> <span class="govar">v</span></span>
 <span class="code-line" data-line="5">    <span class="gopunct">}</span></span>
@@ -187,7 +187,7 @@
             },
             { // 1
                 line: 2,
-                description: "<span class='spmd-inline-code'><span class='gokw'>var</span> <span class='govar'>s</span> <span class='gohypo'>varying</span> <span class='goty'>int</span></span>: Each lane gets its own <span class='spmd-inline-code'><span class='govar'>s</span></span> initialized to 0.",
+                description: "<span class='spmd-inline-code'><span class='gokw'>var</span> <span class='govar'>s</span> <span class='gofn'>lanes.Varying</span><span class='gopunct'>[</span><span class='goty'>int</span><span class='gopunct'>]</span></span>: Each lane gets its own <span class='spmd-inline-code'><span class='govar'>s</span></span> initialized to 0.",
                 laneVDisplay: ["-", "-", "-", "-"],
                 laneSDisplay: [0, 0, 0, 0],
                 finalResult: "N/A"

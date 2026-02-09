@@ -9,7 +9,7 @@ SPMD Demo: printfVerb
 <span class="code-line" id="line-1"><span class="gokw">func</span> <span class="gofn">printfVerb</span>(<span class="govar">format</span> <span class="goty">string</span>) <span class="goty">int</span> {</span>
 <span class="code-line" id="line-2">  <span class="govar">i</span> := 0</span>
 <span class="code-line" id="line-3">  <span class="gokw">go</span> <span class="gokw">for</span> <span class="govar">_</span>, <span class="govar">c</span> := <span class="gokw">range</span> <span class="govar">format</span> {</span>
-<span class="code-line" id="line-4">    <span class="govar">check</span> := <span class="govar">c</span> == <span class="gohypo">'%'</span></span>
+<span class="code-line" id="line-4">    <span class="govar">check</span> := <span class="govar">c</span> == <span class="gonum">'%'</span></span>
 <span class="code-line" id="line-5">    <span class="gokw">if</span> <span class="gofn">reduce.Any</span>(<span class="govar">check</span>) {</span>
 <span class="code-line" id="line-6">        <span class="gokw">return</span> <span class="govar">i</span> + <span class="gofn">reduce.FindFirstSet</span>(<span class="govar">check</span>)</span>
 <span class="code-line" id="line-7">    }</span>
@@ -130,7 +130,7 @@ SPMD Demo: printfVerb
         // Initial step
         steps.push({
             line: 1,
-            info: `Calling <code class="spmd-inline-code"><span class="gofn">printfVerb</span>(<span class="gohypo">"Hello %s world"</span>)</code>. Input <code class="spmd-inline-code">format</code> is initialized. Four execution lanes available.`,
+            info: `Calling <code class="spmd-inline-code"><span class="gofn">printfVerb</span>(<span class="gonum">"Hello %s world"</span>)</code>. Input <code class="spmd-inline-code">format</code> is initialized. Four execution lanes available.`,
             c: ['—', '—', '—', '—'],
             check: ['—', '—', '—', '—'],
             iUniform: '---',

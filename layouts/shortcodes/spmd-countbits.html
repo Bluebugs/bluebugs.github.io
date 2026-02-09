@@ -183,7 +183,7 @@
         <div id="spmd-code-pane_countbits" class="spmd-code-pane"> <!-- Added class="spmd-code-pane" -->
             <pre><code id="spmd-go-code_countbits" class="language-go">
 <span class="code-line" data-line="1"><span class="gokw">func</span> <span class="gofn\">countBits</span><span class="gopunct\">(</span><span class="govar\">a</span> <span class="goty">[]byte</span><span class="gopunct\">)</span> <span class="goty">int</span> <span class="gopunct\">{</span></span>
-<span class="code-line" data-line="2">    <span class="gokw">var</span> <span class="govar">c</span> <span class="gohypo">varying</span> <span class="goty">uint8</span></span>
+<span class="code-line" data-line="2">    <span class="gokw">var</span> <span class="govar">c</span> <span class="gofn">lanes.Varying</span><span class="gopunct">[</span><span class="goty">uint8</span><span class="gopunct">]</span></span>
 <span class="code-line" data-line="3">    <span class="gokw">go</span> <span class="gokw">for</span> <span class="govar\\\">_</span><span class="gopunct\">,</span> <span class="govar">v</span> <span class="goop">:=</span> <span class="gokw">range</span> <span class="govar">a</span> <span class="gopunct\">{</span></span>
 <span class="code-line" data-line="4">        <span class="gokw">for</span> <span class="govar">it</span> <span class="goop">:=</span> <span class="gokw">range</span> <span class="gonum">8</span> <span class="gopunct\">{</span></span>
 <span class="code-line" data-line="5">            <span class="govar">offset</span> <span class="goop">:=</span> <span class="gonum">1</span> <span class="goop">&lt;&lt;</span> <span class="govar">it</span></span>
@@ -517,10 +517,10 @@
             uniformOffset: "-"
         });
 
-        // 1: var c varying int
+        // 1: var c lanes.Varying[uint8]
         steps_countbits.push({
             line: lineNumbers.varC,
-            description: `<span class=\"spmd-inline-code\"><span class=\"gokw\">var</span> <span class=\"govar\">c</span> <span class=\"gohypo\">varying</span> <span class=\"goty\">uint8</span></span>: Each lane gets its own <span class=\"spmd-inline-code\"><span class=\"govar\">c</span></span> (bit counter), initialized to 0.`,
+            description: `<span class=\"spmd-inline-code\"><span class=\"gokw\">var</span> <span class=\"govar\">c</span> <span class=\"gofn\">lanes.Varying</span><span class=\"gopunct\">[</span><span class=\"goty\">uint8</span><span class=\"gopunct\">]</span></span>: Each lane gets its own <span class=\"spmd-inline-code\"><span class=\"govar\">c</span></span> (bit counter), initialized to 0.`,
             laneVDisplay: ["-", "-", "-", "-"],
             laneCDisplay: [...cumulativeC_countbits],
             laneBitCheckDisplay: ["-", "-", "-", "-"],

@@ -5,23 +5,23 @@
         <div class="spmd-code-pane">
             <pre><code id="spmd-go-code_toupper" class="language-go">
 <span class="code-line" id="line-1"><span class="gokw">func</span> <span class="gofn">ToUpper</span><span class="gopunct">(</span><span class="govar">s</span> <span class="goty">[]byte</span><span class="gopunct">)</span> <span class="goty">[]byte</span> <span class="gopunct">{</span></span>
-<span class="code-line" id="line-2">    <span class="gokw">var</span> <span class="govar">hasLower</span> <span class="gohypo">varying</span> <span class="goty">bool</span></span>
+<span class="code-line" id="line-2">    <span class="gokw">var</span> <span class="govar">hasLower</span> <span class="gofn">lanes.Varying</span><span class="gopunct">[</span><span class="goty">bool</span><span class="gopunct">]</span></span>
 <span class="code-line" id="line-3">    <span class="govar">isASCII</span> <span class="goop">:=</span> <span class="gonum">true</span></span>
 <span class="code-line" id="line-4">    <span class="gokw">go</span> <span class="gokw">for</span> <span class="govar">_</span><span class="gopunct">,</span> <span class="govar">c</span> <span class="goop">:=</span> <span class="gokw">range</span> <span class="govar">s</span> <span class="gopunct">{</span></span>
 <span class="code-line" id="line-5">        <span class="gokw">if</span> <span class="gofn">reduce.Any</span><span class="gopunct">(</span><span class="govar">c</span> <span class="goop">>=</span> <span class="govar">utf8.RuneSelf</span><span class="gopunct">)</span> <span class="gopunct">{</span></span>
 <span class="code-line" id="line-6">            <span class="govar">isASCII</span> <span class="goop">=</span> <span class="gonum">false</span></span>
 <span class="code-line" id="line-7">            <span class="gokw">break</span></span>
 <span class="code-line" id="line-8">        <span class="gopunct">}</span></span>
-<span class="code-line" id="line-9">        <span class="govar">hasLower</span> <span class="goop">=</span> <span class="govar">hasLower</span> <span class="goop">||</span> <span class="gopunct">(</span><span class="gohypo">'a'</span> <span class="goop"><=</span> <span class="govar">c</span> <span class="goop">&&</span> <span class="govar">c</span> <span class="goop"><=</span> <span class="gohypo">'z'</span><span class="gopunct">)</span></span>
+<span class="code-line" id="line-9">        <span class="govar">hasLower</span> <span class="goop">=</span> <span class="govar">hasLower</span> <span class="goop">||</span> <span class="gopunct">(</span><span class="gonum">'a'</span> <span class="goop"><=</span> <span class="govar">c</span> <span class="goop">&&</span> <span class="govar">c</span> <span class="goop"><=</span> <span class="gonum">'z'</span><span class="gopunct">)</span></span>
 <span class="code-line" id="line-10">    <span class="gopunct">}</span></span>
 <span class="code-line" id="line-11">    <span class="gokw">if</span> <span class="govar">isASCII</span> <span class="gopunct">{</span> <span class="gocomment">// optimize for ASCII-only byte slices.</span></span>
 <span class="code-line" id="line-12">        <span class="gokw">if</span> <span class="gofn">reduce.All</span><span class="gopunct">(</span><span class="goop">!</span><span class="govar">hasLower</span><span class="gopunct">)</span> <span class="gopunct">{</span></span>
-<span class="code-line" id="line-13">            <span class="gokw">return</span> <span class="gofn">append</span><span class="gopunct">(</span><span class="goty">[]byte</span><span class="gopunct">(</span><span class="gohypo">""</span><span class="gopunct">),</span> <span class="govar">s</span><span class="gopunct">...)</span></span>
+<span class="code-line" id="line-13">            <span class="gokw">return</span> <span class="gofn">append</span><span class="gopunct">(</span><span class="goty">[]byte</span><span class="gopunct">(</span><span class="gonum">""</span><span class="gopunct">),</span> <span class="govar">s</span><span class="gopunct">...)</span></span>
 <span class="code-line" id="line-14">        <span class="gopunct">}</span></span>
 <span class="code-line" id="line-15">        <span class="govar">b</span> <span class="goop">:=</span> <span class="gofn">bytealg.MakeNoZero</span><span class="gopunct">(</span><span class="gofn">len</span><span class="gopunct">(</span><span class="govar">s</span><span class="gopunct">))[:</span><span class="gofn">len</span><span class="gopunct">(</span><span class="govar">s</span><span class="gopunct">):</span><span class="gofn">len</span><span class="gopunct">(</span><span class="govar">s</span><span class="gopunct">)]</span></span>
 <span class="code-line" id="line-16">        <span class="gokw">go</span> <span class="gokw">for</span> <span class="govar">i</span><span class="gopunct">,</span> <span class="govar">c</span> <span class="goop">:=</span> <span class="gokw">range</span> <span class="govar">s</span> <span class="gopunct">{</span></span>
-<span class="code-line" id="line-17">            <span class="gokw">if</span> <span class="gohypo">'a'</span> <span class="goop"><=</span> <span class="govar">c</span> <span class="goop">&&</span> <span class="govar">c</span> <span class="goop"><=</span> <span class="gohypo">'z'</span> <span class="gopunct">{</span></span>
-<span class="code-line" id="line-18">                <span class="govar">c</span> <span class="goop">-=</span> <span class="gohypo">'a'</span> <span class="goop">-</span> <span class="gohypo">'A'</span></span>
+<span class="code-line" id="line-17">            <span class="gokw">if</span> <span class="gonum">'a'</span> <span class="goop"><=</span> <span class="govar">c</span> <span class="goop">&&</span> <span class="govar">c</span> <span class="goop"><=</span> <span class="gonum">'z'</span> <span class="gopunct">{</span></span>
+<span class="code-line" id="line-18">                <span class="govar">c</span> <span class="goop">-=</span> <span class="gonum">'a'</span> <span class="goop">-</span> <span class="gonum">'A'</span></span>
 <span class="code-line" id="line-19">            <span class="gopunct">}</span></span>
 <span class="code-line" id="line-20">            <span class="govar">b</span><span class="gopunct">[</span><span class="govar">i</span><span class="gopunct">]</span> <span class="goop">=</span> <span class="govar">c</span></span>
 <span class="code-line" id="line-21">        <span class="gopunct">}</span></span>
@@ -195,7 +195,7 @@
         // Variable initialization
         steps.push({
             line: 2,
-            info: `Variables are initialized: <code class="spmd-inline-code"><span class="govar">hasLower</span></code> is a <code class="spmd-inline-code"><span class="gohypo">varying</span> <span class="goty">bool</span></code> (starts as false in all lanes), <code class="spmd-inline-code"><span class="govar">isASCII</span></code> is initialized to true.`,
+            info: `Variables are initialized: <code class="spmd-inline-code"><span class="govar">hasLower</span></code> is a <code class="spmd-inline-code"><span class="gofn">lanes.Varying</span><span class="gopunct">[</span><span class="goty">bool</span><span class="gopunct">]</span></code> (starts as false in all lanes), <code class="spmd-inline-code"><span class="govar">isASCII</span></code> is initialized to true.`,
             lanes: {
                 c: Array(4).fill('---'),
                 hasLower: Array(4).fill('false'),

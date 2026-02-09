@@ -85,8 +85,8 @@ decodedChunks := shiftedLo | lanes.Rotate(shiftedHi, 1)
 ### 3. Output Pattern: Selective Extraction
 
 ```go
-func outputPattern() varying[4] uint8 {
- var r varying[4] uint8
+func outputPattern() lanes.Varying[uint8, 4] {
+ var r lanes.Varying[uint8, 4]
  go for i := range[4] {
   r[i] = uint8(i + i/3) // Creates: [0,1,2,4]
  }
@@ -106,7 +106,7 @@ output := lanes.Swizzle(decodedChunks, pattern)
 Now let's see how these operations work together in the complete `decodeChunk` function:
 
 ```go
-func decodeChunk(ascii varying[4] byte, pattern varying[4] uint8) ([]byte, bool) {
+func decodeChunk(ascii lanes.Varying[byte, 4], pattern lanes.Varying[uint8, 4]) ([]byte, bool) {
  // Step 1: Perfect hash function for table indexing
  hashes := lanes.ShiftRight(ascii, 4) 
  if ascii == '/' {
@@ -136,8 +136,8 @@ func decodeChunk(ascii varying[4] byte, pattern varying[4] uint8) ([]byte, bool)
  shiftPattern := lanes.From([]uint16{2, 4, 6, 8})
  shifted := lanes.ShiftLeft(sextets, shiftPattern)
  
- shiftedLo := varying[4] byte(shifted)
- shiftedHi := varying[4] byte(lanes.ShiftRight(shifted, 8))
+ shiftedLo := lanes.Varying[byte, 4](shifted)
+ shiftedHi := lanes.Varying[byte, 4](lanes.ShiftRight(shifted, 8))
  decodedChunks := shiftedLo | lanes.Rotate(shiftedHi, 1)
 
  // Step 5: Extract final 3 bytes using output pattern (Swizzle)
@@ -148,11 +148,11 @@ func decodeChunk(ascii varying[4] byte, pattern varying[4] uint8) ([]byte, bool)
 
 ## Why Multiple-of-4 Lane Counts Matter
 
-Notice the explicit `varying[4]` types throughout the code. This isn't arbitrary—base64's 4-to-3 conversion requires lane counts that are multiples of 4. The cross-lane operations work correctly with any multiple of 4 because:
+Notice the explicit `lanes.Varying[T, 4]` types throughout the code. This isn't arbitrary—base64's 4-to-3 conversion requires lane counts that are multiples of 4. The cross-lane operations work correctly with any multiple of 4 because:
 
 The **Output patterns** maintain the 4:3 ratio across lane groups, discarding the fourth byte that could be "contaminated" by rotation or shift operation. It is this pattern that make this algorithm work for any multiple of 4 lanes.
 
-By specifying `varying[4]`, we tell the compiler: "Process data in groups of 4. If the hardware has 8 lanes, run two groups in parallel. If it has 16 lanes, run four groups simultaneously. If it has fewer than 4 lanes, unroll the loop and interleave operations to ensure each step has the required 4 elements ready for processing.
+By specifying `lanes.Varying[T, 4]`, we tell the compiler: "Process data in groups of 4. If the hardware has 8 lanes, run two groups in parallel. If it has 16 lanes, run four groups simultaneously. If it has fewer than 4 lanes, unroll the loop and interleave operations to ensure each step has the required 4 elements ready for processing.
 
 This allow supporting all hardware with the same code. Relying on compiler to provide portability, but also readability and maintainability while not sacrificing performance.
 

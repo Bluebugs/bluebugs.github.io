@@ -35,7 +35,7 @@ func Decode(ascii []byte) ([]byte, bool) {
 // decode decodes `ascii` as base64. Returns the results of the decoding in the low
 // 3/4 of the returned vector, as well as whether decoding completed successfully.
 // Direct translation of: pub fn decode<const N: usize>(ascii: Simd<u8, N>) -> (Simd<u8, N>, bool)
-func decodeChunk(ascii varying[4] byte, pattern varying[4] uint8) ([]byte, bool) {
+func decodeChunk(ascii lanes.Varying[byte, 4], pattern lanes.Varying[uint8, 4]) ([]byte, bool) {
 	// Perfect hash function: (c >> 4) - (c == '/')
 	// This maps the five base64 categories as such:
 	//   A..=Z => 4 or 5,
@@ -97,8 +97,8 @@ func decodeChunk(ascii varying[4] byte, pattern varying[4] uint8) ([]byte, bool)
 
 	// let lo = shifted.cast::<u8>();
 	// let hi = (shifted >> Simd::splat(8)).cast::<u8>();
-	shiftedLo := varying[4] byte(shifted)
-	shiftedHi := varying[4] byte(lanes.ShiftRight(shifted, 8))
+	shiftedLo := lanes.Varying[byte, 4](shifted)
+	shiftedHi := lanes.Varying[byte, 4](lanes.ShiftRight(shifted, 8))
 
 	// let decoded_chunks = lo | hi.rotate_lanes_left::<1>();
 	decodedChunks := shiftedLo | lanes.Rotate(shiftedHi, 1)
@@ -110,8 +110,8 @@ func decodeChunk(ascii varying[4] byte, pattern varying[4] uint8) ([]byte, bool)
 	return []byte(output), valid
 }
 
-func outputPattern() varying[4] uint8 {
-	var r varying[4] uint8
+func outputPattern() lanes.Varying[uint8, 4] {
+	var r lanes.Varying[uint8, 4]
 	go for i := range[4] {
 		r[i] = uint8(i + i/3)
 	}
