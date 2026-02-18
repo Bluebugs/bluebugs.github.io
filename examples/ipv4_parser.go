@@ -54,7 +54,7 @@ func parseIPv4(s string) ([4]byte, error) {
 		return [4]byte{}, parseAddrError{in: s, at: reduce.FindFirstSet(validChars), msg: "unexpected character"}
 	}
 
-	dotCount := reduce.Sum(dotMaskTotal)
+	dotCount := reduce.Add(dotMaskTotal)
 	if dotCount != 3 {
 		return [4]byte{}, parseAddrError{in: s, msg: "invalid dot count"}
 	}

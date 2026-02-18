@@ -110,7 +110,7 @@ We use reduction operations to aggregate validation results across all lanes:
     }
 
     // Count dots using reduction
-    dotCount := reduce.Sum(dotMaskTotal)
+    dotCount := reduce.Add(dotMaskTotal)
     if dotCount != 3 {
         return [4]byte{}, parseAddrError{in: s, msg: "invalid dot count"}
     }
