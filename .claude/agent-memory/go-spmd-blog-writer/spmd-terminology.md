@@ -24,8 +24,7 @@
   - `lanes.Index()`: Current lane index
   - `lanes.Broadcast(value, lane)`: Broadcast from one lane
   - `lanes.Rotate(value, offset)`: Rotate values across lanes
-  - `lanes.Shuffle(value, indices)`: Arbitrary permutation
-  - `lanes.Swizzle(data, indices)`: Parallel table lookup
+  - `lanes.Swizzle(value, indices)`: Arbitrary permutation / parallel table lookup
   - `lanes.ShiftRight(value, amount)`: Bitwise shift right
   - `lanes.ShiftLeft(value, amount)`: Bitwise shift left
   - `lanes.From(slice)`: Create varying from slice
