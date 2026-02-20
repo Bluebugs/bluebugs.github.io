@@ -1,0 +1,324 @@
+<style>
+    #spmd-demo_mandelbrot {
+        display: flex;
+        flex-direction: column;
+        font-family: sans-serif;
+        border: 1px solid #ccc;
+        padding: 20px;
+        max-width: 900px;
+        margin: 20px auto;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    #spmd-demo_mandelbrot h3 {
+        margin: 0 0 12px 0;
+        color: #333;
+        text-align: center;
+    }
+
+    #spmd-simd-badge_mandelbrot {
+        text-align: center;
+        margin-bottom: 16px;
+        font-size: 0.85em;
+        font-weight: 600;
+    }
+
+    #spmd-simd-badge_mandelbrot .badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 12px;
+        color: #fff;
+    }
+
+    #spmd-simd-badge_mandelbrot .badge-ok {
+        background-color: #28a745;
+    }
+
+    #spmd-simd-badge_mandelbrot .badge-warn {
+        background-color: #e67e22;
+    }
+
+    #spmd-simd-badge_mandelbrot .badge-err {
+        background-color: #dc3545;
+    }
+
+    #spmd-canvases_mandelbrot {
+        display: flex;
+        gap: 24px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .spmd-canvas-col_mandelbrot {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .spmd-canvas-col_mandelbrot h4 {
+        margin: 0 0 8px 0;
+        color: #555;
+        font-size: 0.95em;
+    }
+
+    .spmd-canvas-col_mandelbrot canvas {
+        width: 300px;
+        height: 300px;
+        image-rendering: pixelated;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background-color: #000;
+    }
+
+    .spmd-canvas-col_mandelbrot .timing {
+        margin-top: 6px;
+        font-size: 0.9em;
+        color: #555;
+        font-variant-numeric: tabular-nums;
+        min-height: 1.4em;
+    }
+
+    #spmd-speedup_mandelbrot {
+        text-align: center;
+        margin-top: 12px;
+        font-size: 1.1em;
+        font-weight: 600;
+        color: #007bff;
+        min-height: 1.4em;
+    }
+
+    #spmd-controls_mandelbrot {
+        text-align: center;
+        margin-top: 16px;
+    }
+
+    #spmd-run-btn_mandelbrot {
+        padding: 10px 28px;
+        font-size: 1em;
+        font-weight: 600;
+        color: #fff;
+        background-color: #007bff;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.15s;
+    }
+
+    #spmd-run-btn_mandelbrot:hover:not(:disabled) {
+        background-color: #0056b3;
+    }
+
+    #spmd-run-btn_mandelbrot:disabled {
+        background-color: #999;
+        cursor: not-allowed;
+    }
+
+    .spmd-canvas-col_mandelbrot.disabled canvas {
+        opacity: 0.35;
+    }
+
+    .spmd-canvas-col_mandelbrot.disabled h4 {
+        color: #aaa;
+    }
+
+    @media (max-width: 768px) {
+        #spmd-canvases_mandelbrot {
+            flex-direction: column;
+            align-items: center;
+        }
+    }
+</style>
+
+<div id="spmd-demo_mandelbrot">
+    <h3>Mandelbrot Set: Serial vs SPMD</h3>
+    <div id="spmd-simd-badge_mandelbrot"></div>
+
+    <div id="spmd-canvases_mandelbrot">
+        <div class="spmd-canvas-col_mandelbrot" id="spmd-serial-col_mandelbrot">
+            <h4>Serial (scalar)</h4>
+            <canvas id="spmd-canvas-serial_mandelbrot" width="256" height="256"></canvas>
+            <div class="timing" id="spmd-time-serial_mandelbrot"></div>
+        </div>
+        <div class="spmd-canvas-col_mandelbrot" id="spmd-spmd-col_mandelbrot">
+            <h4>SPMD (4-wide SIMD)</h4>
+            <canvas id="spmd-canvas-spmd_mandelbrot" width="256" height="256"></canvas>
+            <div class="timing" id="spmd-time-spmd_mandelbrot"></div>
+        </div>
+    </div>
+
+    <div id="spmd-speedup_mandelbrot"></div>
+
+    <div id="spmd-controls_mandelbrot">
+        <button id="spmd-run-btn_mandelbrot">Run Benchmark</button>
+    </div>
+</div>
+
+<script src="/wasm/wasm_exec.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const badge     = document.getElementById('spmd-simd-badge_mandelbrot');
+    const btn       = document.getElementById('spmd-run-btn_mandelbrot');
+    const serialCol = document.getElementById('spmd-serial-col_mandelbrot');
+    const spmdCol   = document.getElementById('spmd-spmd-col_mandelbrot');
+    const canvasS   = document.getElementById('spmd-canvas-serial_mandelbrot');
+    const canvasSP  = document.getElementById('spmd-canvas-spmd_mandelbrot');
+    const timeS     = document.getElementById('spmd-time-serial_mandelbrot');
+    const timeSP    = document.getElementById('spmd-time-spmd_mandelbrot');
+    const speedupEl = document.getElementById('spmd-speedup_mandelbrot');
+
+    const W = 256, H = 256, MAX_ITER = 256;
+
+    // --- SIMD detection ---
+    let hasWasm = typeof WebAssembly === 'object' && typeof WebAssembly.validate === 'function';
+    let hasSimd = false;
+    if (hasWasm) {
+        // Minimal WASM module that uses a v128 instruction
+        const simdTest = new Uint8Array([
+            0x00,0x61,0x73,0x6d, 0x01,0x00,0x00,0x00,
+            0x01,0x05,0x01, 0x60,0x00,0x01,0x7b,
+            0x03,0x02,0x01,0x00,
+            0x0a,0x0a,0x01, 0x08,0x00,0x41,0x00,0xfd,0x00,0x00,0x00,0x0b
+        ]);
+        try { hasSimd = WebAssembly.validate(simdTest); } catch(e) { hasSimd = false; }
+    }
+
+    if (!hasWasm) {
+        badge.innerHTML = '<span class="badge badge-err">WebAssembly not supported</span>';
+        btn.disabled = true;
+        return;
+    }
+    if (hasSimd) {
+        badge.innerHTML = '<span class="badge badge-ok">Browser supports WASM SIMD</span>';
+    } else {
+        badge.innerHTML = '<span class="badge badge-warn">No WASM SIMD &mdash; SPMD column will be skipped</span>';
+        spmdCol.classList.add('disabled');
+    }
+
+    // --- WASM loading ---
+    let serialInst = null, spmdInst = null;
+    let serialGo = null, spmdGo = null;
+    let isRunning = false;
+
+    async function loadWasm(url) {
+        const go = new Go();
+        const result = await WebAssembly.instantiateStreaming(fetch(url), go.importObject);
+        const inst = result.instance;
+        go._inst = inst;
+        // TinyGo WASI modules export _start which calls proc_exit(0) after
+        // main() returns. proc_exit throws to unwind, so we catch it here.
+        // After this, globals are initialized and exports are callable.
+        try { inst.exports._start(); } catch (e) { /* expected proc_exit */ }
+        return { instance: inst, go: go };
+    }
+
+    async function ensureLoaded() {
+        if (!serialInst) {
+            const s = await loadWasm('/wasm/mandelbrot-serial.wasm');
+            serialInst = s.instance;
+            serialGo = s.go;
+        }
+        if (hasSimd && !spmdInst) {
+            const s = await loadWasm('/wasm/mandelbrot-spmd.wasm');
+            spmdInst = s.instance;
+            spmdGo = s.go;
+        }
+    }
+
+    // --- Rendering ---
+    function iterToRGBA(iter, maxIter) {
+        if (iter >= maxIter) return [0, 0, 0, 255]; // in the set = black
+
+        // HSL to RGB, hue from iteration count
+        const hue = (iter / maxIter) * 360;
+        const sat = 0.8, lit = 0.5;
+        const c = (1 - Math.abs(2 * lit - 1)) * sat;
+        const x = c * (1 - Math.abs((hue / 60) % 2 - 1));
+        const m = lit - c / 2;
+        let r, g, b;
+        if (hue < 60)       { r = c; g = x; b = 0; }
+        else if (hue < 120) { r = x; g = c; b = 0; }
+        else if (hue < 180) { r = 0; g = c; b = x; }
+        else if (hue < 240) { r = 0; g = x; b = c; }
+        else if (hue < 300) { r = x; g = 0; b = c; }
+        else                { r = c; g = 0; b = x; }
+        return [
+            Math.round((r + m) * 255),
+            Math.round((g + m) * 255),
+            Math.round((b + m) * 255),
+            255
+        ];
+    }
+
+    function paintCanvas(canvas, wasmInstance) {
+        const ctx = canvas.getContext('2d');
+        const ptr = wasmInstance.exports.getBufferPtr();
+        const len = wasmInstance.exports.getBufferLen();
+        const data = new Int32Array(wasmInstance.exports.memory.buffer, ptr, len);
+        const img = ctx.createImageData(W, H);
+        for (let i = 0; i < len; i++) {
+            const [r, g, b, a] = iterToRGBA(data[i], MAX_ITER);
+            img.data[i * 4]     = r;
+            img.data[i * 4 + 1] = g;
+            img.data[i * 4 + 2] = b;
+            img.data[i * 4 + 3] = a;
+        }
+        ctx.putImageData(img, 0, 0);
+    }
+
+    // --- Benchmark ---
+    btn.addEventListener('click', async () => {
+        if (isRunning) return;
+        isRunning = true;
+        btn.disabled = true;
+        btn.textContent = 'Loading...';
+        timeS.textContent = '';
+        timeSP.textContent = '';
+        speedupEl.textContent = '';
+
+        try {
+            await ensureLoaded();
+
+            // --- Serial ---
+            btn.textContent = 'Computing Serial...';
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+            const t0s = performance.now();
+            serialInst.exports.computeMandelbrot(W, H, MAX_ITER);
+            const serialMs = performance.now() - t0s;
+
+            paintCanvas(canvasS, serialInst);
+            timeS.textContent = 'Serial: ' + serialMs.toFixed(1) + ' ms';
+
+            // Yield so the browser paints the serial canvas before blocking on SPMD
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+            // --- SPMD ---
+            if (hasSimd && spmdInst) {
+                btn.textContent = 'Computing SPMD...';
+                await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+                const t0p = performance.now();
+                spmdInst.exports.computeMandelbrot(W, H, MAX_ITER);
+                const spmdMs = performance.now() - t0p;
+
+                paintCanvas(canvasSP, spmdInst);
+                timeSP.textContent = 'SPMD: ' + spmdMs.toFixed(1) + ' ms';
+
+                const speedup = serialMs / spmdMs;
+                speedupEl.textContent = 'Speedup: ' + speedup.toFixed(1) + 'x';
+            } else {
+                timeSP.textContent = 'SIMD not available';
+            }
+        } catch (err) {
+            console.error('Mandelbrot benchmark error:', err);
+            speedupEl.textContent = 'Error: ' + err.message;
+        } finally {
+            btn.textContent = 'Run Benchmark';
+            btn.disabled = false;
+            isRunning = false;
+        }
+    });
+});
+</script>
