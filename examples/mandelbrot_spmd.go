@@ -12,17 +12,17 @@ const bufSize = 256 * 256
 
 var buf [bufSize]int32
 
-func mandelSPMD(cRe, cIm lanes.Varying[float32], maxIter int) lanes.Varying[int] {
+func mandelSPMD(cRe, cIm lanes.Varying[float32], maxIter int) lanes.Varying[int32] {
 	var zRe lanes.Varying[float32] = cRe
 	var zIm lanes.Varying[float32] = cIm
-	var iterations lanes.Varying[int] = maxIter
+	var iterations lanes.Varying[int32] = int32(maxIter)
 
 	for iter := range maxIter {
 		magSquared := zRe*zRe + zIm*zIm
 		diverged := magSquared > 4.0
 
 		if diverged {
-			iterations = iter
+			iterations = int32(iter)
 			break
 		}
 
@@ -35,7 +35,7 @@ func mandelSPMD(cRe, cIm lanes.Varying[float32], maxIter int) lanes.Varying[int]
 	return iterations
 }
 
-func mandelbrotSPMD(x0, y0, x1, y1 float32, width, height, maxIter int, output []int) {
+func mandelbrotSPMD(x0, y0, x1, y1 float32, width, height, maxIter int, output []int32) {
 	dx := (x1 - x0) / float32(width)
 	dy := (y1 - y0) / float32(height)
 
@@ -51,16 +51,9 @@ func mandelbrotSPMD(x0, y0, x1, y1 float32, width, height, maxIter int, output [
 	}
 }
 
-// Shared output buffer for int → int32 conversion
-var intBuf [bufSize]int
-
 //go:export computeMandelbrot
 func computeMandelbrot(width, height, maxIter int32) {
-	mandelbrotSPMD(-2.5, -1.25, 1.5, 1.25, int(width), int(height), int(maxIter), intBuf[:])
-	// Copy int results to int32 buffer for JavaScript
-	for i := 0; i < int(width)*int(height); i++ {
-		buf[i] = int32(intBuf[i])
-	}
+	mandelbrotSPMD(-2.5, -1.25, 1.5, 1.25, int(width), int(height), int(maxIter), buf[:])
 }
 
 //go:export getBufferPtr
