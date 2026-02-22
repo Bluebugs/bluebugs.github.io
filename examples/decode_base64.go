@@ -11,15 +11,15 @@ func Decode(ascii []byte) ([]byte, bool) {
 	if len(ascii) == 0 {
 		return nil, true // No data to decode
 	}
-	if len(ascii) % 4 != 0 {
+	if len(ascii)%4 != 0 {
 		return nil, false // Base64 requires input length to be a multiple of 4 (could do with padding)
 	}
 
-	decoded := make([]byte, 0, len(ascii) * 3 / 4)
+	decoded := make([]byte, 0, len(ascii)*3/4)
 
 	pattern := outputPattern()
 
-	go for _, v := range[4] ascii {
+	go for _, v := range ascii {
 		decodedChunk, valid := decodeChunk(v, pattern)
 		if !valid {
 			return nil, false // Invalid base64 input
@@ -31,11 +31,10 @@ func Decode(ascii []byte) ([]byte, bool) {
 	return decoded, true
 }
 
-
 // decode decodes `ascii` as base64. Returns the results of the decoding in the low
 // 3/4 of the returned vector, as well as whether decoding completed successfully.
 // Direct translation of: pub fn decode<const N: usize>(ascii: Simd<u8, N>) -> (Simd<u8, N>, bool)
-func decodeChunk(ascii lanes.Varying[byte, 4], pattern lanes.Varying[uint8, 4]) ([]byte, bool) {
+func decodeChunk(ascii lanes.Varying[byte], pattern lanes.Varying[uint8]) ([]byte, bool) {
 	// Perfect hash function: (c >> 4) - (c == '/')
 	// This maps the five base64 categories as such:
 	//   A..=Z => 4 or 5,
@@ -43,12 +42,12 @@ func decodeChunk(ascii lanes.Varying[byte, 4], pattern lanes.Varying[uint8, 4]) 
 	//   0..=9 => 3,
 	//   +     => 2,
 	//   /     => 1,
-	
+
 	// let hashes = (ascii >> Simd::splat(4))
 	//   + Simd::simd_eq(ascii, Simd::splat(b'/'))
 	//     .to_int()
 	//     .cast::<u8>();
-	hashes := lanes.ShiftRight(ascii, 4) 
+	hashes := lanes.ShiftRight(ascii, 4)
 	if ascii == '/' {
 		hashes += 1
 	} else {
@@ -57,9 +56,9 @@ func decodeChunk(ascii lanes.Varying[byte, 4], pattern lanes.Varying[uint8, 4]) 
 
 	// let sextets = ascii + tiled(&[!0, 16, 19, 4, 191, 191, 185, 185]).swizzle_dyn(hashes);
 	offsetTable := []byte{255, 16, 19, 4, 191, 191, 185, 185} // !0 = 255
-	offsets := lanes.Swizzle(lanes.From(offsetTable), hashes)
+	offsets := lanes.SwizzleWithin(lanes.From(offsetTable), hashes, 8)
 	sextets := ascii + offsets
-	
+
 	// Range validation using lookup tables
 	// const LO_LUT: Simd<u8, 16> = Simd::from_array([
 	//   0b10101, 0b10001, 0b10001, 0b10001, 0b10001, 0b10001, 0b10001, 0b10001,
@@ -81,40 +80,40 @@ func decodeChunk(ascii lanes.Varying[byte, 4], pattern lanes.Varying[uint8, 4]) 
 
 	// let lo = swizzle::<16, N>(LO_LUT, ascii & Simd::splat(0x0f));
 	// let hi = swizzle::<16, N>(HI_LUT, ascii >> Simd::splat(4));
-	lo := lanes.Swizzle(loLUT, ascii & 0x0f)
-	hi := lanes.Swizzle(hiLUT, lanes.ShiftRight(ascii, 4))
+	lo := lanes.SwizzleWithin(loLUT, ascii&0x0f, 16)
+	hi := lanes.SwizzleWithin(hiLUT, lanes.ShiftRight(ascii, 4), 16)
 
 	// let valid = (lo & hi).reduce_or() == 0;
-	valid := reduce.Or(lo & hi) == 0
-	
+	valid := reduce.Or(lo&hi) == 0
+
 	// Now we need to shift everything a little bit, since each byte has two high
 	// bits it shouldn't that we need to delete. This follows the complex bit
 	// manipulation from the Rust implementation:
-	
+
 	// let shifted = sextets.cast::<u16>() << tiled(&[2, 4, 6, 8]);
 	shiftPattern := lanes.From([]uint16{2, 4, 6, 8})
-	shifted := lanes.ShiftLeft(sextets, shiftPattern)
+	shifted := lanes.ShiftLeftWithin(sextets, shiftPattern, 4)
 
 	// let lo = shifted.cast::<u8>();
 	// let hi = (shifted >> Simd::splat(8)).cast::<u8>();
-	shiftedLo := lanes.Varying[byte, 4](shifted)
-	shiftedHi := lanes.Varying[byte, 4](lanes.ShiftRight(shifted, 8))
+	shiftedLo := lanes.Varying[byte](shifted)
+	shiftedHi := lanes.Varying[byte](lanes.ShiftRight(shifted, 8))
 
 	// let decoded_chunks = lo | hi.rotate_lanes_left::<1>();
-	decodedChunks := shiftedLo | lanes.Rotate(shiftedHi, 1)
+	decodedChunks := shiftedLo | lanes.RotateWithin(shiftedHi, 1, 4)
 
 	// let output = swizzle!(N; decoded_chunks, array!(N; |i| i + i / 3));
 	// The output pattern is skipping every 4th byte, which is why we use `i + i / 3`.
-	output := lanes.Swizzle(decodedChunks, pattern)
+	output := lanes.SwizzleWithin(decodedChunks, pattern, 4)
 
 	return []byte(output), valid
 }
 
-func outputPattern() lanes.Varying[uint8, 4] {
-	var r lanes.Varying[uint8, 4]
-	go for i := range[4] {
+func outputPattern() lanes.Varying[uint8] {
+	count := lanes.Count[uint8]()
+	var r lanes.Varying[uint8]
+	go for i := range count {
 		r[i] = uint8(i + i/3)
 	}
 	return r
 }
-

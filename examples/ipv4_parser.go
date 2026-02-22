@@ -1,4 +1,4 @@
-// Package main demonstrates SPMD IPv4 address parsing using 16-lane processing
+// Package main demonstrates SPMD IPv4 address parsing using parallel processing
 // Based on: https://github.com/WojciechMula/toys/blob/master/parseip4/sse_v7.cpp.inl
 package main
 
@@ -22,7 +22,7 @@ func (e parseAddrError) Error() string {
 	return fmt.Sprintf("parse %q: %s", e.in, e.msg)
 }
 
-// parseIPv4 processes IPv4 addresses using 16-lane SPMD similar to Wojciech's SSE approach
+// parseIPv4 processes IPv4 addresses using SPMD similar to Wojciech's SSE approach
 func parseIPv4(s string) ([4]byte, error) {
 	if len(s) < 7 || len(s) > 15 {
 		return [4]byte{}, parseAddrError{in: s, msg: "IPv4 address string too short or too long"}
@@ -32,19 +32,19 @@ func parseIPv4(s string) ([4]byte, error) {
 	input := [16]byte{}
 	copy(input[:], s)
 
-	// Process all 16 lanes in parallel
-	var dotMaskTotal lanes.Varying[uint8, 16]
-	var dotMask lanes.Varying[bool, 16]
-	var digitMask lanes.Varying[bool, 16]
-	var validChars lanes.Varying[bool, 16]
+	// Process all bytes in parallel
+	var dotMaskTotal lanes.Varying[uint8]
+	var dotMask lanes.Varying[bool]
+	var digitMask lanes.Varying[bool]
+	var validChars lanes.Varying[bool]
 
-	go for i, c := range[16] input {
+	go for i, c := range input {
 		dotMask[i] = c == '.'
 		if dotMask[i] {
 			dotMaskTotal[i] = 1
 		}
 		digitMask[i] = (c >= '0' && c <= '9')
-		
+
 		// Valid if dot, digit, or null (padding)
 		validChars[i] = dotMask[i] || digitMask[i] || c == 0
 	}
@@ -87,10 +87,10 @@ func parseIPv4(s string) ([4]byte, error) {
 		}
 	}
 
-	// Process all four fields in parallel using 4-lane processing
+	// Process all four fields in parallel
 	var ip [4]byte
 	var errors [4]parseAddrError
-	var hasError lanes.Varying[bool, 4]
+	var hasError lanes.Varying[bool]
 
 	go for field, start := range starts {
 		end := ends[field]

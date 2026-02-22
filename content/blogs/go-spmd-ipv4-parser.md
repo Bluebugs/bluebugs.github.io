@@ -75,27 +75,27 @@ func parseIPv4(s string) ([4]byte, error) {
     input := [16]byte{}
     copy(input[:], s)
 
-    // Process all 16 lanes in parallel
-    var dotMaskTotal lanes.Varying[uint8, 16]
-    var dotMask lanes.Varying[bool, 16]
-    var digitMask lanes.Varying[bool, 16]
-    var validChars lanes.Varying[bool, 16]
+    // Process all 16 bytes in parallel
+    var dotMaskTotal lanes.Varying[uint8]
+    var dotMask lanes.Varying[bool]
+    var digitMask lanes.Varying[bool]
+    var validChars lanes.Varying[bool]
 
-    go for i, c := range[16] input {
+    go for i, c := range input {
         dotMask[i] = c == '.'
         if dotMask[i] {
             dotMaskTotal[i] = 1
         }
         digitMask[i] = (c >= '0' && c <= '9')
-        
+
         // Valid if dot, digit, or null (padding)
         validChars[i] = dotMask[i] || digitMask[i] || c == 0
     }
 ```
 
-This parallel analysis validates all characters simultaneously and creates boolean masks for dots and digits—a direct adaptation of Muła's SIMD character classification.
+This parallel analysis validates all characters simultaneously and creates boolean masks for dots and digits -- a direct adaptation of Mula's SIMD character classification.
 
-The key insight here is the **padding strategy**: since we process exactly 16 lanes using `range[16] input`, we need a consistent 16-byte input. The `input := [16]byte{}` creates a zero-initialized array, and `copy(input[:], s)` fills it with the IPv4 string, leaving trailing zeros as padding. The validation logic `validChars[i] = dotMask[i] || digitMask[i] || c == 0` explicitly accepts null padding, making shorter IPv4 addresses work seamlessly with 16-lane processing.
+The key insight here is the **padding strategy**: since we process the fixed-size `[16]byte` array in SPMD fashion, we need a consistent 16-byte input. The `input := [16]byte{}` creates a zero-initialized array, and `copy(input[:], s)` fills it with the IPv4 string, leaving trailing zeros as padding. The validation logic `validChars[i] = dotMask[i] || digitMask[i] || c == 0` explicitly accepts null padding, making shorter IPv4 addresses work seamlessly with parallel processing.
 
 After this initial parallel validation phase, the algorithm continues with the original string `s` for precise boundary calculations and error reporting.
 
@@ -164,14 +164,13 @@ Now we process all four IPv4 octets in parallel, with each lane handling one fie
     // Process all four fields in parallel
     var ip [4]byte
     var errors [4]parseAddrError
-    var hasError lanes.Varying[bool, 4]
+    var hasError lanes.Varying[bool]
 
     go for field, start := range starts {
         end := ends[field]
 
         if field > 0 {
             start++ // Skip the dot
-        }
         }
 
         fieldLen := end - start
@@ -218,9 +217,9 @@ Now we process all four IPv4 octets in parallel, with each lane handling one fie
 
 This parallel field processing mirrors Muła's `SSE_CONVERT_MAX1/2/3` macros, handling different field lengths efficiently while maintaining full validation.
 
-### Compiler Optimization: Array Range vs Range[N]
+### Compiler Optimization: Array Range
 
-The use of `go for field, start := range starts` is a subtle but important optimization. When ranging over an array, the compiler knows the exact iteration count at compile time, enabling:
+The use of `go for field, start := range starts` is a subtle but important optimization. When ranging over a fixed-size array, the compiler knows the exact iteration count at compile time, enabling:
 
 1. **Loop unrolling**: The compiler can unroll the loop entirely, generating direct code for each iteration
 2. **Better instruction scheduling**: With known bounds, the compiler can optimize instruction ordering

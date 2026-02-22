@@ -41,7 +41,7 @@ func Decode(ascii []byte) ([]byte, bool) {
  decoded := make([]byte, 0, len(ascii)*3/4)
  pattern := outputPattern()
 
- go for _, v := range[4] ascii {
+ go for _, v := range ascii {
   decodedChunk, valid := decodeChunk(v, pattern)
   if !valid {
    return nil, false
@@ -53,7 +53,7 @@ func Decode(ascii []byte) ([]byte, bool) {
 }
 ```
 
-The `range[4] ascii` syntax indicates we're processing 4 bytes at a time in groups. This explicit sizing is crucial—the algorithm's cross-lane operations depend on having lane counts that are multiples of 4 to maintain the correct 4-to-3 byte transformation pattern.
+The `range ascii` syntax processes the byte slice in SPMD fashion. The algorithm's cross-lane operations use `*Within` functions with group size 4 to maintain the correct 4-to-3 byte transformation pattern regardless of the hardware's actual SIMD width.
 
 ## The Three Core Cross-Lane Operations
 
@@ -62,39 +62,40 @@ Base64 decoding requires three fundamental cross-lane communication patterns. Le
 ### 1. Swizzle: Parallel Table Lookups
 
 ```go
-// Each lane indexes into a shared lookup table
+// Each lane indexes into a shared lookup table within groups of 8
 offsetTable := []byte{255, 16, 19, 4, 191, 191, 185, 185}
-offsets := lanes.Swizzle(lanes.From(offsetTable), hashes)
+offsets := lanes.SwizzleWithin(lanes.From(offsetTable), hashes, 8)
 ```
 
-**What it does**: `lanes.Swizzle` allows each lane to access any position in a shared array based on its computed index. Lane 0 might read position 3, lane 1 might read position 6, etc.
+**What it does**: `lanes.SwizzleWithin` allows each lane to access any position in a shared array based on its computed index, operating within groups of a given size. Lane 0 might read position 3, lane 1 might read position 6, etc.
 
-**Why it's powerful**: This enables parallel table lookups where each lane can access different data simultaneously—like multiple hands reaching into different positions of the same toolbox at once.
+**Why it's powerful**: This enables parallel table lookups where each lane can access different data simultaneously within each group--like multiple hands reaching into different positions of the same toolbox at once. The group size parameter ensures correct behavior regardless of hardware SIMD width.
 
-### 2. Rotation: Neighboring Data Exchange
+### 2. Rotation Within Groups: Neighboring Data Exchange
 
 ```go
-// Lane N receives data from lane N-1
-decodedChunks := shiftedLo | lanes.Rotate(shiftedHi, 1)
+// Lane N receives data from lane N-1 within each group of 4
+decodedChunks := shiftedLo | lanes.RotateWithin(shiftedHi, 1, 4)
 ```
 
-**What it does**: `lanes.Rotate` shifts data between adjacent lanes. With a rotation of 1, lane 0 gets data from lane 3, lane 1 gets data from lane 0, and so on.
+**What it does**: `lanes.RotateWithin` shifts data between adjacent lanes within groups of a given size. With a group size of 4 and rotation of 1, data rotates within each 4-lane group independently. This enables the same algorithm to work regardless of hardware SIMD width.
 
 **Why it's essential**: Base64's 6-to-8 bit conversion creates bit patterns that span lane boundaries. Each lane needs some bits from its neighbor to form complete bytes.
 
 ### 3. Output Pattern: Selective Extraction
 
 ```go
-func outputPattern() lanes.Varying[uint8, 4] {
- var r lanes.Varying[uint8, 4]
- go for i := range[4] {
-  r[i] = uint8(i + i/3) // Creates: [0,1,2,4]
+func outputPattern() lanes.Varying[uint8] {
+ count := lanes.Count[uint8]()
+ var r lanes.Varying[uint8]
+ go for i := range count {
+  r[i] = uint8(i + i/3) // Creates: [0,1,2,4,5,6,8,...]
  }
  return r
 }
 
-// Use pattern to select final bytes
-output := lanes.Swizzle(decodedChunks, pattern)
+// Use pattern to select final bytes within each group of 4
+output := lanes.SwizzleWithin(decodedChunks, pattern, 4)
 ```
 
 **What it does**: The pattern `[0,1,2,4]` selects specific positions from the decoded data, skipping every fourth element. For larger lane counts, this extends to `[0,1,2,4,5,6,8,9,10,12,...]`.
@@ -106,19 +107,19 @@ output := lanes.Swizzle(decodedChunks, pattern)
 Now let's see how these operations work together in the complete `decodeChunk` function:
 
 ```go
-func decodeChunk(ascii lanes.Varying[byte, 4], pattern lanes.Varying[uint8, 4]) ([]byte, bool) {
+func decodeChunk(ascii lanes.Varying[byte], pattern lanes.Varying[uint8]) ([]byte, bool) {
  // Step 1: Perfect hash function for table indexing
- hashes := lanes.ShiftRight(ascii, 4) 
+ hashes := lanes.ShiftRight(ascii, 4)
  if ascii == '/' {
   hashes += 1
  }
 
  // Step 2: Convert ASCII to 6-bit values via table lookup (Swizzle)
  offsetTable := []byte{255, 16, 19, 4, 191, 191, 185, 185}
- offsets := lanes.Swizzle(lanes.From(offsetTable), hashes)
+ offsets := lanes.SwizzleWithin(lanes.From(offsetTable), hashes, 8)
  sextets := ascii + offsets
 
- // Step 3: Validate characters using parallel lookups (Swizzle + Reduction)
+ // Step 3: Validate characters using parallel lookups (SwizzleWithin + Reduction)
  loLUT := lanes.From([]byte{
   0b10101, 0b10001, 0b10001, 0b10001, 0b10001, 0b10001, 0b10001, 0b10001,
   0b10001, 0b10001, 0b10011, 0b11010, 0b11011, 0b11011, 0b11011, 0b11010,
@@ -127,34 +128,34 @@ func decodeChunk(ascii lanes.Varying[byte, 4], pattern lanes.Varying[uint8, 4]) 
   0b10000, 0b10000, 0b00001, 0b00010, 0b00100, 0b01000, 0b00100, 0b01000,
   0b10000, 0b10000, 0b10000, 0b10000, 0b10000, 0b10000, 0b10000, 0b10000,
  })
- 
- lo := lanes.Swizzle(loLUT, ascii&0x0f)
- hi := lanes.Swizzle(hiLUT, lanes.ShiftRight(ascii, 4))
+
+ lo := lanes.SwizzleWithin(loLUT, ascii&0x0f, 16)
+ hi := lanes.SwizzleWithin(hiLUT, lanes.ShiftRight(ascii, 4), 16)
  valid := reduce.Or(lo&hi) == 0
 
- // Step 4: Pack 6-bit values into bytes with cross-lane coordination (Rotation)
+ // Step 4: Pack 6-bit values into bytes with cross-lane coordination (RotateWithin)
  shiftPattern := lanes.From([]uint16{2, 4, 6, 8})
- shifted := lanes.ShiftLeft(sextets, shiftPattern)
- 
- shiftedLo := lanes.Varying[byte, 4](shifted)
- shiftedHi := lanes.Varying[byte, 4](lanes.ShiftRight(shifted, 8))
- decodedChunks := shiftedLo | lanes.Rotate(shiftedHi, 1)
+ shifted := lanes.ShiftLeftWithin(sextets, shiftPattern, 4)
 
- // Step 5: Extract final 3 bytes using output pattern (Swizzle)
- output := lanes.Swizzle(decodedChunks, pattern)
+ shiftedLo := lanes.Varying[byte](shifted)
+ shiftedHi := lanes.Varying[byte](lanes.ShiftRight(shifted, 8))
+ decodedChunks := shiftedLo | lanes.RotateWithin(shiftedHi, 1, 4)
+
+ // Step 5: Extract final 3 bytes using output pattern (SwizzleWithin)
+ output := lanes.SwizzleWithin(decodedChunks, pattern, 4)
  return []byte(output), valid
 }
 ```
 
-## Why Multiple-of-4 Lane Counts Matter
+## Why Within-Group Operations Matter
 
-Notice the explicit `lanes.Varying[T, 4]` types throughout the code. This isn't arbitrary—base64's 4-to-3 conversion requires lane counts that are multiples of 4. The cross-lane operations work correctly with any multiple of 4 because:
+Notice the `*Within` operations with group size 4 throughout the code. This isn't arbitrary -- base64's 4-to-3 conversion requires operations that respect 4-element group boundaries. The `*Within` cross-lane operations work correctly regardless of SIMD width because:
 
-The **Output patterns** maintain the 4:3 ratio across lane groups, discarding the fourth byte that could be "contaminated" by rotation or shift operation. It is this pattern that make this algorithm work for any multiple of 4 lanes.
+The **Output patterns** maintain the 4:3 ratio across lane groups, discarding the fourth byte that could be "contaminated" by rotation or shift operation. It is this pattern that makes this algorithm work for any SIMD width.
 
-By specifying `lanes.Varying[T, 4]`, we tell the compiler: "Process data in groups of 4. If the hardware has 8 lanes, run two groups in parallel. If it has 16 lanes, run four groups simultaneously. If it has fewer than 4 lanes, unroll the loop and interleave operations to ensure each step has the required 4 elements ready for processing.
+By using `lanes.RotateWithin(value, offset, 4)` and `lanes.SwizzleWithin(value, indices, 4)`, we tell the compiler: "Perform these operations within groups of 4 lanes." If the hardware has 4 lanes, one group is processed. If it has 16 lanes, four groups are processed simultaneously. The group size parameter ensures correct behavior regardless of hardware.
 
-This allow supporting all hardware with the same code. Relying on compiler to provide portability, but also readability and maintainability while not sacrificing performance.
+This allows supporting all hardware with the same code. Relying on the compiler to provide portability, but also readability and maintainability while not sacrificing performance.
 
 ## The Cost of Communication
 
