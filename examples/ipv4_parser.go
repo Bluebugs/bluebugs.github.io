@@ -11,15 +11,15 @@ import (
 
 type parseAddrError struct {
 	in  string
+	at  int
 	msg string
-	at  string
 }
 
 func (e parseAddrError) Error() string {
-	if e.at != "" {
-		return fmt.Sprintf("parse %q: %s (at %q)", e.in, e.msg, e.at)
+	if e.at >= 0 {
+		return fmt.Sprintf("parse %s at position %d: %s", e.in, e.at, e.msg)
 	}
-	return fmt.Sprintf("parse %q: %s", e.in, e.msg)
+	return fmt.Sprintf("parse %s: %s", e.in, e.msg)
 }
 
 // parseIPv4 processes IPv4 addresses using SPMD similar to Wojciech's SSE approach
@@ -33,38 +33,43 @@ func parseIPv4(s string) ([4]byte, error) {
 	copy(input[:], s)
 
 	// Process all bytes in parallel
-	var dotMaskTotal lanes.Varying[uint8]
-	var dotMask lanes.Varying[bool]
-	var digitMask lanes.Varying[bool]
-	var validChars lanes.Varying[bool]
+	var dotMask [16]bool
+	var dotMaskTotal lanes.Varying[uint32]
 
+	var loop int
 	go for i, c := range input {
 		dotMask[i] = c == '.'
 		if dotMask[i] {
-			dotMaskTotal[i] = 1
+			dotMaskTotal++
 		}
-		digitMask[i] = (c >= '0' && c <= '9')
+		digitMask := (c >= '0' && c <= '9')
 
 		// Valid if dot, digit, or null (padding)
-		validChars[i] = dotMask[i] || digitMask[i] || c == 0
+		validChars := dotMask[i] || digitMask || c == 0
+
+		// Check character validity with precise error location
+		if !reduce.All(validChars) {
+			return [4]byte{}, parseAddrError{in: s, at: reduce.FindFirstSet(!validChars) + loop, msg: "unexpected character"}
+		}
+		loop += lanes.Count(c)
 	}
 
-	// Check character validity
-	if !reduce.All(validChars) {
-		return [4]byte{}, parseAddrError{in: s, at: reduce.FindFirstSet(validChars), msg: "unexpected character"}
-	}
-
+	// Count dots using reduction
 	dotCount := reduce.Add(dotMaskTotal)
 	if dotCount != 3 {
 		return [4]byte{}, parseAddrError{in: s, msg: "invalid dot count"}
 	}
 
 	// Create dot position bitmask from lanes (similar to _mm_movemask_epi8)
-	dotPositionMask := reduce.Mask(dotMask)
+	var mask uint16
+	loop = 0
+	go for _, isDot := range dotMask {
+		mask |= uint16(reduce.Mask(isDot)) << loop
+		loop += lanes.Count(isDot)
+	}
 
 	// Extract dot positions (similar to Wojciech's pattern matching)
 	var dotPositions [3]int
-	mask := dotPositionMask
 	for i := 0; i < 3; i++ {
 		pos := bits.TrailingZeros16(mask)
 		dotPositions[i] = pos
@@ -89,8 +94,6 @@ func parseIPv4(s string) ([4]byte, error) {
 
 	// Process all four fields in parallel
 	var ip [4]byte
-	var errors [4]parseAddrError
-	var hasError lanes.Varying[bool]
 
 	go for field, start := range starts {
 		end := ends[field]
@@ -124,20 +127,14 @@ func parseIPv4(s string) ([4]byte, error) {
 			hasLeadingZero = (d2 == 0)
 		}
 
-		// Validation (following Wojciech's approach)
-		if hasLeadingZero {
-			errors[field] = parseAddrError{in: s, msg: "IPv4 field has octet with leading zero"}
-			hasError[field] = true
-		} else if value > 255 {
-			errors[field] = parseAddrError{in: s, msg: "IPv4 field has value >255"}
-			hasError[field] = true
-		} else {
-			ip[field] = uint8(value)
+		// Validation: check each error condition across all lanes
+		if reduce.Any(hasLeadingZero) {
+			return [4]byte{}, parseAddrError{in: s, msg: "IPv4 field has octet with leading zero"}
 		}
-	}
-
-	if reduce.Any(hasError) {
-		return [4]byte{}, errors[reduce.FindFirstSet(hasError)]
+		if reduce.Any(value > 255) {
+			return [4]byte{}, parseAddrError{in: s, msg: "IPv4 field has value >255"}
+		}
+		ip[field] = uint8(value)
 	}
 
 	return ip, nil

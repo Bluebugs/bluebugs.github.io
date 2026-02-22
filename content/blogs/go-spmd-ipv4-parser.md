@@ -75,27 +75,26 @@ func parseIPv4(s string) ([4]byte, error) {
     input := [16]byte{}
     copy(input[:], s)
 
-    // Process all 16 bytes in parallel
-    var dotMaskTotal lanes.Varying[uint8]
-    var dotMask lanes.Varying[bool]
-    var digitMask lanes.Varying[bool]
-    var validChars lanes.Varying[bool]
+    // Process all bytes in parallel
+    var dotMask [16]bool
+    var dotMaskTotal lanes.Varying[uint32]
 
+    var loop int
     go for i, c := range input {
         dotMask[i] = c == '.'
         if dotMask[i] {
-            dotMaskTotal[i] = 1
+            dotMaskTotal++
         }
-        digitMask[i] = (c >= '0' && c <= '9')
+        digitMask := (c >= '0' && c <= '9')
 
         // Valid if dot, digit, or null (padding)
-        validChars[i] = dotMask[i] || digitMask[i] || c == 0
+        validChars := dotMask[i] || digitMask || c == 0
     }
 ```
 
 This parallel analysis validates all characters simultaneously and creates boolean masks for dots and digits -- a direct adaptation of Mula's SIMD character classification.
 
-The key insight here is the **padding strategy**: since we process the fixed-size `[16]byte` array in SPMD fashion, we need a consistent 16-byte input. The `input := [16]byte{}` creates a zero-initialized array, and `copy(input[:], s)` fills it with the IPv4 string, leaving trailing zeros as padding. The validation logic `validChars[i] = dotMask[i] || digitMask[i] || c == 0` explicitly accepts null padding, making shorter IPv4 addresses work seamlessly with parallel processing.
+The key insight here is the **padding strategy**: since we process the fixed-size `[16]byte` array in SPMD fashion, we need a consistent 16-byte input. The `input := [16]byte{}` creates a zero-initialized array, and `copy(input[:], s)` fills it with the IPv4 string, leaving trailing zeros as padding. The validation logic `validChars := dotMask[i] || digitMask || c == 0` explicitly accepts null padding, making shorter IPv4 addresses work seamlessly with parallel processing. Note that `dotMask` is a regular `[16]bool` array -- the parallel `go for` loop writes to it via scatter operations, and we use it later in a second `go for` loop to build the dot position bitmask.
 
 After this initial parallel validation phase, the algorithm continues with the original string `s` for precise boundary calculations and error reporting.
 
@@ -104,9 +103,11 @@ After this initial parallel validation phase, the algorithm continues with the o
 We use reduction operations to aggregate validation results across all lanes:
 
 ```go
-    // Check character validity with precise error location
-    if !reduce.All(validChars) {
-        return [4]byte{}, parseAddrError{in: s, at: reduce.FindFirstSet(validChars), msg: "unexpected character"}
+        // Check character validity with precise error location
+        if !reduce.All(validChars) {
+            return [4]byte{}, parseAddrError{in: s, at: reduce.FindFirstSet(!validChars) + loop, msg: "unexpected character"}
+        }
+        loop += lanes.Count(c)
     }
 
     // Count dots using reduction
@@ -116,12 +117,17 @@ We use reduction operations to aggregate validation results across all lanes:
     }
 
     // Create dot position bitmask (mimics _mm_movemask_epi8)
-    dotPositionMask := reduce.Mask(dotMask)
+    var mask uint16
+    loop = 0
+    go for _, isDot := range dotMask {
+        mask |= uint16(reduce.Mask(isDot)) << loop
+        loop += lanes.Count(isDot)
+    }
 ```
 
-The `reduce.Mask()` operation is particularly elegant—it converts the boolean array into a bitmask, directly paralleling SSE's `_mm_movemask_epi8` instruction.
+The `reduce.Mask()` operation is particularly elegant—it converts the varying boolean into a bitmask, directly paralleling SSE's `_mm_movemask_epi8` instruction. The `loop` variable tracks the bit offset across iterations, and `lanes.Count(isDot)` returns the number of lanes for the element type, ensuring the bitmask is built correctly regardless of SIMD width.
 
-Note the improved error reporting: `reduce.FindFirstSet(validChars)` locates the exact position of the first invalid character, providing precise error messages instead of generic failures. This demonstrates how reduction operations can enhance not just performance, but also debugging and user experience.
+Note the improved error reporting: `reduce.FindFirstSet(!validChars) + loop` locates the exact position of the first invalid character by combining the lane index with the iteration offset, providing precise error messages instead of generic failures. This demonstrates how reduction operations can enhance not just performance, but also debugging and user experience.
 
 ### Phase 3: Race-Free Dot Position Extraction
 
@@ -130,7 +136,6 @@ Here we solve the potential race condition by using a normal `for` loop and bit 
 ```go
     // Extract dot positions using bit manipulation
     var dotPositions [3]int
-    mask := dotPositionMask
     for i := 0; i < 3; i++ {
         pos := bits.TrailingZeros16(mask)
         dotPositions[i] = pos
@@ -163,8 +168,6 @@ Now we process all four IPv4 octets in parallel, with each lane handling one fie
 
     // Process all four fields in parallel
     var ip [4]byte
-    var errors [4]parseAddrError
-    var hasError lanes.Varying[bool]
 
     go for field, start := range starts {
         end := ends[field]
@@ -194,21 +197,14 @@ Now we process all four IPv4 octets in parallel, with each lane handling one fie
             hasLeadingZero = (d2 == 0)
         }
 
-        // Validation and error handling
-        if hasLeadingZero {
-            errors[field] = parseAddrError{in: s, msg: "IPv4 field has octet with leading zero"}
-            hasError[field] = true
-        } else if value > 255 {
-            errors[field] = parseAddrError{in: s, msg: "IPv4 field has value >255"}
-            hasError[field] = true
-        } else {
-            ip[field] = uint8(value)
+        // Validation: check each error condition across all lanes
+        if reduce.Any(hasLeadingZero) {
+            return [4]byte{}, parseAddrError{in: s, msg: "IPv4 field has octet with leading zero"}
         }
-    }
-
-    // Check for errors using reduction
-    if reduce.Any(hasError) {
-        return [4]byte{}, errors[reduce.FindFirstSet(hasError)]
+        if reduce.Any(value > 255) {
+            return [4]byte{}, parseAddrError{in: s, msg: "IPv4 field has value >255"}
+        }
+        ip[field] = uint8(value)
     }
 
     return ip, nil
@@ -233,18 +229,21 @@ This represents a key principle for SPMD Go: give the compiler as much compile-t
 One significant advantage of the SPMD approach in Go itself is improved error reporting. If using SIMD intrinsics and assembly, it is harder to keep track of proper error handling, but with this proposal, it feels a lot more logical and simpler to do proper error reporting, like the locations when validating the initial content of the string:
 
 ```go
-// Instead of generic "unexpected character" 
+// Instead of generic "unexpected character"
 if !reduce.All(validChars) {
-    return [4]byte{}, parseAddrError{in: s, at: reduce.FindFirstSet(validChars), msg: "unexpected character"}
+    return [4]byte{}, parseAddrError{in: s, at: reduce.FindFirstSet(!validChars) + loop, msg: "unexpected character"}
 }
 
-// And precise field error reporting
-if reduce.Any(hasError) {
-    return [4]byte{}, errors[reduce.FindFirstSet(hasError)]
+// And precise field error reporting using reduce.Any
+if reduce.Any(hasLeadingZero) {
+    return [4]byte{}, parseAddrError{in: s, msg: "IPv4 field has octet with leading zero"}
+}
+if reduce.Any(value > 255) {
+    return [4]byte{}, parseAddrError{in: s, msg: "IPv4 field has value >255"}
 }
 ```
 
-The `reduce.FindFirstSet()` operation efficiently locates the first lane with an error condition, providing users with exact character positions rather than generic failure messages. This demonstrates how parallel processing in Go enables simpler and idiomatic Go error handling in a simple form.
+The `reduce.Any()` and `reduce.FindFirstSet()` operations efficiently detect error conditions across all lanes simultaneously. Since `reduce.Any()` returns a uniform bool, the `return` statement is under a uniform condition -- all lanes agree on whether to return -- making it a valid early exit in the `go for` loop. This demonstrates how parallel processing in Go enables simpler and idiomatic Go error handling in a simple form.
 
 ## Performance Implications
 
