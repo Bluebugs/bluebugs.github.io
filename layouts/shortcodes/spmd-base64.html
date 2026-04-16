@@ -223,8 +223,9 @@
 </div>
 
 <script src="/wasm/wasm_exec.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
+<script type="module">
+import { simd, relaxedSimd } from "https://unpkg.com/wasm-feature-detect?module";
+document.addEventListener('DOMContentLoaded', async () => {
     const badge       = document.getElementById('spmd-base64-badge');
     const btn         = document.getElementById('spmd-base64-run-btn');
     const inputArea   = document.getElementById('spmd-base64-input');
@@ -252,32 +253,10 @@ document.addEventListener('DOMContentLoaded', () => {
         inputInfo.textContent = len + " bytes of base64 input";
     });
 
-    // --- SIMD detection ---
-    let hasWasm = typeof WebAssembly === 'object' && typeof WebAssembly.validate === 'function';
-    let hasSimd = false;
-    let hasRelaxedSimd = false;
-
-    if (hasWasm) {
-        // Basic SIMD test: v128.load
-        const simdTest = new Uint8Array([
-            0x00,0x61,0x73,0x6d, 0x01,0x00,0x00,0x00,
-            0x01,0x05,0x01, 0x60,0x00,0x01,0x7b,
-            0x03,0x02,0x01,0x00,
-            0x0a,0x0a,0x01, 0x08,0x00,0x41,0x00,0xfd,0x00,0x00,0x00,0x0b
-        ]);
-        try { hasSimd = WebAssembly.validate(simdTest); } catch(e) { hasSimd = false; }
-
-        // Relaxed SIMD test: i8x16.relaxed_swizzle
-        if (hasSimd) {
-            const relaxedTest = new Uint8Array([
-                0x00,0x61,0x73,0x6d, 0x01,0x00,0x00,0x00,
-                0x01,0x05,0x01, 0x60,0x00,0x01,0x7b,
-                0x03,0x02,0x01,0x00,
-                0x0a,0x0c,0x01, 0x0a,0x00,0x41,0x00,0xfd,0x00,0x00,0x00,0xfd,0x00,0x01,0x0b
-            ]);
-            try { hasRelaxedSimd = WebAssembly.validate(relaxedTest); } catch(e) { hasRelaxedSimd = false; }
-        }
-    }
+    // --- SIMD detection via wasm-feature-detect ---
+    const hasWasm = typeof WebAssembly === 'object';
+    const hasSimd = hasWasm ? await simd() : false;
+    const hasRelaxedSimd = hasSimd ? await relaxedSimd() : false;
 
     if (!hasWasm) {
         badge.innerHTML = '<span class="badge badge-err">WebAssembly not supported</span>';

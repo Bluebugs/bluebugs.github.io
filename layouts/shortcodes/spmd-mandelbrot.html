@@ -156,8 +156,10 @@
 </div>
 
 <script src="/wasm/wasm_exec.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
+<script type="module">
+import { simd } from "https://unpkg.com/wasm-feature-detect?module";
+
+document.addEventListener('DOMContentLoaded', async () => {
     const badge     = document.getElementById('spmd-simd-badge_mandelbrot');
     const btn       = document.getElementById('spmd-run-btn_mandelbrot');
     const serialCol = document.getElementById('spmd-serial-col_mandelbrot');
@@ -170,19 +172,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const W = 256, H = 256, MAX_ITER = 256;
 
-    // --- SIMD detection ---
-    let hasWasm = typeof WebAssembly === 'object' && typeof WebAssembly.validate === 'function';
-    let hasSimd = false;
-    if (hasWasm) {
-        // Minimal WASM module that uses a v128 instruction
-        const simdTest = new Uint8Array([
-            0x00,0x61,0x73,0x6d, 0x01,0x00,0x00,0x00,
-            0x01,0x05,0x01, 0x60,0x00,0x01,0x7b,
-            0x03,0x02,0x01,0x00,
-            0x0a,0x0a,0x01, 0x08,0x00,0x41,0x00,0xfd,0x00,0x00,0x00,0x0b
-        ]);
-        try { hasSimd = WebAssembly.validate(simdTest); } catch(e) { hasSimd = false; }
-    }
+    // --- SIMD detection via wasm-feature-detect ---
+    const hasWasm = typeof WebAssembly === 'object';
+    const hasSimd = hasWasm ? await simd() : false;
 
     if (!hasWasm) {
         badge.innerHTML = '<span class="badge badge-err">WebAssembly not supported</span>';
