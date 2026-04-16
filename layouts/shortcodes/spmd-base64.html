@@ -1,0 +1,403 @@
+<style>
+    #spmd-base64-demo {
+        display: flex;
+        flex-direction: column;
+        font-family: sans-serif;
+        border: 1px solid #ccc;
+        padding: 20px;
+        max-width: 900px;
+        margin: 20px auto;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    #spmd-base64-demo h3 {
+        margin: 0 0 12px 0;
+        color: #333;
+        text-align: center;
+    }
+
+    #spmd-base64-badge {
+        text-align: center;
+        margin-bottom: 16px;
+        font-size: 0.85em;
+        font-weight: 600;
+    }
+
+    #spmd-base64-badge .badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 12px;
+        color: #fff;
+    }
+
+    #spmd-base64-badge .badge-ok {
+        background-color: #28a745;
+    }
+
+    #spmd-base64-badge .badge-warn {
+        background-color: #e67e22;
+    }
+
+    #spmd-base64-badge .badge-err {
+        background-color: #dc3545;
+    }
+
+    #spmd-base64-input-section {
+        margin-bottom: 16px;
+    }
+
+    #spmd-base64-input-section label {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 0.85em;
+        color: #555;
+        font-weight: 600;
+    }
+
+    #spmd-base64-input {
+        width: 100%;
+        height: 60px;
+        font-family: monospace;
+        font-size: 0.8em;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        resize: vertical;
+        box-sizing: border-box;
+    }
+
+    #spmd-base64-input-info {
+        font-size: 0.8em;
+        color: #888;
+        margin-top: 4px;
+    }
+
+    #spmd-base64-panels {
+        display: flex;
+        gap: 24px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .spmd-base64-panel {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+        min-width: 280px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 12px;
+        background-color: #fff;
+    }
+
+    .spmd-base64-panel h4 {
+        margin: 0 0 8px 0;
+        color: #555;
+        font-size: 0.95em;
+    }
+
+    .spmd-base64-panel .throughput {
+        font-size: 1.3em;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 4px;
+        min-height: 1.6em;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .spmd-base64-panel .timing {
+        font-size: 0.9em;
+        color: #555;
+        font-variant-numeric: tabular-nums;
+        min-height: 1.4em;
+    }
+
+    .spmd-base64-panel .preview-label {
+        font-size: 0.8em;
+        color: #888;
+        margin-top: 8px;
+    }
+
+    .spmd-base64-panel .preview {
+        font-family: monospace;
+        font-size: 0.8em;
+        color: #333;
+        background-color: #f5f5f5;
+        padding: 4px 8px;
+        border-radius: 4px;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-height: 1.4em;
+        margin-top: 2px;
+        word-break: break-all;
+    }
+
+    .spmd-base64-panel.disabled {
+        opacity: 0.35;
+    }
+
+    .spmd-base64-panel.disabled h4 {
+        color: #aaa;
+    }
+
+    #spmd-base64-speedup {
+        text-align: center;
+        margin-top: 12px;
+        font-size: 1.1em;
+        font-weight: 600;
+        color: #007bff;
+        min-height: 1.4em;
+    }
+
+    #spmd-base64-controls {
+        text-align: center;
+        margin-top: 16px;
+    }
+
+    #spmd-base64-run-btn {
+        padding: 10px 28px;
+        font-size: 1em;
+        font-weight: 600;
+        color: #fff;
+        background-color: #007bff;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.15s;
+    }
+
+    #spmd-base64-run-btn:hover:not(:disabled) {
+        background-color: #0056b3;
+    }
+
+    #spmd-base64-run-btn:disabled {
+        background-color: #999;
+        cursor: not-allowed;
+    }
+
+    @media (max-width: 768px) {
+        #spmd-base64-panels {
+            flex-direction: column;
+            align-items: center;
+        }
+    }
+</style>
+
+<div id="spmd-base64-demo">
+    <h3>Base64 Decode: Scalar vs SPMD</h3>
+    <div id="spmd-base64-badge"></div>
+
+    <div id="spmd-base64-input-section">
+        <label for="spmd-base64-input">Base64 Input</label>
+        <textarea id="spmd-base64-input"></textarea>
+        <div id="spmd-base64-input-info"></div>
+    </div>
+
+    <div id="spmd-base64-panels">
+        <div class="spmd-base64-panel" id="spmd-base64-scalar-panel">
+            <h4>Scalar</h4>
+            <div class="throughput" id="spmd-base64-scalar-throughput"></div>
+            <div class="timing" id="spmd-base64-scalar-timing"></div>
+            <div class="preview-label">Decoded output (first 80 chars):</div>
+            <div class="preview" id="spmd-base64-scalar-preview"></div>
+        </div>
+        <div class="spmd-base64-panel" id="spmd-base64-spmd-panel">
+            <h4>SPMD (WASM SIMD)</h4>
+            <div class="throughput" id="spmd-base64-spmd-throughput"></div>
+            <div class="timing" id="spmd-base64-spmd-timing"></div>
+            <div class="preview-label">Decoded output (first 80 chars):</div>
+            <div class="preview" id="spmd-base64-spmd-preview"></div>
+        </div>
+    </div>
+
+    <div id="spmd-base64-speedup"></div>
+
+    <div id="spmd-base64-controls">
+        <button id="spmd-base64-run-btn">Run Benchmark</button>
+    </div>
+</div>
+
+<script src="/wasm/wasm_exec.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const badge       = document.getElementById('spmd-base64-badge');
+    const btn         = document.getElementById('spmd-base64-run-btn');
+    const inputArea   = document.getElementById('spmd-base64-input');
+    const inputInfo   = document.getElementById('spmd-base64-input-info');
+    const scalarPanel = document.getElementById('spmd-base64-scalar-panel');
+    const spmdPanel   = document.getElementById('spmd-base64-spmd-panel');
+    const scalarTP    = document.getElementById('spmd-base64-scalar-throughput');
+    const spmdTP      = document.getElementById('spmd-base64-spmd-throughput');
+    const scalarTime  = document.getElementById('spmd-base64-scalar-timing');
+    const spmdTime    = document.getElementById('spmd-base64-spmd-timing');
+    const scalarPrev  = document.getElementById('spmd-base64-scalar-preview');
+    const spmdPrev    = document.getElementById('spmd-base64-spmd-preview');
+    const speedupEl   = document.getElementById('spmd-base64-speedup');
+
+    // --- Default input: repeat base64("The quick brown fox jumps over the lazy dog") to ~4KB ---
+    const sampleB64 = "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw==";
+    let defaultInput = "";
+    while (defaultInput.length < 4096) defaultInput += sampleB64;
+    defaultInput = defaultInput.substring(0, defaultInput.length - (defaultInput.length % 4));
+    inputArea.value = defaultInput;
+    inputInfo.textContent = defaultInput.length + " bytes of base64 input";
+
+    inputArea.addEventListener('input', () => {
+        const len = inputArea.value.length;
+        inputInfo.textContent = len + " bytes of base64 input";
+    });
+
+    // --- SIMD detection ---
+    let hasWasm = typeof WebAssembly === 'object' && typeof WebAssembly.validate === 'function';
+    let hasSimd = false;
+    let hasRelaxedSimd = false;
+
+    if (hasWasm) {
+        // Basic SIMD test: v128.load
+        const simdTest = new Uint8Array([
+            0x00,0x61,0x73,0x6d, 0x01,0x00,0x00,0x00,
+            0x01,0x05,0x01, 0x60,0x00,0x01,0x7b,
+            0x03,0x02,0x01,0x00,
+            0x0a,0x0a,0x01, 0x08,0x00,0x41,0x00,0xfd,0x00,0x00,0x00,0x0b
+        ]);
+        try { hasSimd = WebAssembly.validate(simdTest); } catch(e) { hasSimd = false; }
+
+        // Relaxed SIMD test: i8x16.relaxed_swizzle
+        if (hasSimd) {
+            const relaxedTest = new Uint8Array([
+                0x00,0x61,0x73,0x6d, 0x01,0x00,0x00,0x00,
+                0x01,0x05,0x01, 0x60,0x00,0x01,0x7b,
+                0x03,0x02,0x01,0x00,
+                0x0a,0x0c,0x01, 0x0a,0x00,0x41,0x00,0xfd,0x00,0x00,0x00,0xfd,0x00,0x01,0x0b
+            ]);
+            try { hasRelaxedSimd = WebAssembly.validate(relaxedTest); } catch(e) { hasRelaxedSimd = false; }
+        }
+    }
+
+    if (!hasWasm) {
+        badge.innerHTML = '<span class="badge badge-err">WebAssembly not supported</span>';
+        btn.disabled = true;
+        return;
+    }
+    if (hasRelaxedSimd) {
+        badge.innerHTML = '<span class="badge badge-ok">Browser supports WASM SIMD + Relaxed SIMD</span>';
+    } else if (hasSimd) {
+        badge.innerHTML = '<span class="badge badge-warn">No Relaxed SIMD &mdash; SPMD column will be skipped</span>';
+        spmdPanel.classList.add('disabled');
+    } else {
+        badge.innerHTML = '<span class="badge badge-warn">No WASM SIMD &mdash; SPMD column will be skipped</span>';
+        spmdPanel.classList.add('disabled');
+    }
+
+    // --- WASM loading ---
+    let scalarInst = null, spmdInst = null;
+    let isRunning = false;
+
+    async function loadWasm(url) {
+        const go = new Go();
+        const result = await WebAssembly.instantiateStreaming(fetch(url), go.importObject);
+        const inst = result.instance;
+        go._inst = inst;
+        try { inst.exports._start(); } catch (e) { /* expected proc_exit */ }
+        return { instance: inst, go: go };
+    }
+
+    async function ensureLoaded() {
+        if (!scalarInst) {
+            const s = await loadWasm('/wasm/base64-scalar.wasm');
+            scalarInst = s.instance;
+        }
+        if (hasRelaxedSimd && !spmdInst) {
+            const s = await loadWasm('/wasm/base64-spmd.wasm');
+            spmdInst = s.instance;
+        }
+    }
+
+    // --- Benchmark helpers ---
+    const ITERATIONS = 200;
+
+    function runDecode(inst, inputBytes) {
+        const inputLen = inputBytes.length;
+        const inputPtr = inst.exports.getInputPtr();
+        new Uint8Array(inst.exports.memory.buffer, inputPtr, inputLen).set(inputBytes);
+
+        const t0 = performance.now();
+        for (let i = 0; i < ITERATIONS; i++) {
+            inst.exports.decodeBase64(inputLen);
+        }
+        const totalMs = performance.now() - t0;
+
+        const outputPtr = inst.exports.getOutputPtr();
+        const outputLen = inst.exports.getOutputLen();
+        const outputBytes = new Uint8Array(inst.exports.memory.buffer, outputPtr, outputLen);
+        const decoded = new TextDecoder().decode(outputBytes.slice(0, 80));
+
+        const mbPerSec = (inputLen * ITERATIONS / 1024 / 1024) / (totalMs / 1000);
+        const perIter = totalMs / ITERATIONS;
+
+        return { totalMs, perIter, mbPerSec, decoded };
+    }
+
+    // --- Benchmark ---
+    btn.addEventListener('click', async () => {
+        if (isRunning) return;
+        isRunning = true;
+        btn.disabled = true;
+        btn.textContent = 'Loading...';
+        scalarTP.textContent = '';
+        spmdTP.textContent = '';
+        scalarTime.textContent = '';
+        spmdTime.textContent = '';
+        scalarPrev.textContent = '';
+        spmdPrev.textContent = '';
+        speedupEl.textContent = '';
+
+        try {
+            await ensureLoaded();
+
+            const inputText = inputArea.value;
+            const inputBytes = new TextEncoder().encode(inputText);
+
+            // --- Scalar ---
+            btn.textContent = 'Running Scalar...';
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+            const scalar = runDecode(scalarInst, inputBytes);
+            scalarTP.textContent = scalar.mbPerSec.toFixed(1) + ' MB/s';
+            scalarTime.textContent = scalar.perIter.toFixed(3) + ' ms/iter (' + ITERATIONS + ' iterations)';
+            scalarPrev.textContent = scalar.decoded;
+
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+            // --- SPMD ---
+            if (hasRelaxedSimd && spmdInst) {
+                btn.textContent = 'Running SPMD...';
+                await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+                const spmd = runDecode(spmdInst, inputBytes);
+                spmdTP.textContent = spmd.mbPerSec.toFixed(1) + ' MB/s';
+                spmdTime.textContent = spmd.perIter.toFixed(3) + ' ms/iter (' + ITERATIONS + ' iterations)';
+                spmdPrev.textContent = spmd.decoded;
+
+                const speedup = spmd.mbPerSec / scalar.mbPerSec;
+                speedupEl.textContent = 'Speedup: ' + speedup.toFixed(1) + 'x';
+            } else {
+                spmdTP.textContent = 'N/A';
+                spmdTime.textContent = 'Relaxed SIMD not available';
+            }
+        } catch (err) {
+            console.error('Base64 benchmark error:', err);
+            speedupEl.textContent = 'Error: ' + err.message;
+        } finally {
+            btn.textContent = 'Run Benchmark';
+            btn.disabled = false;
+            isRunning = false;
+        }
+    });
+});
+</script>
