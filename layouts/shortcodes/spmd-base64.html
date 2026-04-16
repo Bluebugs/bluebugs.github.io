@@ -240,10 +240,12 @@ import { simd, relaxedSimd } from "https://unpkg.com/wasm-feature-detect?module"
     const spmdPrev    = document.getElementById('spmd-base64-spmd-preview');
     const speedupEl   = document.getElementById('spmd-base64-speedup');
 
-    // --- Default input: repeat base64("The quick brown fox jumps over the lazy dog") to ~64KB ---
+    // --- Default input: repeat base64("The quick brown fox jumps over the lazy dog") to ~60KB ---
+    // Must stay under 65536 bytes (WASM input buffer size).
+    const maxInputLen = 65536;
     const sampleB64 = "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw==";
     let defaultInput = "";
-    while (defaultInput.length < 65536) defaultInput += sampleB64;
+    while (defaultInput.length + sampleB64.length <= maxInputLen) defaultInput += sampleB64;
     defaultInput = defaultInput.substring(0, defaultInput.length - (defaultInput.length % 4));
     inputArea.value = defaultInput;
     inputInfo.textContent = defaultInput.length + " bytes of base64 input";
@@ -348,7 +350,11 @@ import { simd, relaxedSimd } from "https://unpkg.com/wasm-feature-detect?module"
         try {
             await ensureLoaded();
 
-            const inputText = inputArea.value;
+            let inputText = inputArea.value;
+            if (inputText.length > maxInputLen) {
+                inputText = inputText.substring(0, maxInputLen);
+                inputText = inputText.substring(0, inputText.length - (inputText.length % 4));
+            }
             const inputBytes = new TextEncoder().encode(inputText);
 
             // --- Scalar ---
