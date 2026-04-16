@@ -259,7 +259,28 @@ import { simd } from "https://unpkg.com/wasm-feature-detect?module";
         ctx.putImageData(img, 0, 0);
     }
 
-    // --- Benchmark ---
+    // --- Animated zoom benchmark ---
+    // Zooms into the Mandelbrot boundary at Seahorse Valley,
+    // rendering each frame with both serial and SPMD, showing
+    // cumulative average ms/frame and speedup.
+
+    // Zoom target: Seahorse Valley (-0.75, 0.1) — on the boundary, visually rich.
+    const CX = -0.75, CY = 0.1;
+    const ZOOM_FRAMES = 30;  // frames per direction (in + out = 60 total)
+    const ZOOM_FACTOR = 1.12; // per-frame zoom multiplier
+
+    function computeViewport(frame) {
+        // Oscillate: frames 0..29 zoom in, 30..59 zoom out.
+        const cycle = frame % (ZOOM_FRAMES * 2);
+        const step = cycle < ZOOM_FRAMES ? cycle : (ZOOM_FRAMES * 2 - 1 - cycle);
+        const scale = Math.pow(ZOOM_FACTOR, -step);
+        const hw = 2.0 * scale, hh = 1.25 * scale;
+        return {
+            x0: CX - hw, y0: CY - hh,
+            x1: CX + hw, y1: CY + hh
+        };
+    }
+
     btn.addEventListener('click', async () => {
         if (isRunning) return;
         isRunning = true;
@@ -271,35 +292,54 @@ import { simd } from "https://unpkg.com/wasm-feature-detect?module";
 
         try {
             await ensureLoaded();
+            btn.textContent = 'Animating...';
 
-            // --- Serial ---
-            btn.textContent = 'Computing Serial...';
-            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+            let serialTotal = 0, spmdTotal = 0, frames = 0;
+            const totalFrames = ZOOM_FRAMES * 2;
 
-            const t0s = performance.now();
-            serialInst.exports.computeMandelbrot(W, H, MAX_ITER);
-            const serialMs = performance.now() - t0s;
+            for (let f = 0; f < totalFrames; f++) {
+                const vp = computeViewport(f);
 
-            paintCanvas(canvasS, serialInst);
-            timeS.textContent = 'Serial: ' + serialMs.toFixed(1) + ' ms';
+                // --- Serial frame ---
+                const t0s = performance.now();
+                serialInst.exports.computeMandelbrotZoom(vp.x0, vp.y0, vp.x1, vp.y1, W, H, MAX_ITER);
+                const serialMs = performance.now() - t0s;
+                serialTotal += serialMs;
 
-            // Yield so the browser paints the serial canvas before blocking on SPMD
-            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+                paintCanvas(canvasS, serialInst);
 
-            // --- SPMD ---
+                // --- SPMD frame ---
+                let spmdMs = 0;
+                if (hasSimd && spmdInst) {
+                    const t0p = performance.now();
+                    spmdInst.exports.computeMandelbrotZoom(vp.x0, vp.y0, vp.x1, vp.y1, W, H, MAX_ITER);
+                    spmdMs = performance.now() - t0p;
+                    spmdTotal += spmdMs;
+
+                    paintCanvas(canvasSP, spmdInst);
+                }
+
+                frames++;
+                const avgSerial = serialTotal / frames;
+                const avgSpmd = spmdTotal / frames;
+
+                timeS.textContent = 'Serial: ' + avgSerial.toFixed(1) + ' ms/frame';
+                if (hasSimd && spmdInst) {
+                    timeSP.textContent = 'SPMD: ' + avgSpmd.toFixed(1) + ' ms/frame';
+                    speedupEl.textContent = 'Speedup: ' + (avgSerial / avgSpmd).toFixed(1) + 'x (' + frames + '/' + totalFrames + ' frames)';
+                }
+
+                // Yield to let the browser paint
+                await new Promise(r => requestAnimationFrame(r));
+            }
+
+            // Final summary
+            const avgSerial = serialTotal / frames;
+            timeS.textContent = 'Serial: ' + avgSerial.toFixed(1) + ' ms/frame (avg over ' + frames + ')';
             if (hasSimd && spmdInst) {
-                btn.textContent = 'Computing SPMD...';
-                await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
-                const t0p = performance.now();
-                spmdInst.exports.computeMandelbrot(W, H, MAX_ITER);
-                const spmdMs = performance.now() - t0p;
-
-                paintCanvas(canvasSP, spmdInst);
-                timeSP.textContent = 'SPMD: ' + spmdMs.toFixed(1) + ' ms';
-
-                const speedup = serialMs / spmdMs;
-                speedupEl.textContent = 'Speedup: ' + speedup.toFixed(1) + 'x';
+                const avgSpmd = spmdTotal / frames;
+                timeSP.textContent = 'SPMD: ' + avgSpmd.toFixed(1) + ' ms/frame (avg over ' + frames + ')';
+                speedupEl.textContent = 'Speedup: ' + (avgSerial / avgSpmd).toFixed(1) + 'x';
             } else {
                 timeSP.textContent = 'SIMD not available';
             }

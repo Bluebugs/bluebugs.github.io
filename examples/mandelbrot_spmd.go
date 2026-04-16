@@ -56,6 +56,11 @@ func computeMandelbrot(width, height, maxIter int32) {
 	mandelbrotSPMD(-2.5, -1.25, 1.5, 1.25, int(width), int(height), int(maxIter), buf[:])
 }
 
+//go:export computeMandelbrotZoom
+func computeMandelbrotZoom(x0, y0, x1, y1 float32, width, height, maxIter int32) {
+	mandelbrotSPMD(x0, y0, x1, y1, int(width), int(height), int(maxIter), buf[:])
+}
+
 //go:export getBufferPtr
 func getBufferPtr() int32 {
 	return int32(uintptr(unsafe.Pointer(&buf[0])))

@@ -240,10 +240,10 @@ import { simd, relaxedSimd } from "https://unpkg.com/wasm-feature-detect?module"
     const spmdPrev    = document.getElementById('spmd-base64-spmd-preview');
     const speedupEl   = document.getElementById('spmd-base64-speedup');
 
-    // --- Default input: repeat base64("The quick brown fox jumps over the lazy dog") to ~4KB ---
+    // --- Default input: repeat base64("The quick brown fox jumps over the lazy dog") to ~64KB ---
     const sampleB64 = "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw==";
     let defaultInput = "";
-    while (defaultInput.length < 4096) defaultInput += sampleB64;
+    while (defaultInput.length < 65536) defaultInput += sampleB64;
     defaultInput = defaultInput.substring(0, defaultInput.length - (defaultInput.length % 4));
     inputArea.value = defaultInput;
     inputInfo.textContent = defaultInput.length + " bytes of base64 input";
@@ -298,28 +298,37 @@ import { simd, relaxedSimd } from "https://unpkg.com/wasm-feature-detect?module"
     }
 
     // --- Benchmark helpers ---
-    const ITERATIONS = 200;
+    // Adaptive: run until at least MIN_BENCH_MS have elapsed for stable timing.
+    const MIN_BENCH_MS = 500;
 
     function runDecode(inst, inputBytes) {
         const inputLen = inputBytes.length;
         const inputPtr = inst.exports.getInputPtr();
         new Uint8Array(inst.exports.memory.buffer, inputPtr, inputLen).set(inputBytes);
 
+        // Warmup
+        inst.exports.decodeBase64(inputLen);
+
+        // Adaptive iteration: keep running until we have enough time
+        let iterations = 0;
         const t0 = performance.now();
-        for (let i = 0; i < ITERATIONS; i++) {
+        let elapsed = 0;
+        while (elapsed < MIN_BENCH_MS) {
             inst.exports.decodeBase64(inputLen);
+            iterations++;
+            elapsed = performance.now() - t0;
         }
-        const totalMs = performance.now() - t0;
+        const totalMs = elapsed;
 
         const outputPtr = inst.exports.getOutputPtr();
         const outputLen = inst.exports.getOutputLen();
         const outputBytes = new Uint8Array(inst.exports.memory.buffer, outputPtr, outputLen);
         const decoded = new TextDecoder().decode(outputBytes.slice(0, 80));
 
-        const mbPerSec = (inputLen * ITERATIONS / 1024 / 1024) / (totalMs / 1000);
-        const perIter = totalMs / ITERATIONS;
+        const mbPerSec = (inputLen * iterations / 1024 / 1024) / (totalMs / 1000);
+        const perIter = totalMs / iterations;
 
-        return { totalMs, perIter, mbPerSec, decoded };
+        return { totalMs, perIter, mbPerSec, decoded, iterations };
     }
 
     // --- Benchmark ---
@@ -348,7 +357,7 @@ import { simd, relaxedSimd } from "https://unpkg.com/wasm-feature-detect?module"
 
             const scalar = runDecode(scalarInst, inputBytes);
             scalarTP.textContent = scalar.mbPerSec.toFixed(1) + ' MB/s';
-            scalarTime.textContent = scalar.perIter.toFixed(3) + ' ms/iter (' + ITERATIONS + ' iterations)';
+            scalarTime.textContent = scalar.perIter.toFixed(3) + ' ms/iter (' + scalar.iterations + ' iters)';
             scalarPrev.textContent = scalar.decoded;
 
             await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -360,7 +369,7 @@ import { simd, relaxedSimd } from "https://unpkg.com/wasm-feature-detect?module"
 
                 const spmd = runDecode(spmdInst, inputBytes);
                 spmdTP.textContent = spmd.mbPerSec.toFixed(1) + ' MB/s';
-                spmdTime.textContent = spmd.perIter.toFixed(3) + ' ms/iter (' + ITERATIONS + ' iterations)';
+                spmdTime.textContent = spmd.perIter.toFixed(3) + ' ms/iter (' + spmd.iterations + ' iters)';
                 spmdPrev.textContent = spmd.decoded;
 
                 const speedup = spmd.mbPerSec / scalar.mbPerSec;

@@ -35,6 +35,19 @@ func computeMandelbrot(width, height, maxIter int32) {
 	}
 }
 
+//go:export computeMandelbrotZoom
+func computeMandelbrotZoom(x0, y0, x1, y1 float32, width, height, maxIter int32) {
+	dx := (x1 - x0) / float32(width)
+	dy := (y1 - y0) / float32(height)
+	for j := int32(0); j < height; j++ {
+		y := y0 + float32(j)*dy
+		for i := int32(0); i < width; i++ {
+			x := x0 + float32(i)*dx
+			buf[j*width+i] = mandelSerial(x, y, maxIter)
+		}
+	}
+}
+
 //go:export getBufferPtr
 func getBufferPtr() int32 {
 	return int32(uintptr(unsafe.Pointer(&buf[0])))
