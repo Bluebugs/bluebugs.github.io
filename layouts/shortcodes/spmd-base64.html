@@ -251,13 +251,16 @@ import { simd, relaxedSimd } from "https://unpkg.com/wasm-feature-detect?module"
     const spmdPrev    = document.getElementById('spmd-base64-spmd-preview');
     const speedupEl   = document.getElementById('spmd-base64-speedup');
 
-    // --- Default input: repeat base64("The quick brown fox jumps over the lazy dog") to ~60KB ---
-    // Must stay under 65536 bytes (WASM input buffer size).
+    // --- Default input: repeat base64 without internal padding ---
+    // Go's encoding/base64.StdEncoding rejects '=' in the middle of the input.
+    // Strip padding before repeating, then pad at the end to a multiple of 4.
     const maxInputLen = 65536;
-    const sampleB64 = "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw==";
+    const sampleRaw = "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw";  // no trailing ==
     let defaultInput = "";
-    while (defaultInput.length + sampleB64.length <= maxInputLen) defaultInput += sampleB64;
-    defaultInput = defaultInput.substring(0, defaultInput.length - (defaultInput.length % 4));
+    while (defaultInput.length + sampleRaw.length <= maxInputLen - 4) defaultInput += sampleRaw;
+    // Pad to multiple of 4
+    while (defaultInput.length % 4 !== 0) defaultInput += "=";
+    defaultInput = defaultInput.substring(0, Math.min(defaultInput.length, maxInputLen));
     inputArea.value = defaultInput;
     inputInfo.textContent = defaultInput.length + " bytes of base64 input";
 
