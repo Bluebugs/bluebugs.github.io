@@ -1,5 +1,5 @@
 +++
-date = '2026-04-16T10:06:00-07:00'
+date = '2026-04-15T10:06:00-07:00'
 draft = true
 title = '16 Bytes That Saved a Thousand Branches'
 description = 'The cheapest optimization in our SPMD proof of concept: a WASM linear memory guard zone for safe vector overreads'

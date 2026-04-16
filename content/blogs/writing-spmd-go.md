@@ -1,5 +1,5 @@
 +++
-date = '2026-04-16T10:01:00-07:00'
+date = '2026-04-15T10:01:00-07:00'
 draft = true
 title = 'Writing SPMD Go: A Practical Guide'
 description = 'How to think about uniform vs varying, write go for loops, use reductions, and avoid the common pitfalls'

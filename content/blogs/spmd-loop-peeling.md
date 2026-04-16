@@ -1,5 +1,5 @@
 +++
-date = '2026-04-16T10:03:00-07:00'
+date = '2026-04-15T10:03:00-07:00'
 draft = true
 title = 'Loop Peeling: Where Most of the Speed Comes From'
 description = 'How SSA-level loop peeling enables the all-ones mask fast path that delivers ~2x of SPMD benchmark wins'

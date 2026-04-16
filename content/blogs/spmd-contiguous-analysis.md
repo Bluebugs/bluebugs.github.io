@@ -1,5 +1,5 @@
 +++
-date = '2026-04-16T10:07:00-07:00'
+date = '2026-04-15T10:07:00-07:00'
 draft = true
 title = 'How the Compiler Knows Your Load Is Contiguous'
 description = 'The most important backend optimization in SPMD: recognizing contiguous memory access through ChangeType and BinOp chains'

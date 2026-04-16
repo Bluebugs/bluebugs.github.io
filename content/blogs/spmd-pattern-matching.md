@@ -1,5 +1,5 @@
 +++
-date = '2026-04-16T10:04:00-07:00'
+date = '2026-04-15T10:04:00-07:00'
 draft = true
 title = 'Pattern Matching Beats Hand-Written SIMD'
 description = 'How compiler pattern detection on idiomatic Go outperformed explicit cross-lane SIMD builtins in our SPMD proof of concept'

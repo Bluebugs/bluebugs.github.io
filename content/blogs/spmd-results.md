@@ -1,5 +1,5 @@
 +++
-date = '2026-04-16T10:00:00-07:00'
+date = '2026-04-15T10:00:00-07:00'
 draft = true
 title = 'SPMD for Go: What If Your Loops Were 9x Faster?'
 description = 'A proof of concept for language-level data parallelism in Go, with live WASM demos and real benchmark results'

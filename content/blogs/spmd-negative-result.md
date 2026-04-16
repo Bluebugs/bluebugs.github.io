@@ -1,5 +1,5 @@
 +++
-date = '2026-04-16T10:08:00-07:00'
+date = '2026-04-15T10:08:00-07:00'
 draft = true
 title = 'We Built Cross-Lane SIMD Primitives. None of Them Helped.'
 description = 'The most important negative result from our SPMD-for-Go proof of concept: explicit shuffles and rotations lost to compiler pattern detection on idiomatic Go'

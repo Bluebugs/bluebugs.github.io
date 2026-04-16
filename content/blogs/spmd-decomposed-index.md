@@ -1,5 +1,5 @@
 +++
-date = '2026-04-16T10:05:00-07:00'
+date = '2026-04-15T10:05:00-07:00'
 draft = true
 title = 'Byte Iteration at 32 Lanes: The Decomposed Index Path'
 description = 'How to iterate a []byte on AVX2 without drowning in index-register pressure'
