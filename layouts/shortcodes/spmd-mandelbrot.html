@@ -207,12 +207,12 @@ import { simd } from "https://unpkg.com/wasm-feature-detect?module";
 
     async function ensureLoaded() {
         if (!serialInst) {
-            const s = await loadWasm('/wasm/mandelbrot-serial.wasm');
+            const s = await loadWasm('/wasm/mandelbrot-serial.wasm?v=2');
             serialInst = s.instance;
             serialGo = s.go;
         }
         if (hasSimd && !spmdInst) {
-            const s = await loadWasm('/wasm/mandelbrot-spmd.wasm');
+            const s = await loadWasm('/wasm/mandelbrot-spmd.wasm?v=2');
             spmdInst = s.instance;
             spmdGo = s.go;
         }

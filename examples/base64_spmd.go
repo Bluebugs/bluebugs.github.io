@@ -56,6 +56,12 @@ func decodeSextet(ch byte) (byte, bool) {
 	return 0, false
 }
 
+// Scratch buffers for decodeAndPack — pre-allocated to avoid per-call heap
+// pressure in the benchmark loop. Sized for max chunk (32 bytes on AVX2).
+var scratchSextets [32]byte
+var scratchMerged [16]int16
+var scratchPacked [8]int32
+
 // decodeAndPack processes one SIMD-register-width chunk of base64 source.
 // src must be exactly lanes.Count[byte]() bytes (16 on SSE/WASM, 32 on AVX2).
 // Decodes sextets and packs via cascading multiply-add loops that trigger
@@ -63,10 +69,12 @@ func decodeSextet(ch byte) (byte, bool) {
 // Returns number of output bytes written to dst (= len(src) * 3/4).
 func decodeAndPack(dst, src []byte) int {
 	n := len(src)
+	sextets := scratchSextets[:n]
+	halfLen := n / 2
+	merged := scratchMerged[:halfLen]
+	quarterLen := halfLen / 2
+	packed := scratchPacked[:quarterLen]
 
-	// Loop 1 (byte-width): decode ASCII → 6-bit sextets via nibble LUT.
-	// 16 lanes on WASM/SSE, 32 on AVX2 → vpshufb / pshufb.
-	sextets := make([]byte, n)
 	go for i, ch := range src {
 		s := ch + decodeLUT[ch>>4]
 		if ch == byte('+') {
@@ -75,30 +83,14 @@ func decodeAndPack(dst, src []byte) int {
 		sextets[i] = s
 	}
 
-	// Loop 2 (int16-width): merge adjacent sextet pairs.
-	// 8 lanes on WASM/SSE, 16 on AVX2.
-	// a*64 + b = (a<<6)|b → pmaddubsw pattern [64, 1, 64, 1, ...].
-	halfLen := n / 2
-	merged := make([]int16, halfLen)
 	go for g := range merged {
 		merged[g] = int16(sextets[g*2])*64 + int16(sextets[g*2+1])
 	}
 
-	// Loop 3 (int32-width): merge adjacent int16 pairs.
-	// 4 lanes on WASM/SSE, 8 on AVX2.
-	// a*4096 + b → pmaddwd pattern [4096, 1, 4096, 1, ...].
-	// Result layout: (s0<<18)|(s1<<12)|(s2<<6)|s3
-	quarterLen := halfLen / 2
-	packed := make([]int32, quarterLen)
 	go for g := range packed {
 		packed[g] = int32(merged[g*2])*4096 + int32(merged[g*2+1])
 	}
 
-	// Loop 4: extract 3 output bytes per packed int32.
-	// packed[g] = (s0<<18)|(s1<<12)|(s2<<6)|s3
-	//   byte0 = packed[g]>>16 (bits 23-16)
-	//   byte1 = packed[g]>>8  (bits 15-8)
-	//   byte2 = packed[g]     (bits  7-0)
 	go for g := range packed {
 		dst[g*3+0] = byte(packed[g] >> 16)
 		dst[g*3+1] = byte(packed[g] >> 8)
