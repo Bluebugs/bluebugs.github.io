@@ -7,7 +7,7 @@ featured_image = 'images/lakelouise.jpg'
 featured_image_class = 'cover bg-center'
 +++
 
-We built an SPMD compiler for Go. Not a proposal, not a design doc -- a working proof of concept that compiles `go for` loops to WASM SIMD128, x86 SSE, and x86 AVX2, with 102 end-to-end tests passing and a base64 decoder running at 91% of simdutf C++. Along the way we learned one lesson the hard way: **SPMD is a compiler feature that has to live at the heart of the SSA form.** Everything else follows from that.
+We built an SPMD compiler for Go. Not a proposal, not a design doc -- a working proof of concept that compiles `go for` loops to WASM SIMD128, x86 SSE, and x86 AVX2, with 102 end-to-end tests passing and a base64 decoder reaching ~77% of simdutf C++ throughput. Along the way we learned one lesson the hard way: **SPMD is a compiler feature that has to live at the heart of the SSA form.** Everything else follows from that.
 
 This article is for compiler engineers. If you want to see the benchmarks and the pitch, read [the overview](../go-data-parallelism/). If you want to write SPMD Go code, the practical guide is coming next. Here, we talk about what we built inside the compiler, what we got wrong, and what we would do differently.
 
@@ -121,4 +121,4 @@ Each of these was a five-minute fix once found. All were hidden until scalar mod
 
 ---
 
-*This is part of a series on the SPMD-for-Go proof of concept. The [source code](https://github.com/nicholasgasior/gopher-spmd) is open. For an introduction to the project and benchmark numbers, see [Data Parallelism: simpler solution for Golang?](../go-data-parallelism/). For the story of how pattern detection beat hand-written SIMD primitives, read the pattern matching article (coming soon).*
+*This is part of a series on the SPMD-for-Go proof of concept. The [source code](https://github.com/nicholasgasior/gopher-spmd) is open. For an introduction to the project and benchmark numbers, see [Data Parallelism: simpler solution for Golang?](../go-data-parallelism/). For the story of how pattern detection outperformed explicit SIMD primitives, read the pattern matching article (coming soon).*
