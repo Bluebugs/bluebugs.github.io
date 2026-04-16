@@ -159,7 +159,7 @@
 <script type="module">
 import { simd } from "https://unpkg.com/wasm-feature-detect?module";
 
-document.addEventListener('DOMContentLoaded', async () => {
+{
     const badge     = document.getElementById('spmd-simd-badge_mandelbrot');
     const btn       = document.getElementById('spmd-run-btn_mandelbrot');
     const serialCol = document.getElementById('spmd-serial-col_mandelbrot');
@@ -312,5 +312,5 @@ document.addEventListener('DOMContentLoaded', async () => {
             isRunning = false;
         }
     });
-});
+}
 </script>

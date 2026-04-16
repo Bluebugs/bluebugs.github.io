@@ -225,7 +225,7 @@
 <script src="/wasm/wasm_exec.js"></script>
 <script type="module">
 import { simd, relaxedSimd } from "https://unpkg.com/wasm-feature-detect?module";
-document.addEventListener('DOMContentLoaded', async () => {
+{
     const badge       = document.getElementById('spmd-base64-badge');
     const btn         = document.getElementById('spmd-base64-run-btn');
     const inputArea   = document.getElementById('spmd-base64-input');
@@ -378,5 +378,5 @@ document.addEventListener('DOMContentLoaded', async () => {
             isRunning = false;
         }
     });
-});
+}
 </script>
