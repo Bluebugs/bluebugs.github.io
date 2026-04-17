@@ -251,18 +251,34 @@ import { simd, relaxedSimd } from "https://unpkg.com/wasm-feature-detect?module"
     const spmdPrev    = document.getElementById('spmd-base64-spmd-preview');
     const speedupEl   = document.getElementById('spmd-base64-speedup');
 
-    // --- Default input: repeat base64 without internal padding ---
-    // Go's encoding/base64.StdEncoding rejects '=' in the middle of the input.
-    // Strip padding before repeating, then pad at the end to a multiple of 4.
+    // --- Default input: Wikipedia "Go (programming language)" article, base64-encoded ---
+    // We encode readable text client-side so the base64 is valid without internal padding.
     const maxInputLen = 65536;
-    const sampleRaw = "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw";  // no trailing ==
-    let defaultInput = "";
-    while (defaultInput.length + sampleRaw.length <= maxInputLen - 4) defaultInput += sampleRaw;
-    // Pad to multiple of 4
-    while (defaultInput.length % 4 !== 0) defaultInput += "=";
-    defaultInput = defaultInput.substring(0, Math.min(defaultInput.length, maxInputLen));
+    const sourceText = `Go is a high-level, general-purpose programming language that is statically typed and compiled. Designed at Google in 2007 by Robert Griesemer, Rob Pike, and Ken Thompson, Go was publicly announced in November 2009, with version 1.0 released in March 2012. Go is syntactically similar to C but includes garbage collection, structural typing, and CSP-style concurrency.
+
+The language was created to improve programming productivity in an era of multicore, networked machines and large codebases. The designers aimed to address criticisms of other languages used at Google while preserving their useful characteristics: static typing and runtime efficiency similar to C, readability and usability comparable to Python, and high-performance networking and multiprocessing capabilities.
+
+Go contains 25 reserved keywords. The syntax includes changes from C aimed at keeping code concise and readable. A combined declaration/initialization operator allows programmers to write i := 3 without specifying variable types. Methods may return multiple values, and returning a result, err pair is the conventional way methods indicate errors to callers.
+
+Go provides two features replacing class inheritance: embedding and interfaces. Interfaces provide runtime polymorphism. Any object with matching functions for all required methods implicitly satisfies that interface. The empty interface can refer to items of any concrete type. Generics were added in version 1.18 on March 15, 2022.
+
+The primary concurrency construct is the goroutine, a type of green thread. A function call prefixed with the go keyword starts a function in a new goroutine. Channels send messages between goroutines. The select statement implements non-blocking communication on multiple channels. Go includes built-in facilities and library support for writing concurrent programs.
+
+Go was designed at Google in 2007. The designers were primarily motivated by their shared dissatisfaction with C++. Go was publicly announced in November 2009. It is widely used in production at Google and in many other organizations and open-source projects. Popular applications written in Go include Docker, Kubernetes, CockroachDB, Hugo, and Caddy.
+
+The Go authors put substantial effort into influencing Go program style. The gofmt tool automatically standardizes indentation, spacing, and other surface-level code details. Tools and libraries distributed with Go suggest standard approaches to API documentation, testing, building, and package management. Go enforces rules that are recommendations in other languages, banning cyclic dependencies, unused variables or imports, and implicit type conversions.
+
+The linker in the gc toolchain creates statically linked binaries by default. Go deliberately omits certain common features: implementation inheritance, assertions, pointer arithmetic, implicit type conversions, untagged unions, and tagged unions. The designers added only facilities all three agreed upon. Exception handling uses a panic/recover mechanism. Across package boundaries, Go includes a canonical error type with multi-value returns as the standard idiom.`;
+
+    // Repeat the text until we have ~48KB of plaintext (~64KB base64), then encode.
+    let fullText = "";
+    while (fullText.length < 48000) fullText += sourceText;
+    let defaultInput = btoa(fullText);
+    if (defaultInput.length > maxInputLen) {
+        defaultInput = defaultInput.substring(0, maxInputLen - (maxInputLen % 4));
+    }
     inputArea.value = defaultInput;
-    inputInfo.textContent = defaultInput.length + " bytes of base64 input";
+    inputInfo.textContent = defaultInput.length + " bytes of base64 input (Wikipedia article about Go)";
 
     inputArea.addEventListener('input', () => {
         const len = inputArea.value.length;
