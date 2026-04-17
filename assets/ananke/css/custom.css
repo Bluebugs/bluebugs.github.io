@@ -9,3 +9,26 @@
     width: 100%;
     height: auto;
 }
+
+/* Markdown tables in article content */
+.nested-copy-line-height table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+}
+
+.nested-copy-line-height th,
+.nested-copy-line-height td {
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    text-align: left;
+}
+
+.nested-copy-line-height th {
+    background-color: #f5f5f5;
+    font-weight: 600;
+}
+
+.nested-copy-line-height tr:nth-child(even) {
+    background-color: #fafafa;
+}
