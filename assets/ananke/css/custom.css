@@ -15,6 +15,7 @@
     border-collapse: collapse;
     width: 100%;
     margin: 1em 0;
+    font-variant-numeric: tabular-nums;
 }
 
 .nested-copy-line-height th,
@@ -22,6 +23,8 @@
     border: 1px solid #ddd;
     padding: 8px 12px;
     text-align: left;
+    font-size: 0.95em;
+    line-height: 1.5;
 }
 
 .nested-copy-line-height th {
@@ -29,6 +32,48 @@
     font-weight: 600;
 }
 
+.nested-copy-line-height td {
+    font-weight: 400;
+}
+
+/* Keep emphasis readable but not jarring in tables */
+.nested-copy-line-height td strong {
+    font-weight: 600;
+}
+
+.nested-copy-line-height td em {
+    font-style: italic;
+    font-weight: 400;
+}
+
+.nested-copy-line-height td code {
+    font-size: 0.9em;
+    padding: 1px 4px;
+    background-color: #f5f5f5;
+    border-radius: 3px;
+}
+
 .nested-copy-line-height tr:nth-child(even) {
     background-color: #fafafa;
+}
+
+/* Uniform article body text — normalize bold/code weight differences */
+.nested-copy-line-height p,
+.nested-copy-line-height li {
+    line-height: 1.7;
+}
+
+.nested-copy-line-height p strong,
+.nested-copy-line-height li strong {
+    font-weight: 600;
+    color: inherit;
+}
+
+.nested-copy-line-height p code,
+.nested-copy-line-height li code {
+    font-size: 0.88em;
+    padding: 2px 5px;
+    background-color: #f5f5f5;
+    border-radius: 3px;
+    font-weight: 400;
 }
