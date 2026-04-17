@@ -313,15 +313,15 @@ The linker in the gc toolchain creates statically linked binaries by default. Go
 
     async function ensureLoaded() {
         if (!stdlibInst) {
-            const s = await loadWasm('/wasm/base64-stdlib.wasm');
+            const s = await loadWasm('/wasm/base64-stdlib.wasm?v=3');
             stdlibInst = s.instance;
         }
         if (!scalarInst) {
-            const s = await loadWasm('/wasm/base64-scalar.wasm');
+            const s = await loadWasm('/wasm/base64-scalar.wasm?v=3');
             scalarInst = s.instance;
         }
         if (hasRelaxedSimd && !spmdInst) {
-            const s = await loadWasm('/wasm/base64-spmd.wasm');
+            const s = await loadWasm('/wasm/base64-spmd.wasm?v=3');
             spmdInst = s.instance;
         }
     }
