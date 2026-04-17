@@ -125,11 +125,14 @@ func spmdDecode(dst, src []byte) int {
 	}
 	hotBytes := hotGroups * 4
 
-	// Chunk size = byte SIMD width. 16 on WASM/SSE, 32 on AVX2.
-	// Ensures each go-for loop inside decodeAndPack runs exactly one
-	// iteration, enabling full unrolling and register promotion.
+	// Chunk size = byte SIMD width. 16 on WASM/SSE, 32 on AVX2, 4 in scalar mode.
+	// The minimum of 4 ensures the cascading byte→int16→int32 loops all produce
+	// meaningful work: 4 bytes → 2 int16 → 1 int32 → 3 output bytes. Without it,
+	// scalar mode (lanes.Count=1) would give empty int16/int32 loops.
+	// In SIMD mode, this ensures each go-for loop runs exactly one iteration,
+	// enabling full unrolling and register promotion.
 	var bv lanes.Varying[byte]
-	chunkSize := lanes.Count[byte](bv)
+	chunkSize := max(4, lanes.Count[byte](bv))
 	outOffset := 0
 
 	// Process full register-width chunks via SPMD kernel.

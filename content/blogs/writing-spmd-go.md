@@ -240,7 +240,7 @@ Still in the base64 decoder, the outer driver sizes its chunks to match the regi
 
 ```go
 var bv lanes.Varying[byte]
-chunkSize := lanes.Count[byte](bv)
+chunkSize := max(4, lanes.Count[byte](bv))
 
 for off := 0; off+chunkSize <= hotBytes; off += chunkSize {
     n := decodeAndPack(dst[outOffset:], src[off:off+chunkSize])
@@ -248,9 +248,9 @@ for off := 0; off+chunkSize <= hotBytes; off += chunkSize {
 }
 ```
 
-`chunkSize` is 16 on SSE, 32 on AVX2. Each call to `decodeAndPack` runs each inner `go for` exactly once --- no loop at all after lowering. Register allocation becomes trivial.
+`chunkSize` is 16 on SSE, 32 on AVX2, and 4 in scalar fallback mode. The `max(4, ...)` is load-bearing: the cascading byte → int16 → int32 structure needs at least 4 input bytes for every level to produce meaningful work (4 bytes → 2 int16 → 1 int32 → 3 output bytes). In scalar mode where `lanes.Count` returns 1, without the floor the int16 and int32 loops would be empty. In SIMD mode the lane count is already >= 16 so the `max` is a no-op.
 
-The general pattern: for encoder/decoder kernels, write the outer loop in scalar Go, use `lanes.Count[T]()` to size chunks, and let each inner `go for` run exactly one iteration.
+The general pattern: for encoder/decoder kernels with cascading width reductions, use `max(algorithmicMinimum, lanes.Count[T]())` to size chunks. The minimum depends on the cascade depth. Dual-mode testing catches this if you forget.
 
 ### Byte-lane vs int-lane iteration
 
