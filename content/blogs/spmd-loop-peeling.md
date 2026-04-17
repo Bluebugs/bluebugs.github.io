@@ -111,4 +111,4 @@ If you are building an SPMD compiler and you can only ship one optimization, shi
 
 ---
 
-**Further reading:** [SPMD for Go: What If Your Loops Were 9x Faster?](../spmd-pitch/) for the motivation and benchmark numbers. [How SPMD Lives in the Compiler](../spmd-compiler-lessons/) for the full SSA architecture that peeling plugs into.
+**Further reading:** [SPMD for Go: What If Your Loops Were 9x Faster?](../spmd-results/) for the motivation and benchmark numbers. [How SPMD Lives in the Compiler](../spmd-compiler-internals/) for the full SSA architecture that peeling plugs into.

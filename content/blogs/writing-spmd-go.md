@@ -403,6 +403,6 @@ The proof of concept is open source. The full developer guide, the compiler inte
 
 ---
 
-**Previous in series:** [SPMD for Go: What If Your Loops Were 9x Faster?](../spmd-for-go/) --- the pitch, with live demos and benchmark numbers.
+**Previous in series:** [SPMD for Go: What If Your Loops Were 9x Faster?](../spmd-results/) --- the pitch, with live demos and benchmark numbers.
 
-**Further reading:** [Pattern Matching Beats Hand-Written SIMD](../pattern-matching-simd/) --- why the base64 decoder's idiomatic Go outperforms explicit cross-lane operations. [We Built Cross-Lane Primitives. None of Them Helped.](../cross-lane-negative-result/) --- the most important negative result from the proof of concept.
+**Further reading:** [Pattern Matching Beats Hand-Written SIMD](../spmd-pattern-matching/) --- why the base64 decoder's idiomatic Go outperforms explicit cross-lane operations. [We Built Cross-Lane Primitives. None of Them Helped.](../spmd-negative-result/) --- the most important negative result from the proof of concept.

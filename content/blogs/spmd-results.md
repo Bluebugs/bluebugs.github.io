@@ -13,7 +13,7 @@ We wrote a base64 decoder in 40 lines of Go. It runs at roughly 17 GB/s on AVX2 
 
 ## See it: Mandelbrot
 
-Two compilations of the same Go source -- scalar on the left, SPMD on the right. Both come from [`examples/mandelbrot/main.go`](https://github.com/Bluebugs/SPMD/blob/main/examples/mandelbrot/main.go). The only difference is the compiler flag: `-simd=false` vs `-simd=true`. Click "Run Benchmark" to see the gap.
+Two compilations of the same Go source -- scalar on the left, SPMD on the right. Both come from [`examples/mandelbrot/main.go`](https://github.com/Bluebugs/go-spmd/blob/main/examples/mandelbrot/main.go). The only difference is the compiler flag: `-simd=false` vs `-simd=true`. Click "Run Benchmark" to see the gap.
 
 The SPMD version uses `go for` to process multiple pixels per iteration and `lanes.Varying[float32]` for the complex-plane coordinates. The compiler handles the rest: vectorized arithmetic, per-lane break when a point diverges, and a masked tail for the last few pixels in each row.
 
@@ -171,6 +171,6 @@ If you want to dig deeper, the rest of this series covers the details:
 - [How SPMD Lives in the Compiler](../spmd-compiler-internals/) -- the mask-stack lesson, predicated SSA, and what we would do differently
 - [Pattern Matching Beats Hand-Written SIMD](../spmd-pattern-matching/) -- why the simplest code produced the fastest output
 - [Loop Peeling: Where Most of the Speed Comes From](../spmd-loop-peeling/) -- the single highest-leverage optimization
-- [We Built Cross-Lane SIMD Primitives. None of Them Helped.](../spmd-cross-lane-negative-result/) -- the most important negative result
+- [We Built Cross-Lane SIMD Primitives. None of Them Helped.](../spmd-negative-result/) -- the most important negative result
 
 ---

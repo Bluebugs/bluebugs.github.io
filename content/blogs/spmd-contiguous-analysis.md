@@ -133,6 +133,6 @@ And the overarching lesson: **invest disproportionately here.** Every percentage
 
 ---
 
-**Further reading:** [How SPMD Lives in the Compiler](../spmd-compiler-lessons/) covers the broader compiler architecture. [Pattern Matching Beats Hand-Written SIMD](../spmd-pattern-matching/) shows another case where a simple compiler recognizer outperformed explicit intrinsics.
+**Further reading:** [How SPMD Lives in the Compiler](../spmd-compiler-internals/) covers the broader compiler architecture. [Pattern Matching Beats Hand-Written SIMD](../spmd-pattern-matching/) shows another case where a simple compiler recognizer outperformed explicit intrinsics.
 
-*This article is part of a series on SPMD for Go. The proof of concept is open source at [github.com/nicedispatcher/SPMD](https://github.com/nicedispatcher/SPMD).*
+*This article is part of a series on SPMD for Go. The proof of concept is open source at [github.com/Bluebugs/go-spmd](https://github.com/Bluebugs/go-spmd).*

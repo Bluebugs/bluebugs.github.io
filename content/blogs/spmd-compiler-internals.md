@@ -121,4 +121,4 @@ Each of these was a five-minute fix once found. All were hidden until scalar mod
 
 ---
 
-*This is part of a series on the SPMD-for-Go proof of concept. The [source code](https://github.com/nicholasgasior/gopher-spmd) is open. For an introduction to the project and benchmark numbers, see [Data Parallelism: simpler solution for Golang?](../go-data-parallelism/). For the story of how pattern detection outperformed explicit SIMD primitives, read the pattern matching article (coming soon).*
+*This is part of a series on the SPMD-for-Go proof of concept. For the benchmark numbers and live demos, see [SPMD for Go: What If Your Loops Were 9x Faster?](../spmd-results/). For the story of how pattern detection outperformed explicit SIMD primitives, read [Pattern Matching Beats Hand-Written SIMD](../spmd-pattern-matching/).*
