@@ -74,75 +74,59 @@
         margin-top: 4px;
     }
 
-    #spmd-base64-panels {
-        display: flex;
-        gap: 24px;
-        justify-content: center;
-        flex-wrap: wrap;
+    #spmd-base64-results {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 8px;
     }
 
-    .spmd-base64-panel {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        flex: 1;
-        min-width: 280px;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        padding: 12px;
-        background-color: #fff;
+    #spmd-base64-results th,
+    #spmd-base64-results td {
+        padding: 8px 12px;
+        text-align: center;
+        border-bottom: 1px solid #ddd;
     }
 
-    .spmd-base64-panel h4 {
-        margin: 0 0 8px 0;
-        color: #555;
+    #spmd-base64-results th {
+        background-color: #f0f0f0;
         font-size: 0.95em;
+        color: #555;
+        font-weight: 600;
     }
 
-    .spmd-base64-panel .throughput {
-        font-size: 1.3em;
+    #spmd-base64-results th:first-child,
+    #spmd-base64-results td:first-child {
+        text-align: left;
+        font-weight: 600;
+        color: #555;
+        font-size: 0.9em;
+    }
+
+    #spmd-base64-results .throughput-cell {
+        font-size: 1.15em;
         font-weight: 700;
         color: #333;
-        margin-bottom: 4px;
-        min-height: 1.6em;
         font-variant-numeric: tabular-nums;
     }
 
-    .spmd-base64-panel .timing {
-        font-size: 0.9em;
+    #spmd-base64-results .timing-cell {
+        font-size: 0.85em;
         color: #555;
         font-variant-numeric: tabular-nums;
-        min-height: 1.4em;
     }
 
-    .spmd-base64-panel .preview-label {
-        font-size: 0.8em;
-        color: #888;
-        margin-top: 8px;
-    }
-
-    .spmd-base64-panel .preview {
+    #spmd-base64-results .preview-cell {
         font-family: monospace;
-        font-size: 0.8em;
+        font-size: 0.75em;
         color: #333;
-        background-color: #f5f5f5;
-        padding: 4px 8px;
-        border-radius: 4px;
-        max-width: 100%;
+        max-width: 200px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        min-height: 1.4em;
-        margin-top: 2px;
-        word-break: break-all;
     }
 
-    .spmd-base64-panel.disabled {
+    #spmd-base64-results .disabled-cell {
         opacity: 0.35;
-    }
-
-    .spmd-base64-panel.disabled h4 {
-        color: #aaa;
     }
 
     #spmd-base64-speedup {
@@ -198,29 +182,36 @@
         <div id="spmd-base64-input-info"></div>
     </div>
 
-    <div id="spmd-base64-panels">
-        <div class="spmd-base64-panel" id="spmd-base64-stdlib-panel">
-            <h4>Go stdlib</h4>
-            <div class="throughput" id="spmd-base64-stdlib-throughput"></div>
-            <div class="timing" id="spmd-base64-stdlib-timing"></div>
-            <div class="preview-label">Decoded (first 80 chars):</div>
-            <div class="preview" id="spmd-base64-stdlib-preview"></div>
-        </div>
-        <div class="spmd-base64-panel" id="spmd-base64-scalar-panel">
-            <h4>Scalar SPMD</h4>
-            <div class="throughput" id="spmd-base64-scalar-throughput"></div>
-            <div class="timing" id="spmd-base64-scalar-timing"></div>
-            <div class="preview-label">Decoded (first 80 chars):</div>
-            <div class="preview" id="spmd-base64-scalar-preview"></div>
-        </div>
-        <div class="spmd-base64-panel" id="spmd-base64-spmd-panel">
-            <h4>SPMD (WASM SIMD)</h4>
-            <div class="throughput" id="spmd-base64-spmd-throughput"></div>
-            <div class="timing" id="spmd-base64-spmd-timing"></div>
-            <div class="preview-label">Decoded (first 80 chars):</div>
-            <div class="preview" id="spmd-base64-spmd-preview"></div>
-        </div>
-    </div>
+    <table id="spmd-base64-results">
+        <thead>
+            <tr>
+                <th></th>
+                <th>Go stdlib</th>
+                <th>Scalar SPMD</th>
+                <th id="spmd-base64-spmd-header">SPMD (WASM SIMD)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Throughput</td>
+                <td class="throughput-cell" id="spmd-base64-stdlib-throughput">--</td>
+                <td class="throughput-cell" id="spmd-base64-scalar-throughput">--</td>
+                <td class="throughput-cell" id="spmd-base64-spmd-throughput">--</td>
+            </tr>
+            <tr>
+                <td>Time / iter</td>
+                <td class="timing-cell" id="spmd-base64-stdlib-timing">--</td>
+                <td class="timing-cell" id="spmd-base64-scalar-timing">--</td>
+                <td class="timing-cell" id="spmd-base64-spmd-timing">--</td>
+            </tr>
+            <tr>
+                <td>Decoded preview</td>
+                <td class="preview-cell" id="spmd-base64-stdlib-preview">--</td>
+                <td class="preview-cell" id="spmd-base64-scalar-preview">--</td>
+                <td class="preview-cell" id="spmd-base64-spmd-preview">--</td>
+            </tr>
+        </tbody>
+    </table>
 
     <div id="spmd-base64-speedup"></div>
 
@@ -237,9 +228,7 @@ import { simd, relaxedSimd } from "https://unpkg.com/wasm-feature-detect?module"
     const btn         = document.getElementById('spmd-base64-run-btn');
     const inputArea   = document.getElementById('spmd-base64-input');
     const inputInfo   = document.getElementById('spmd-base64-input-info');
-    const stdlibPanel = document.getElementById('spmd-base64-stdlib-panel');
-    const scalarPanel = document.getElementById('spmd-base64-scalar-panel');
-    const spmdPanel   = document.getElementById('spmd-base64-spmd-panel');
+    const spmdHeader  = document.getElementById('spmd-base64-spmd-header');
     const stdlibTP    = document.getElementById('spmd-base64-stdlib-throughput');
     const scalarTP    = document.getElementById('spmd-base64-scalar-throughput');
     const spmdTP      = document.getElementById('spmd-base64-spmd-throughput');
@@ -298,11 +287,15 @@ The linker in the gc toolchain creates statically linked binaries by default. Go
     if (hasRelaxedSimd) {
         badge.innerHTML = '<span class="badge badge-ok">Browser supports WASM SIMD + Relaxed SIMD</span>';
     } else if (hasSimd) {
-        badge.innerHTML = '<span class="badge badge-warn">No Relaxed SIMD &mdash; SPMD column will be skipped</span>';
-        spmdPanel.classList.add('disabled');
+        badge.innerHTML = '<span class="badge badge-warn">No Relaxed SIMD &mdash; SPMD SIMD column will be skipped</span>';
+        spmdTP.classList.add('disabled-cell');
+        spmdTime.classList.add('disabled-cell');
+        spmdPrev.classList.add('disabled-cell');
     } else {
-        badge.innerHTML = '<span class="badge badge-warn">No WASM SIMD &mdash; SPMD column will be skipped</span>';
-        spmdPanel.classList.add('disabled');
+        badge.innerHTML = '<span class="badge badge-warn">No WASM SIMD &mdash; SPMD SIMD column will be skipped</span>';
+        spmdTP.classList.add('disabled-cell');
+        spmdTime.classList.add('disabled-cell');
+        spmdPrev.classList.add('disabled-cell');
     }
 
     // --- WASM loading ---
@@ -373,9 +366,9 @@ The linker in the gc toolchain creates statically linked binaries by default. Go
         isRunning = true;
         btn.disabled = true;
         btn.textContent = 'Loading...';
-        stdlibTP.textContent = ''; stdlibTime.textContent = ''; stdlibPrev.textContent = '';
-        scalarTP.textContent = ''; scalarTime.textContent = ''; scalarPrev.textContent = '';
-        spmdTP.textContent = ''; spmdTime.textContent = ''; spmdPrev.textContent = '';
+        stdlibTP.textContent = '...'; stdlibTime.textContent = ''; stdlibPrev.textContent = '';
+        scalarTP.textContent = '...'; scalarTime.textContent = ''; scalarPrev.textContent = '';
+        spmdTP.textContent = '...'; spmdTime.textContent = ''; spmdPrev.textContent = '';
         speedupEl.textContent = '';
 
         try {
