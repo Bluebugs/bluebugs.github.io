@@ -65,7 +65,7 @@
 
     .spmd-canvas-col_mandelbrot canvas {
         width: 360px;
-        height: 360px;
+        height: 300px;
         image-rendering: pixelated;
         border: 1px solid #ccc;
         border-radius: 4px;
@@ -138,12 +138,12 @@
     <div id="spmd-canvases_mandelbrot">
         <div class="spmd-canvas-col_mandelbrot" id="spmd-serial-col_mandelbrot">
             <h4>Serial (scalar)</h4>
-            <canvas id="spmd-canvas-serial_mandelbrot" width="256" height="256"></canvas>
+            <canvas id="spmd-canvas-serial_mandelbrot" width="360" height="300"></canvas>
             <div class="timing" id="spmd-time-serial_mandelbrot"></div>
         </div>
         <div class="spmd-canvas-col_mandelbrot" id="spmd-spmd-col_mandelbrot">
             <h4>SPMD (4-wide SIMD)</h4>
-            <canvas id="spmd-canvas-spmd_mandelbrot" width="256" height="256"></canvas>
+            <canvas id="spmd-canvas-spmd_mandelbrot" width="360" height="300"></canvas>
             <div class="timing" id="spmd-time-spmd_mandelbrot"></div>
         </div>
     </div>
@@ -170,7 +170,7 @@ import { simd } from "https://unpkg.com/wasm-feature-detect?module";
     const timeSP    = document.getElementById('spmd-time-spmd_mandelbrot');
     const speedupEl = document.getElementById('spmd-speedup_mandelbrot');
 
-    const W = 256, H = 256, MAX_ITER = 256;
+    const W = 360, H = 300, MAX_ITER = 256;
 
     // --- SIMD detection via wasm-feature-detect ---
     const hasWasm = typeof WebAssembly === 'object';
@@ -207,12 +207,12 @@ import { simd } from "https://unpkg.com/wasm-feature-detect?module";
 
     async function ensureLoaded() {
         if (!serialInst) {
-            const s = await loadWasm('/wasm/mandelbrot-serial.wasm?v=2');
+            const s = await loadWasm('/wasm/mandelbrot-serial.wasm?v=4');
             serialInst = s.instance;
             serialGo = s.go;
         }
         if (hasSimd && !spmdInst) {
-            const s = await loadWasm('/wasm/mandelbrot-spmd.wasm?v=2');
+            const s = await loadWasm('/wasm/mandelbrot-spmd.wasm?v=4');
             spmdInst = s.instance;
             spmdGo = s.go;
         }
@@ -246,10 +246,10 @@ import { simd } from "https://unpkg.com/wasm-feature-detect?module";
     function paintCanvas(canvas, wasmInstance) {
         const ctx = canvas.getContext('2d');
         const ptr = wasmInstance.exports.getBufferPtr();
-        const len = wasmInstance.exports.getBufferLen();
-        const data = new Int32Array(wasmInstance.exports.memory.buffer, ptr, len);
+        const pixels = W * H;
+        const data = new Int32Array(wasmInstance.exports.memory.buffer, ptr, pixels);
         const img = ctx.createImageData(W, H);
-        for (let i = 0; i < len; i++) {
+        for (let i = 0; i < pixels; i++) {
             const [r, g, b, a] = iterToRGBA(data[i], MAX_ITER);
             img.data[i * 4]     = r;
             img.data[i * 4 + 1] = g;

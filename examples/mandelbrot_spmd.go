@@ -8,7 +8,7 @@ import (
 	"unsafe"
 )
 
-const bufSize = 256 * 256
+const bufSize = 512 * 512 // large enough for any canvas up to 512x512
 
 var buf [bufSize]int32
 
