@@ -19,10 +19,29 @@ The SPMD version uses `go for` to process multiple pixels per iteration and `lan
 
 {{< spmd-mandelbrot >}}
 
-Here is the core of the SPMD kernel -- the part that runs per pixel:
+Here is the full SPMD mandelbrot -- the calling loop and the kernel together:
 
 ```go
 // file: examples/mandelbrot/main.go
+
+// The driver: a scalar outer loop over rows, an SPMD inner loop over columns.
+func mandelbrotSPMD(x0, y0, x1, y1 float32, width, height, maxIter int, output []int) {
+    dx := (x1 - x0) / float32(width)
+    dy := (y1 - y0) / float32(height)
+
+    for j := 0; j < height; j++ {
+        y := y0 + float32(j)*dy
+
+        go for i := range width {
+            x := x0 + lanes.Varying[float32](i)*dx
+            iterations := mandelSPMD(x, y, maxIter)
+            index := j*width + i
+            output[index] = iterations
+        }
+    }
+}
+
+// The kernel: runs per pixel, receives a varying x and uniform y.
 func mandelSPMD(cRe, cIm lanes.Varying[float32], maxIter int) lanes.Varying[int] {
     var zRe lanes.Varying[float32] = cRe
     var zIm lanes.Varying[float32] = cIm
@@ -46,7 +65,9 @@ func mandelSPMD(cRe, cIm lanes.Varying[float32], maxIter int) lanes.Varying[int]
 }
 ```
 
-That `break` inside a varying `if` is the interesting part. Each lane breaks independently -- when a pixel diverges, its lane goes inactive while the others keep iterating. The compiler turns this into per-lane mask tracking: no branches, just predicated execution.
+The structure: a scalar `for j` iterates rows. Inside it, `go for i := range width` is the SPMD loop -- each lane computes a different x coordinate, all sharing the same y. The kernel `mandelSPMD` is an SPMD function (it takes varying parameters); the compiler passes the mask implicitly.
+
+The `break` inside a varying `if` is the interesting part. Each lane breaks independently -- when a pixel diverges, its lane goes inactive while the others keep iterating. The compiler turns this into per-lane mask tracking: no branches, just predicated execution.
 
 ## See it: Base64
 
