@@ -131,8 +131,8 @@ Real numbers from our test infrastructure, measured on an AMD Ryzen 7 6800U:
 | Base64 decode | SSSE3 | ~8.5 GB/s |
 | lo-min / lo-max | AVX2 8-wide | 7.27x / 7.18x |
 | Mandelbrot | AVX2 | 6.07x |
-| Mandelbrot | WASM | 3.03x |
-| Hex-encode | WASM | 8.9x |
+| Mandelbrot | WASM | 2.5-3.6x (varies by host) |
+| Hex-encode | WASM | 6-9x (varies by host) |
 | Hex-encode | SSE | 6.31x |
 
 Honest disclosure: not everything speeds up. Our IPv4 parser hit 0.58x with inner-SPMD -- actually *slower* than scalar. The input (7-15 bytes per address) was too small to amortize SIMD setup costs. The fix is outer-SPMD batching: vectorize *across* IP addresses instead of within one. The lesson is that SPMD shines on tight loops over contiguous memory, not on short, variable-length inputs processed one at a time.

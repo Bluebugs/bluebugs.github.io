@@ -317,7 +317,7 @@ func Encode(dst, src []byte) int {
 }
 ```
 
-The iteration variable `i` is varying. `src[i>>1]` is a gather. `hextable[...]` is a 16-entry table lookup that compiles to `pshufb`/`v128.swizzle`. The `if i%2 == 0` is a varying conditional --- both branches compute, the mask selects. `dst[i] = ...` is a contiguous store. On WASM simd128 this hits **8.9x** scalar. On x86 SSE, **6.31x**.
+The iteration variable `i` is varying. `src[i>>1]` is a gather. `hextable[...]` is a 16-entry table lookup that compiles to `pshufb`/`v128.swizzle`. The `if i%2 == 0` is a varying conditional --- both branches compute, the mask selects. `dst[i] = ...` is a contiguous store. On WASM simd128 this hits **6-9x** scalar (varies by host/runtime). On x86 SSE, **6.31x**.
 
 The **src-centric** version iterates over the source instead:
 
@@ -387,7 +387,7 @@ func mandelbrotSPMD(x0, y0, x1, y1 float32,
 
 The outer `for j` is scalar (rows). The inner `go for i := range width` is SPMD (columns). Each lane computes a different x coordinate; all lanes in a group share the same y. `mandelSPMD` receives the mask implicitly and carries it through its internal control flow.
 
-Measured speedup: **6.07x** on AVX2, **3.71x** on SSE, **3.03x** on WASM simd128.
+Measured speedup: **6.07x** on AVX2, **3.71x** on SSE, **2.5-3.6x** on WASM simd128 (varies by host).
 
 The lesson: divergent iteration counts --- different lanes finishing their work at different times --- are handled well by SPMD. Write the uniform loop with a varying break condition. The compiler tracks per-lane masks correctly. You do not manage any of this yourself.
 

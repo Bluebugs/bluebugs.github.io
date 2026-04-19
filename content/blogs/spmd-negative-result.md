@@ -74,7 +74,7 @@ No `SwizzleWithin`. No `RotateWithin`. No `CompactStore`. Just four loops with i
 
 v2 hit ~17 GB/s on AVX2 -- roughly 77% of simdutf (the best C++ SIMD base64 library) and about 9x faster than Go's `encoding/base64`. That is a roughly 5x improvement over v1, achieved by *removing* cross-lane operations.
 
-The rest of the examples tell the same story. Hex-encode: 8.9x on WASM, no cross-lane ops. Mandelbrot: 6.07x on AVX2, no cross-lane ops. lo-min: 7.27x on AVX2, no cross-lane ops. IPv4 parser: initially used `lanes.DotProductI8x16Add` as a custom builtin; we deleted it when the `vpmaddubsw` pattern detector subsumed it. Performance was unchanged.
+The rest of the examples tell the same story. Hex-encode: 6-9x on WASM (varies by host), no cross-lane ops. Mandelbrot: 6.07x on AVX2, no cross-lane ops. lo-min: 7.27x on AVX2, no cross-lane ops. IPv4 parser: initially used `lanes.DotProductI8x16Add` as a custom builtin; we deleted it when the `vpmaddubsw` pattern detector subsumed it. Performance was unchanged.
 
 We deleted the 1500 lines of `CompactStore` / `SPMDMux` / `SPMDInterleaveStore` compiler machinery. Nothing got slower.
 
