@@ -156,7 +156,21 @@ Real numbers from our test infrastructure, measured on an AMD Ryzen 7 6800U:
 | Hex-encode | WASM | 6-9x (varies by host) |
 | Hex-encode | SSE | 6.31x |
 
-Honest disclosure: not everything speeds up. Our IPv4 parser hit 0.58x with inner-SPMD -- actually *slower* than scalar. The input (7-15 bytes per address) was too small to amortize SIMD setup costs. The fix is outer-SPMD batching: vectorize *across* IP addresses instead of within one. The lesson is that SPMD shines on tight loops over contiguous memory, not on short, variable-length inputs processed one at a time.
+Honest disclosure: not everything speeds up. Our IPv4 parser hit 0.58x with inner-SPMD -- actually *slower* than scalar while Daniel Lemire manage to do [so](https://lemire.me/blog/2023/06/08/parsing-ip-addresses-crazily-fast/) pretty well. It might be a skill issue on my part. Also very often the scalar generated version of a SPMD code can be slightly slower than current Go stdlib. This is often because you do write algorithm differently when you expect things to be processed in parallel than when you expect them not to.
+
+## Why TinyGo
+
+A fair question: why build this on TinyGo rather than the main Go compiler?
+
+The short answer is LLVM. ISPC -- the closest existing SPMD compiler, and the one we learned the most from -- is built on LLVM. Every SIMD architecture we care about (WASM simd128, x86 SSE/AVX2/AVX-512, ARM NEON/SVE) already has mature vector instruction support in LLVM's backend. TinyGo uses LLVM. The main Go compiler does not. Building on TinyGo meant we could emit LLVM vector IR (`<4 x i32>`, `<32 x i8>`, masked loads and stores) and get correct code on every target without writing a single line of architecture-specific codegen ourselves. The multi-architecture support was already there; bolting on SPMD loop lowering was the only missing piece.
+
+That said, TinyGo has its own costs. The biggest one is the Go compiler's duplicated infrastructure. Go has *two* type-checker implementations (`cmd/compile/internal/types2` and `go/types`), *two* SSA representations (`cmd/compile/internal/ssa` and `golang.org/x/tools/go/ssa`), and *two* parser implementations (`cmd/compile/internal/syntax` and `go/parser`). TinyGo uses the `go/` standard-library versions of all three. The main Go compiler uses the `cmd/compile/internal/` versions. They are near-identical codebases maintained separately.
+
+For the PoC, this meant every frontend change -- every type-checker rule for `lanes.Varying[T]`, every parser extension for `go for`, every control-flow restriction -- had to be written in *both* trees. The SPMD SSA work went into a patched `golang.org/x/tools/go/ssa` because that is what TinyGo consumes, but for an upstream Go implementation the same patterns would go into `cmd/compile/internal/ssa`. We ended up maintaining three forked repositories (Go, TinyGo, and x-tools-spmd) when ideally there would be one.
+
+The duplication is not a TinyGo problem. It is a Go ecosystem problem. Any tool that needs to understand Go at the type or SSA level -- gopls, staticcheck, go vet, TinyGo -- faces the same split. If the Go project ever unified `types2` and `go/types`, or converged the two SSA representations, it would benefit every downstream consumer, not just SPMD.
+
+For the PoC's purposes, TinyGo was the right choice. It gave us LLVM's vector infrastructure for free, it let us iterate on the SSA-level transforms without modifying the main Go compiler, and it produced real executables we could benchmark on real hardware. The tradeoff was the double-write tax on frontend work.
 
 ## Why this belongs in the compiler
 
@@ -166,11 +180,9 @@ We learned this the hard way. Our first approach tried to bolt SPMD onto the Tin
 
 The proof-of-concept adds three SPMD-aware SSA instructions (`SPMDLoad`, `SPMDStore`, `SPMDSelect`) and four metadata structures to `go/ssa`. With that foundation, predication and loop peeling become mechanical transforms, and mask correctness is guaranteed by construction rather than reconstructed by analysis.
 
-**How this relates to `simd/archsimd` (Go 1.26).** The two approaches are complementary, not competing. `archsimd` is instruction-level: you pick `Int32x8`, you call `.Add()`, you get one instruction. It is "SIMD as `syscall`" -- architecture-specific, direct, and exactly right for `crypto` internals or `math/big` where you want a specific machine instruction. SPMD is loop-level: you write `go for`, the compiler picks the width and the instructions. It is "SIMD as `go for`" -- portable, automatic, and right for application code where you want the compiler to do the work.
+**How this relates to `simd/archsimd` (Go 1.26).** The two approaches are complementary, not competing. `archsimd` is instruction-level: you pick `Int32x8`, you call `.Add()`, you get one instruction. It is "SIMD as `syscall`" -- architecture-specific. It build up infrastructure and support for assembly instruction not otherwise available. It is a necessary step to enable higher level. SPMD is that higher level of abstraction: you write `go for`, the compiler picks the width and the instructions. It is "SIMD as `go for`" -- portable, automatic, and right for application code where you want the compiler to do the work with readable idiomatic Go.
 
-The Go team has described a planned portable high-level API on top of `archsimd`. That would be a third point in the design space -- something like Google's Highway for C++. Our hypothesis is that a serious Go SIMD story wants all three: `archsimd` underneath for instruction-level control, a portable vector library for typed vector operations, and SPMD on top for loop-level data parallelism. They serve different audiences and different use cases.
-
-For upstream Go, the SSA-level patterns we prototyped in `golang.org/x/tools/go/ssa` -- `SPMDLoopInfo`, explicit mask metadata, predication transforms, loop peeling -- would go into `cmd/compile/internal/ssa`. The 42 Phase-1 opcodes we built early on were the wrong shape (a flat list of vector operations) but pointed at the right location. The structured approach is what should replace them.
+The Go team has described a planned portable high-level API on top of `archsimd`. That would be a third point in the design space -- something like Google's Highway for C++. Our hypothesis is that a language approach will likely outperform such approach and enable more developers to use it: `archsimd` underneath for instruction-level control for teams that really want hand written non portable assembly for that last 20% speed up and SPMD on top for loop-level data parallelism for everyone else. They serve different audiences and different use cases.
 
 ## Where SPMD would help in the stdlib
 
@@ -180,9 +192,27 @@ Two categories stand out as natural fits:
 
 **Byte parsing.** HTTP header scanning (`net/http`), JSON structural character detection, `go/scanner` tokenization, `encoding/hex`, `encoding/base64`. The proof-of-concept's hex-encode and base64 examples are proofs of concept for this whole category. Anything that is "scan a `[]byte`, classify each byte, act on the classification" fits the same pattern: byte-lane iteration, small-table lookup via `vpshufb`, and masked stores. These hot paths are well-tested, self-contained, and performance-visible in real services -- good properties for introducing a new compiler technology.
 
+## How this was built: six months of vibe coding
+
+I want to be transparent about how this proof of concept came together, because the process itself is part of the story.
+
+This entire PoC was built with Claude Code over roughly six months, starting in late 2025. The Go frontend, the TinyGo backend, the x-tools-spmd patches, the E2E test infrastructure, the examples -- all of it was produced through a human-AI collaboration where I provided the direction and the AI wrote the code. I could not have built this alone. Not in six months, probably not ever. The compiler engineering involved -- predicated SSA, loop peeling, pattern detection, LLVM IR generation across three SIMD targets -- spans too many domains for one person without deep LLVM experience to execute at this pace.
+
+That said, it was not smooth. The biggest friction was that the model had never seen `go for` before. Every Go example it had ever trained on uses `go` followed by `func()`, never `go` followed by `for`. It consistently tried to rewrite SPMD code as goroutine launches, or inserted `go func()` wrappers around `for` loops. **All examples and tests had to be written by hand.** Every `go for` loop, every `lanes.Varying[T]` declaration, every `reduce.Add` call in the test suite -- I wrote those, because the model could not reliably generate valid SPMD Go from scratch.
+
+Strangely, the reverse worked well: once I gave the model the rules and the context (the type-checker restrictions, the ISPC semantics, the SSA generation strategy), it could *review* the hand-written examples and tests and find real bugs. It caught mask-propagation errors, missing edge cases in control-flow rules, and type-checker omissions that I had missed. The model was a better reviewer than it was a writer for novel syntax.
+
+The other persistent source of confusion was the duplicated Go infrastructure. The model regularly mixed up `cmd/compile/internal/types2` with `go/types`, `cmd/compile/internal/ssa` with `golang.org/x/tools/go/ssa`, and `cmd/compile/internal/syntax` with `go/parser`. It would confidently edit the wrong file, add imports from the wrong package, or reference APIs that existed in one SSA but not the other. With three forked repositories, each with its own branch, the context management was genuinely difficult. A significant fraction of the six months was spent correcting navigation errors rather than making progress.
+
+Things changed in January 2026 when I switched to a structured agent workflow: a development agent writes the code, a separate reviewer agent checks it, and a commit agent handles the git work. The reviewer agent turned out to be the key -- it caught the navigation errors and the types2/go-types mix-ups that the development agent introduced, and it enforced consistency across the three repositories. From that point, the pace of progress roughly doubled.
+
+**What should be reused from this PoC:** the learnings, the design (predicated SSA at the SSA level, explicit masks, pattern detection philosophy), the examples, and the test suite. **What should not be reused:** the compiler code itself. It was written to explore and validate, not to ship. A real implementation would start from the architectural lessons documented in these articles and build the transforms properly inside `cmd/compile/internal/ssa`, not retrofit them from a TinyGo fork.
+
+The PoC served its purpose: it proved that SPMD-for-Go is viable, it identified the patterns that deliver performance, and it documented the dead ends so the next person does not have to rediscover them. That is enough.
+
 ## Where to go from here
 
-The proof of concept is open source. The full implementation spans three repositories: a Go fork (type system and SSA), a TinyGo fork (LLVM backend for WASM and x86), and a patched `golang.org/x/tools` (SSA-level predication and loop peeling). We have 90 end-to-end tests passing across WASM, SSE, and AVX2.
+The proof of concept is open source. The full implementation spans three repositories: a Go fork (type system and SSA), a TinyGo fork (LLVM backend for WASM and x86), and a patched `golang.org/x/tools` (SSA-level predication and loop peeling). We have 90 end-to-end tests passing across WASM, SSE, and AVX2. It work good enough for a proof of concept and an experiment to show what is possible.
 
 We would welcome feedback from the Go community -- whether you are a developer who would use this, a compiler engineer who sees how to do it better, or someone who spots a flaw in the design. The interesting conversation is not "should Go have SIMD?" (it should, and `archsimd` is already here) but rather "should Go have *loop-level* data parallelism, and if so, what should it look like?"
 
