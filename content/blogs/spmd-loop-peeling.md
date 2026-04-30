@@ -52,7 +52,7 @@ Without peeling, every `SPMDStore` in the loop must do three memory operations:
 2. **Blend** in the new values at mask-active positions (a select or bitwise OR).
 3. **Store** the blended vector back.
 
-Three memory operations for one logical store. On WASM, the situation is even worse: `llvm.masked.store` scalarizes to 4-16 conditional scalar stores, each with a branch. On x86, a `vpblendvb` is cheaper than branches but still requires the load.
+Three memory operations for one logical store. On WASM, we managed to find a trick. Always take 16bytes out of the end of the memory heap to guarantee that all read or store are safe. On x86, a `vpblendvb` is cheaper than branches but still requires the load.
 
 With peeling, the main body's mask is statically known to be `ConstAllOnes`. The backend checks this at `spmdFullStoreWithBlend` (around line 4644 of `tinygo/compiler/spmd.go`):
 

@@ -7,7 +7,7 @@ featured_image = 'images/lakelouise.jpg'
 featured_image_class = 'cover bg-center'
 +++
 
-You have heard the pitch: a base64 decoder in 40 lines of Go that runs at ~17 GB/s on AVX2, about 9x faster than `encoding/base64` and within 77% of the best C++ SIMD library. If that got your attention, this article is where you learn how to write code like that yourself.
+You have read the short version: a base64 decoder in 40 lines of Go that runs at ~17 GB/s on AVX2, about 9x faster than `encoding/base64` and within 77% of the best C++ SIMD library. If that got your attention, this article is where you learn how to write code like that yourself.
 
 <!--more-->
 
@@ -17,12 +17,12 @@ I am going to walk through the mental model, the idioms that deliver wins, and t
 
 In SPMD, every value has one of two shapes:
 
-- **Uniform.** A regular Go value. Same across all SIMD lanes. No annotation needed. Your `int`, your `float32`, your slice header --- all uniform unless you say otherwise.
+- **Uniform.** A regular Go value. Also known as a scalar. Same across all SIMD lanes. No annotation needed. Your `int`, your `float32`, your slice header --- all uniform unless you say otherwise.
 - **Varying.** A vector of values, one per lane. Typed as `lanes.Varying[T]`. On WASM simd128 a `lanes.Varying[int32]` holds 4 values; on AVX2 it holds 8.
 
 Uniform values are exactly what you are used to in Go. There is no runtime overhead --- they live in scalar registers, not vector registers.
 
-Varying values are the new idea. They represent "this value has a different per-lane content." In generated code, a `lanes.Varying[int32]` is a vector register.
+Varying values are the "new" idea for Go. They represent "this value has a different per-lane content." In generated code, a `lanes.Varying[int32]` is a vector register. The naming come from shaders language which are designed to operate on vectors.
 
 ### Implicit broadcast
 
@@ -73,7 +73,7 @@ Three sources:
 
 ## Your first `go for`
 
-First, the disambiguation: `go for` is an SPMD loop. `go func()` is a goroutine. The parser tells them apart by looking at the token after `go`. There is no ambiguity.
+First, the disambiguation: `go for` indicate you can process the data in parallel in that loop, aka a SPMD loop. `go func()` is a goroutine indicating you can execute that function in parallel with the rest of the program. The parser tells them apart by looking at the token after `go`. There is no ambiguity.
 
 An SPMD loop is lowered by the compiler into a vectorized main body that processes `laneCount` elements per iteration, plus a masked tail that handles the remainder. You do not see this. You just write the loop.
 
@@ -99,7 +99,7 @@ Line by line:
 - `total += value` adds the current vector of values into the accumulator. One `vpaddd` per main iteration.
 - `return reduce.Add(total)` collapses the varying accumulator into a single scalar.
 
-For a 1024-element slice on AVX2 (8 lanes of int), the main loop runs 128 iterations, each doing one load and one add. The scalar equivalent does 1024 of each. Roughly 8x fewer instructions.
+For a 1024-element slice on AVX2 (8 lanes of int), the main loop runs 128 iterations, each doing one load and one add. The scalar equivalent does 1024 of each. Roughly 8x fewer instructions. Roughly that much speed up.
 
 ## The golden pattern
 
@@ -115,7 +115,7 @@ go for i, x := range in {
 
 When writing new SPMD code, aim for this shape first. Complications come from varying-index access (gather/scatter instead of contiguous), strided stores (`out[i*3+k]`), and partial stores under a varying condition. The compiler handles all of these, but contiguous access is where the biggest wins live.
 
-## Reductions and the `lanes.Index()` anti-pattern
+## Reductions anti-pattern
 
 Here is the trap. This innocent-looking code is wrong in a deep way:
 
@@ -135,13 +135,11 @@ The problem: `i` is varying and `result` is uniform. The assignment should not t
 
 **Any time your output depends on the SIMD width, you have a correctness bug.** This is not a performance issue --- it is a "your tests pass in one mode and fail in another" issue.
 
-The broader anti-pattern: using `lanes.Index()` for per-lane computation and `reduce.From()` to inspect individual lane values. Both produce lane-count-dependent results.
+The broader anti-pattern: using `reduce.From()` to inspect individual lane values. Both produce lane-count-dependent results.
 
 The correct discipline is to produce scalar results via reductions: `reduce.Add`, `reduce.Min`, `reduce.Max`, `reduce.Or`, `reduce.And`, `reduce.Mask`. All of these give the same answer regardless of SIMD width.
 
-`reduce.From(v)` exists --- it extracts all lanes into a Go slice. It is a code smell in hot paths: slow (N scalar extractions), lane-count-dependent, and a sign you are trying to do per-lane work on the CPU side. Reserve it for tests and debugging.
-
-A possible future language refinement: `lanes.Index()` is really just `iota` --- "the sequence `0, 1, 2, ..., N-1`" --- promoted to vector form. A natural evolution would be to let `iota` carry that meaning when its result type is varying. The proof of concept does not implement this, but the conceptual fit is appealing.
+`reduce.From(v)` exists --- it extracts all lanes into a Go slice. It is a code smell in hot paths: slow (N scalar extractions), lane-count-dependent, and a sign you are trying to do per-lane work on the scalar side. Reserve it for tests and debugging.
 
 **How to detect lane-count bugs today:** compile in dual mode and diff the output:
 
@@ -151,7 +149,7 @@ tinygo build -target=wasi -simd=false -o out-scalar.wasm main.go
 diff <(wasmer run out-simd.wasm) <(wasmer run out-scalar.wasm)
 ```
 
-If the outputs differ, you have a lane-count-dependent bug. In a real implementation this should be a static analyzer rule (the properties are syntactic and local), but dual-mode diffing is the practical workaround for now.
+If the outputs differ, you have a lane-count-dependent bug. In a final implementation this should be a static analyzer rule (the properties are syntactic and local) and also likely part of the -race tests path, but dual-mode diffing is the practical workaround for now.
 
 ## Control flow rules
 
@@ -232,7 +230,7 @@ func decodeAndPack(dst, src []byte) int {
 }
 ```
 
-The programmer writes plain Go. No builtins, no intrinsics, no annotations. The compiler recognizes the patterns and emits the tightest available SIMD instructions for each target. The hot loop went from 14.3 instructions per byte (scatter-gather version) to 0.44 instructions per byte --- a 32x instruction reduction.
+The programmer writes plain Go. No builtins, no intrinsics, no annotations. The compiler recognizes the patterns and emits the tightest available SIMD instructions for each target.
 
 ### Chunk sizing with `lanes.Count[T]()`
 
@@ -258,14 +256,6 @@ On AVX2, iterating at byte granularity gives you **32 lanes** per iteration. Ite
 
 Rule of thumb: if your algorithm is naturally byte-parallel, prefer byte lanes.
 
-### Outer-SPMD batching
-
-The IPv4 parser in the proof of concept is instructive for a different reason: it does **not** speed up with inner SPMD. Vectorizing the parse of a single IP address peaks at 0.58x scalar --- actually slower --- because a single IPv4 string has only 4--15 characters and the vector setup overhead eats the gains.
-
-The architectural answer is **outer-SPMD batching**: vectorize across independent instances instead of within one instance. If you have 16 IPv4 strings to parse, run 16 parsers in parallel, one per lane.
-
-The general rule: when one instance of your computation is too small or too irregular to vectorize internally, vectorize across instances. This is how ISPC's flagship use cases (ray tracers, physics solvers) work.
-
 ## Debugging
 
 ### `fmt.Printf` with `%v` on varying values
@@ -282,10 +272,6 @@ go for i := range 16 {
 ```
 
 `%v` on a varying value prints `[value _ value _ ...]` where active lanes show their values and inactive lanes show `_`. The mask becomes immediately visible. Use it liberally while writing your first SPMD code.
-
-### Dual-mode build and diff
-
-Compile with both `-simd=true` and `-simd=false`, run both, diff the output. If they differ, you have a lane-count-dependent bug. The test script `test/e2e/spmd-e2e-test.sh` Level 8 automates this for every example.
 
 ### Reading generated code
 
@@ -333,7 +319,7 @@ func EncodeSrc(dst, src []byte) int {
 
 Same output, different shape. The strided stores `dst[i*2]` and `dst[i*2+1]` trigger the byte-decomposition store pattern: the compiler recognizes that they form a stride-2 interleaved write and emits a single bitcast + pshufb + store sequence.
 
-On WASM the dst-centric form wins slightly; on AVX2 the difference is small. **This is a recurring theme in SPMD: the same algorithm can be expressed multiple ways, and the best one depends on the target.** Benchmark both.
+On WASM the dst-centric form wins slightly; on AVX2 the difference is small. **This is a recurring theme in SPMD: the same algorithm can be expressed multiple ways, and the best one depends in practice.** Benchmark both. Also WASM performance might vary depending on the runtime/os/cpu, it isn't the best platform to optimize for and choose an ideal SPMD algorithm.
 
 ### Mandelbrot: divergent iteration with SPMD function calls
 
@@ -397,9 +383,9 @@ Write the loop. Trust the compiler. If the generated code is bad, file a bug ---
 
 The patterns that deliver wins: contiguous slice loads and stores (the golden case), cascading `go for` loops with constant-coefficient multiply-add, chunk sizing with `lanes.Count[T]()`, and varying accumulators collapsed with `reduce.Add` / `reduce.Max` / `reduce.Min`.
 
-The anti-patterns that hurt: using `lanes.Index()` for per-lane computation, inspecting individual lanes with `reduce.From`, reaching for `Swizzle` or `*Within` operations before measuring, and vectorizing a single small string when you could batch across strings.
+The anti-patterns that hurt: inspecting individual lanes with `reduce.From`, reaching for `Swizzle` or `*Within` operations before measuring, and vectorizing a single small string when you could batch across strings.
 
-The proof of concept is open source. The full developer guide, the compiler internals, and every example referenced in this article are in the repository. If you want to try it yourself, `GOEXPERIMENT=spmd` and a forked TinyGo are all you need.
+The proof of concept is open source. The full developer guide, the compiler internals, and every example referenced in this article are in the repository. If you want to try it yourself locally, `GOEXPERIMENT=spmd` and a forked TinyGo are all you need. Or you can just try it right now online [here](FIXME).
 
 ---
 

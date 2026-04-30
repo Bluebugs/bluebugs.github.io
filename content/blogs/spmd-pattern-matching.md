@@ -73,7 +73,7 @@ func decodeAndPack(dst, src []byte) int {
 }
 ```
 
-No `SwizzleWithin`. No `RotateWithin`. No `ShiftLeftWithin`. No output pattern. No explicit cross-lane anything. Just four `go for` loops with plain Go arithmetic. And it hit 77% of the best C++ SIMD library.
+No `SwizzleWithin`. No `RotateWithin`. No `ShiftLeftWithin`. No output pattern. No explicit cross-lane anything. Just four `go for` loops with plain Go arithmetic. And it hit 77% of the best C++ SIMD library. It is to be noted that tinygo is targeting embedded devices and as such it is optimized for size. This means no loop unrolling. simdutf8 base64 implementation work on 64 bytes per iteration while ours does only 32. If only performance mattered, we would enable loop unrolling for any `go for` loop and likely would get closer to simdutf8.
 
 The original blog post even asked the right question: "Is the added complexity worth it? Perhaps the real question is whether we need the full suite of cross-lane operations, or if reduction alone would cover the majority of practical use cases." The answer turned out to be more dramatic than we expected.
 
@@ -121,7 +121,9 @@ The compiler's byte-decomposition store detector recognizes the stride-S pattern
 
 Three operations, independent of the number of lanes. On WASM, `v128.swizzle` does the same job. On SSE, `pshufb`. The detection pass is roughly 300 lines of compiler code.
 
-Here is the part that still amazes me: the byte-decomposition store detector replaced approximately 1,500 lines of `CompactStore`, `SPMDMux`, and `SPMDInterleaveStore` infrastructure we had built for the v1 decoder. We added those three features between April 8 and April 10, 2026 --- explicit cross-lane builtins with SSA-level optimization passes, diagonal-extraction shuffles, and per-lane selection logic. Four days later, we deleted all of it. One recognizer, 300 lines, did the same job better.
+Here is the part that still amazes me: the byte-decomposition store detector replaced approximately 1,500 lines of `CompactStore`, `SPMDMux`, and `SPMDInterleaveStore` infrastructure we had built for the v1 decoder. We added those three features --- explicit cross-lane builtins with SSA-level optimization passes, diagonal-extraction shuffles, and per-lane selection logic. Four days later, we deleted all of it. One recognizer, 300 lines, did the same job better.
+
+This optimization should be implemented to cover at minima stride from 2 to 4 elements. This will likely cover most practical case (hexadecimal, base64 and image manipulation all would use the same pattern) and if over time larger are needed they can be added.
 
 ## Why simpler code wins
 
@@ -158,6 +160,7 @@ Ship fewer primitives, not more. Let the compiler do the thinking.
 ---
 
 **Further reading:**
+
 - [We Built Cross-Lane SIMD Primitives. None of Them Helped.](../spmd-negative-result/) --- the full negative result on cross-lane operations.
 - [SPMD for Go: What If Your Loops Were 9x Faster?](../spmd-results/) --- benchmark results and live demos.
 - [How SPMD Lives in the Compiler](../spmd-compiler-internals/) --- the SSA architecture that makes pattern detection possible.

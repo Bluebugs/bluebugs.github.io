@@ -7,15 +7,15 @@ featured_image = 'images/lakelouise.jpg'
 featured_image_class = 'cover bg-center'
 +++
 
-We built an SPMD compiler for Go. Not a proposal, not a design doc -- a working proof of concept that compiles `go for` loops to WASM SIMD128, x86 SSE, and x86 AVX2, with 102 end-to-end tests passing and a base64 decoder reaching ~77% of simdutf C++ throughput. The goal is to help people imagine what is possible. Along the way we learned one lesson the hard way: **SPMD is a compiler feature that has to live at the heart of the SSA form.** Everything else follows from that.
+We added the ability for developers to express data parallelism in idiomatic Go. It was close to a past proposal that developer and compiler engineer couldn't understand how it could work. A working proof of concept that compiles `go for` loops to WASM SIMD128, x86 SSE, and x86 AVX2, with end-to-end tests passing and a base64 decoder reaching ~77% of simdutf C++ throughput is better at explaining what can be done. The goal is to help people imagine what is possible. Along the way we learned one lesson the hard way: **SPMD is a compiler feature that has to live at the heart of the SSA form.** Everything else follows from that.
 
-This article is for compiler engineers. If you want to see the benchmarks and the pitch, read [the overview](../spmd-results/). If you want to write SPMD Go code, the practical guide is coming next. Here, we talk about what we built inside the compiler, what we got wrong, and what we would do differently.
+This article is for compiler engineers. If you want to see the benchmarks and the short version, read [the overview](../spmd-results/). If you want to write SPMD Go code, the [practical guide](../writing-spmd-go) is for you. Here, we talk about what we built inside the compiler, what we got wrong, and what we would do differently.
 
 <!--more-->
 
 ## The mask-stack detour
 
-The proof of concept already maintained two forked repositories: a Go fork for the frontend (lexer, parser, type checker) and a TinyGo fork for the LLVM backend. Adding a third fork -- a patched copy of `golang.org/x/tools/go/ssa` -- felt like a maintenance burden we could not afford. Three forks means three rebase surfaces, three sets of merge conflicts, three repos to keep in sync every time upstream changes.
+The proof of concept already maintained two forked repositories: a Go fork for the frontend (lexer, parser, type checker) and a TinyGo fork for the LLVM backend. Adding a third fork -- a patched copy of `golang.org/x/tools/go/ssa` -- felt like an additional burden. We already had lost time modifying the Go compiler SSA which was absolutely not necessary for this project. There is also this idea that this can be done outside of the compiler. If that was true, we certainly wouldn't need to touch that package, right?
 
 So we spent real effort trying to do everything in TinyGo's backend without modifying the SSA layer. The reasoning was straightforward: TinyGo already consumes `go/ssa` as a read-only input. If we could reconstruct varying-ness, control-flow masks, and predication from the SSA structure alone -- by analyzing the blocks during LLVM codegen -- we would not need to fork `go/ssa`.
 
@@ -69,15 +69,13 @@ In Phase 1 of the PoC, we added 42 vector opcodes to [`cmd/compile/internal/ssa/
 
 The 42 opcodes were the wrong shape but the right location. A flat list of vector ops is how you would design a SIMD intrinsics library, not how you would design a compiler. The structured approach that worked -- `SPMDLoopInfo`, explicit-mask `SPMDLoad`/`SPMDStore`/`SPMDSelect`, `If.IsVarying` metadata, predication transforms, SSA-level loop peeling -- is what should replace them. An upstream implementation should rework `cmd/compile/internal/ssa` to carry these patterns natively.
 
-The public `go/ssa` package served as our prototyping ground. `cmd/compile/internal/ssa` is where the production implementation lives. The design transfers directly; the only question is how deeply to integrate predication with the existing optimization passes (dead code elimination, constant folding, register allocation) that `cmd/compile` already runs.
-
 ## The `lanes.Varying[T]` type magic
 
 `lanes.Varying[T]` is a compiler-magic generic. It parses as a plain generic index expression -- `PkgName.TypeName[TypeArg]` -- but the type checker special-cases it: when resolving the index expression, if the callee is the magic type `lanes.Varying`, it dispatches to the SPMD code path and synthesizes an `SPMDType`. Tooling works unchanged; the grammar is unchanged; `gopls` sees a generic invocation and does the right thing.
 
 We considered a `varying` keyword. We rejected it because any new reserved word breaks old Go code that uses `varying` as an identifier. It also requires lexer changes that ripple into every downstream tool -- `gopls`, `goimports`, `vet`, tree-sitter grammars, syntax highlighters, generator authors. The cost falls on people who do not care about SPMD.
 
-Every SPMD-specific frontend rule lives in a file whose name ends with `_ext_spmd.go`. This makes the SPMD work trivially separable from the rest of the type checker and makes merging with upstream Go much easier. Examples in `cmd/compile/internal/types2/`: [`typexpr_ext_spmd.go`](https://github.com/Bluebugs/go/blob/spmd/src/cmd/compile/internal/types2/typexpr_ext_spmd.go) for the entry point that catches `lanes.Varying[T]` index expressions, [`stmt_ext_spmd.go`](https://github.com/Bluebugs/go/blob/spmd/src/cmd/compile/internal/types2/stmt_ext_spmd.go) for return/break rules, [`call_ext_spmd.go`](https://github.com/Bluebugs/go/blob/spmd/src/cmd/compile/internal/types2/call_ext_spmd.go) for the public API restriction.
+Every SPMD-specific frontend rule lives in a file whose name ends with `_ext_spmd.go`. This makes the SPMD work trivially separable from the rest of the type checker and makes understanding it much easier. Examples in `cmd/compile/internal/types2/`: [`typexpr_ext_spmd.go`](https://github.com/Bluebugs/go/blob/spmd/src/cmd/compile/internal/types2/typexpr_ext_spmd.go) for the entry point that catches `lanes.Varying[T]` index expressions, [`stmt_ext_spmd.go`](https://github.com/Bluebugs/go/blob/spmd/src/cmd/compile/internal/types2/stmt_ext_spmd.go) for return/break rules, [`call_ext_spmd.go`](https://github.com/Bluebugs/go/blob/spmd/src/cmd/compile/internal/types2/call_ext_spmd.go) for the public API restriction.
 
 Every one of these files is mirrored in [`go/types/`](https://github.com/Bluebugs/go/tree/spmd/src/go/types) with identical logic. This is the single most painful thing about working in Go's type checker today: `cmd/compile/internal/types2` and `go/types` are two near-duplicate trees. Every SPMD rule had to be written twice, reviewed twice, tested twice. If you are planning to upstream this work, unify `types2` and `go/types` first, or accept that every SPMD contribution is a double-write.
 
@@ -101,15 +99,14 @@ Building scalar mode exposed five categories of assumption bugs:
 2. `MakeInterface` on a varying value assumed a vector layout; at lane count 1, the "vector" is a scalar and the layout differs.
 3. `splatScalar` optimized for lane count 1 by returning the scalar directly, which broke type matching downstream.
 4. `reduce.Add` and friends matched by a naming convention that broke when scalar mode inlined differently.
-5. `lanes.DotProductI8x16Add` had no scalar path at all. (We removed the builtin entirely.)
 
 Each of these was a five-minute fix once found. All were hidden until scalar mode ran. Do not ship an SPMD compiler without a scalar fallback mode. It is the only automated correctness check that catches entire classes of bugs that pass under SIMD and fail under 1-lane execution.
 
 ## What we would do differently
 
-**Unify `types2` and `go/types`.** The double-write cost us more time than any single technical decision. Every type-system extension was implemented twice, debugged twice, tested twice. If you are building this for real, unify first.
+**Unify `types2` and `go/types`.** The double-write cost us more time than any single technical decision. Every type-system extension was implemented twice, debugged twice, tested twice. We gave up trying to get things clean in favor of just getting things to work. Their is clearly more work to do in the check pass than we did as we decided to live with it and add some of the logic in the next pass. Not ideal decision.
 
-**First-class mask width in the type system.** Two `go for` loops in the same function can have different lane counts -- one iterating `int32` (4-wide on SSE), another iterating `byte` (16-wide on SSE). Their masks have different LLVM types. We handled this with deferred mask type resolution at materialization points. It works but it is ugly. A cleaner design would make mask width part of the SPMD type system so that `Varying[mask[N]]` carries its N.
+**First-class mask width in the type system.** Two `go for` loops in the same function can have different lane counts -- one iterating `int32` (4-wide on SSE), another iterating `byte` (16-wide on SSE). Their masks have different LLVM types. We handled this with deferred mask type resolution at materialization points. It works but it is ugly. A cleaner design would make mask width part of the SPMD type system so that `Varying[mask[N]]` carries its N. That has to be done with the implied decision that the `go for` loops drive the final lane count inside a loop.
 
 **A real calling convention for the mask parameter.** In the PoC, the current mask is a synthetic parameter shoved into the front of every SPMD function's argument list. In a real implementation, debuggers, profilers, FFI bridges, and reflection should see it explicitly. It deserves a calling convention, not a hack.
 
@@ -118,6 +115,8 @@ Each of these was a five-minute fix once found. All were hidden until scalar mod
 **A smaller [`compiler/spmd.go`](https://github.com/Bluebugs/tinygo/blob/spmd/compiler/spmd.go).** The file grew to approximately 9,000 lines. It should have been seven files of 1,200 lines each: `spmd_loop.go`, `spmd_memory.go`, `spmd_masks.go`, `spmd_patterns_x86.go`, `spmd_patterns_wasm.go`, `spmd_builtins.go`, `spmd_lowering.go`. Commit to a file-per-concern structure from day one.
 
 **Fork `go/ssa` on day one.** The mask-stack detour cost us months. If we had accepted the three-fork maintenance burden early and built predication at the SSA level from the start, the total project time would have been shorter. The bugs were proportional to the gap between what the SSA knew and what the backend needed. Close the gap at the source. That is the lesson, and it is the one we would give to anyone starting a similar project.
+
+Also we need a better name. I am bad at naming things. `goroutine` is nice and understandable way to describe light thread. So what should be the name of a SPMD for loop, this little `go for`... I am so close to call it a gopher loop :-D Yes, my jokes are not much better than my sense of naming.
 
 ---
 

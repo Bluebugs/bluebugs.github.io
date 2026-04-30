@@ -92,7 +92,9 @@ Cross-lane primitives move values *within* a SIMD register. They do not change h
 
 None of these optimizations involve moving values between lanes. They are all about reducing memory traffic, reducing instruction count, and eliminating masking overhead. Cross-lane primitives contribute to none of them.
 
-## The market mismatch
+They also are complex for the compiler to reason about them, making them opaque builtin that it can not optimize away.
+
+## The mismatch
 
 ISPC and Mojo ship rich cross-lane vocabularies, and for good reason. Their primary markets -- ray tracing, physics simulation, shader compilation -- are full of small kernels that need within-register rearrangement: butterfly operations in FFTs, neighborhood lookups in stencil computations, AoS-to-SoA transforms in particle systems.
 
