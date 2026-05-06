@@ -92,7 +92,7 @@ Cross-lane primitives move values *within* a SIMD register. They do not change h
 
 None of these optimizations involve moving values between lanes. They are all about reducing memory traffic, reducing instruction count, and eliminating masking overhead. Cross-lane primitives contribute to none of them.
 
-They also are complex for the compiler to reason about them, making them opaque builtin that it can not optimize away.
+They also make the source more opaque to the compiler, which means fewer opportunities for higher-level optimizations to fire.
 
 ## The mismatch
 
@@ -112,7 +112,7 @@ Based on this evidence, a real Go SPMD implementation should ship three cross-la
 
 That is it. Maybe add compile-time-const `lanes.Rotate` if a specific benchmark demands it -- circular buffer tricks are a candidate. But gate even that on concrete evidence.
 
-Do not ship the `*Within` family. Do not ship runtime-indexed `Swizzle`. They cost nothing to execute but they cost real engineering to maintain: type-checker enforcement for const-only arguments, AVX2 table duplication interactions, scalar fallback paths, test matrices. Unused builtins are a tax on every future compiler change.
+Do not ship the `*Within` family. Do not ship runtime-indexed `Swizzle`. Even when some of these lower efficiently in the good cases, they cost real engineering to maintain: type-checker enforcement for const-only arguments, AVX2 table duplication interactions, scalar fallback paths, test matrices. Unused builtins are a tax on every future compiler change.
 
 You can always add more primitives later when a real benchmark demands them. This runs against the "future-proof API surface" instinct, but the evidence says it is the right call: we built the full suite, measured everything, and deleted most of it.
 
@@ -122,7 +122,7 @@ If you are designing a SIMD API -- for Go or anything else -- invest in pattern 
 
 We wrote this up because negative results deserve documentation. We spent real engineering time on cross-lane primitives, learned they do not help for Go's workloads, and want to save others from the same detour.
 
-For the technical details on which pattern detectors replaced the cross-lane primitives: [Pattern Matching Beats Hand-Written SIMD](../spmd-pattern-matching/). For the full benchmark results across all examples and targets: [SPMD for Go: What If Your Loops Were 9x Faster?](../spmd-results/).
+For the technical details on which pattern detectors replaced the cross-lane primitives: [Pattern Matching Outperformed Hand-Written SIMD](../spmd-pattern-matching/). For the full benchmark results across all examples and targets: [SPMD for Go: What If Your Loops Were 9x Faster?](../spmd-results/).
 
 ---
 

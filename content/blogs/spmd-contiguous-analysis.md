@@ -129,10 +129,10 @@ If you are building a vectorizing compiler for any managed-memory language, here
 
 **Treat unrecognized as non-contiguous.** Do not try to handle "mostly contiguous" or "contiguous with gaps." Either the recognizer can prove full contiguity or the access falls back to scatter. Partial solutions create partial correctness bugs.
 
-And the overarching lesson: **invest disproportionately here.** Every percentage point of recognizer coverage is worth more than any other compiler work in this domain. The contiguous/non-contiguous boundary is where most of the benchmark delta lives. A slightly better recognizer beats a much better register allocator, a much better instruction selector, or a much better loop unroller. Those optimizations make fast code faster. The contiguous recognizer decides whether the code is fast in the first place.
+And the overarching lesson: **invest disproportionately here.** Every percentage point of recognizer coverage is worth more than any other compiler work in this domain. The contiguous/non-contiguous boundary is where most of the benchmark delta lives. A slightly better recognizer matters more than a much better register allocator, a much better instruction selector, or a much better loop unroller. Those optimizations make fast code faster. The contiguous recognizer decides whether the code is fast in the first place.
 
 ---
 
-**Further reading:** [How SPMD Lives in the Compiler](../spmd-compiler-internals/) covers the broader compiler architecture. [Pattern Matching Beats Hand-Written SIMD](../spmd-pattern-matching/) shows another case where a simple compiler recognizer outperformed explicit intrinsics.
+**Further reading:** [How SPMD Lives in the Compiler](../spmd-compiler-internals/) covers the broader compiler architecture. [Pattern Matching Outperformed Hand-Written SIMD](../spmd-pattern-matching/) shows another case where a simple compiler recognizer outperformed explicit intrinsics.
 
 *This article is part of a series on SPMD for Go. The proof of concept is open source at [github.com/Bluebugs/go-spmd](https://github.com/Bluebugs/go-spmd).*

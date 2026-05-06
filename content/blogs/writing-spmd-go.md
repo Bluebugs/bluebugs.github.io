@@ -9,6 +9,8 @@ featured_image_class = 'cover bg-center'
 
 You have read the short version: a base64 decoder in 40 lines of Go that runs at ~17 GB/s on AVX2, about 9x faster than `encoding/base64` and within 77% of the best C++ SIMD library. If that got your attention, this article is where you learn how to write code like that yourself.
 
+This is written against the proof of concept in this repository, not upstream Go. The aim is practical: explain the mental model that made the examples fast, and explain the mistakes that made some of them slow.
+
 <!--more-->
 
 I am going to walk through the mental model, the idioms that deliver wins, and the mistakes that will waste your time. Every code example here comes from the proof-of-concept repository and has been compiled and benchmarked. Nothing is hypothetical.
@@ -22,7 +24,7 @@ In SPMD, every value has one of two shapes:
 
 Uniform values are exactly what you are used to in Go. There is no runtime overhead --- they live in scalar registers, not vector registers.
 
-Varying values are the "new" idea for Go. They represent "this value has a different per-lane content." In generated code, a `lanes.Varying[int32]` is a vector register. The naming come from shaders language which are designed to operate on vectors.
+Varying values are the "new" idea for Go. They represent "this value has different per-lane content." In generated code, a `lanes.Varying[int32]` is a vector register. The name comes from shader languages, where the uniform/varying distinction is standard.
 
 ### Implicit broadcast
 
@@ -73,7 +75,7 @@ Three sources:
 
 ## Your first `go for`
 
-First, the disambiguation: `go for` indicate you can process the data in parallel in that loop, aka a SPMD loop. `go func()` is a goroutine indicating you can execute that function in parallel with the rest of the program. The parser tells them apart by looking at the token after `go`. There is no ambiguity.
+First, the disambiguation: `go for` means "this loop can execute in data parallel," that is, as an SPMD loop. `go func()` means "run this function concurrently as a goroutine." The parser tells them apart by looking at the token after `go`. There is no ambiguity.
 
 An SPMD loop is lowered by the compiler into a vectorized main body that processes `laneCount` elements per iteration, plus a masked tail that handles the remainder. You do not see this. You just write the loop.
 
@@ -135,9 +137,9 @@ The problem: `i` is varying and `result` is uniform. The assignment should not t
 
 **Any time your output depends on the SIMD width, you have a correctness bug.** This is not a performance issue --- it is a "your tests pass in one mode and fail in another" issue.
 
-The broader anti-pattern: using `reduce.From()` to inspect individual lane values. Both produce lane-count-dependent results.
+The broader anti-pattern is using `reduce.From()` to inspect individual lane values in real logic. That too produces lane-count-dependent results.
 
-The correct discipline is to produce scalar results via reductions: `reduce.Add`, `reduce.Min`, `reduce.Max`, `reduce.Or`, `reduce.And`, `reduce.Mask`. All of these give the same answer regardless of SIMD width.
+The correct discipline is to produce scalar results via reductions: `reduce.Add`, `reduce.Min`, `reduce.Max`, `reduce.Or`, `reduce.And`, `reduce.Mask`. Those give the same answer regardless of SIMD width.
 
 `reduce.From(v)` exists --- it extracts all lanes into a Go slice. It is a code smell in hot paths: slow (N scalar extractions), lane-count-dependent, and a sign you are trying to do per-lane work on the scalar side. Reserve it for tests and debugging.
 
@@ -391,4 +393,4 @@ The proof of concept is open source. The full developer guide, the compiler inte
 
 **Previous in series:** [SPMD for Go: What If Your Loops Were 9x Faster?](../spmd-results/) --- the pitch, with live demos and benchmark numbers.
 
-**Further reading:** [Pattern Matching Beats Hand-Written SIMD](../spmd-pattern-matching/) --- why the base64 decoder's idiomatic Go outperforms explicit cross-lane operations. [We Built Cross-Lane Primitives. None of Them Helped.](../spmd-negative-result/) --- the most important negative result from the proof of concept.
+**Further reading:** [Pattern Matching Outperformed Hand-Written SIMD](../spmd-pattern-matching/) --- why the base64 decoder's idiomatic Go outperforms explicit cross-lane operations. [We Built Cross-Lane Primitives. None of Them Helped.](../spmd-negative-result/) --- the most important negative result from the proof of concept.
