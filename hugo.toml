@@ -16,7 +16,7 @@ priority = 0.5
 filename = "sitemap.xml"
 
 [pagination]
-pagerSize = 3
+pagerSize = 9
 
 [params]
 text_color = "black"

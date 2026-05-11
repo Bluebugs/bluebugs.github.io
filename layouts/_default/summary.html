@@ -1,0 +1,39 @@
+{{ $featured_image := partial "func/GetFeaturedImage.html" . }}
+{{ $name := "" }}
+{{ with .File }}{{ $name = .LogicalName }}{{ end }}
+{{ $isSpmd := or (hasPrefix $name "spmd-")
+                 (hasPrefix $name "writing-spmd")
+                 (hasPrefix $name "go-spmd")
+                 (hasPrefix $name "cross-lane")
+                 (hasPrefix $name "go-data-parallelism")
+                 (hasPrefix $name "practical-vector") }}
+<article class="blog-card bg-white br2 overflow-hidden flex flex-column">
+  <a href="{{ .RelPermalink }}" class="link db dim">
+    {{ if $featured_image }}
+      <div class="blog-card-image aspect-ratio aspect-ratio--16x9">
+        <img src="{{ $featured_image }}" class="aspect-ratio--object cover" alt="">
+      </div>
+    {{ end }}
+  </a>
+  <div class="blog-card-body pa3 pa4-ns flex flex-column flex-auto">
+    <div class="blog-card-meta f6 mb2 flex items-center">
+      {{ if .Date }}
+        <time class="gray" datetime="{{ .Date.Format "2006-01-02" }}">
+          {{ .Date | time.Format (default "Jan 2, 2006" .Site.Params.date_format) }}
+        </time>
+      {{ end }}
+      {{ if $isSpmd }}
+        <span class="blog-card-badge ml2 ph2 pv1 br-pill f7 fw5">SPMD</span>
+      {{ end }}
+    </div>
+    <h2 class="blog-card-title f4 fw6 lh-title mt0 mb2 near-black">
+      <a href="{{ .RelPermalink }}" class="link near-black dim">{{ .Title }}</a>
+    </h2>
+    <p class="blog-card-desc f6 lh-copy mid-gray mt0 mb3">
+      {{ with .Description }}{{ . }}{{ else }}{{ .Summary | plainify | truncate 160 }}{{ end }}
+    </p>
+    <a href="{{ .RelPermalink }}" class="blog-card-cta mt-auto self-start ba b--moon-gray bg-light-gray br2 color-inherit f7 link ph2 pv1 hover-bg-moon-gray">
+      {{ $.Param "read_more_copy" | default (i18n "readMore") }}
+    </a>
+  </div>
+</article>
