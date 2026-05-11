@@ -8,7 +8,7 @@ googleAnalytics = ''
 enableRobotsTXT = true
 disqusShortname = "bluebugs"
 
-builddrafts = true
+builddrafts = false
 
 [sitemap]
 changefreq = "monthly"
