@@ -21,9 +21,7 @@ But byte-granular iteration over a `[]byte` requires computing 32 memory address
 <32 x i64> = [base, base+1, base+2, ..., base+31]
 ```
 
-That is **256 bytes of register state just for the index**, before you have loaded any actual data. On AVX-512 with 64 byte-lanes, it doubles to 512 bytes. LLVM's GEP vectorization path struggles with this: it scalarizes the gather into 32 individual loads, and the "vectorized" loop is slower than the scalar one.
-
-Worse, if you try to save register space by narrowing the index to `<32 x i8>` and then sign-extending it back to `i64` at the GEP site, LLVM's sign-extension pipeline produces wrong addresses for certain offset layouts. We discovered this the hard way in our hex-encode example and named it Bug 2. The addresses were silently incorrect -- no crash, just garbled output.
+That is **256 bytes of register state just for the index**, before you have loaded any actual data. On AVX-512 with 64 byte-lanes, it doubles to 512 bytes. LLVM's GEP vectorization path struggles with this: it scalarizes the gather into 32 individual loads, and the "vectorized" loop is slower than the scalar one. Solving this problem is critical to make SPMD and gopher loops useful in Go.
 
 ## The technique: scalar base + constant lane offset
 
@@ -54,24 +52,7 @@ The constraint that made byte iteration expensive was the index vector's width s
 
 This means `[]byte` iteration on AVX2 uses 32 lanes, on SSE uses 16 lanes, and on AVX-512 would use 64 lanes, all without index-register pressure. The lane count matches the register width exactly, which is the theoretical optimum for byte processing.
 
-The decision to use the decomposed path is a single line in the compiler:
-
-```go
-// tinygo/compiler/spmd.go:1091
-isDecomposed := ssaLoop.IsRangeIndex && laneCount > 4
-```
-
-At 4 lanes or fewer, a `<4 x i32>` index vector is 16 bytes -- trivially cheap -- and the GEP scalarization issue does not arise. Above 4, the decomposed path is strictly better. It originally had a `spmdIsWASM()` gate because we developed it for WASM first, but we removed that restriction on 2026-03-31. The technique is correct and profitable on every target.
-
-## The bugs it fixed
-
-Introducing the decomposed path resolved a chain of bugs that had blocked wide-SIMD correctness for weeks:
-
-**Hex-encode Bug 2: SExt corruption in scatter GEP.** Before the decomposed path, the compiler narrowed indices to `<32 x i8>` for storage efficiency, then sign-extended them back to `i64` at GEP time. LLVM's sign-extend-then-GEP pipeline produced wrong addresses for certain offset values. The decomposed path sidesteps this entirely -- the `i8` offset is zero-extended into the GEP addend, and the scalar base handles the high bits. No sign extension, no corruption.
-
-**Hex-encode Bug 3: AVX2 vpshufb halving.** On 256-bit AVX2 registers, `vpshufb` shuffles each 128-bit half independently -- it does not permute across halves. A 16-byte lookup table applied to a 32-byte register produces correct results in the lower half and garbage in the upper half. The decomposed path made the origin of swizzle inputs explicit, which let us apply the table-duplication fix cleanly: duplicate the 16-byte table to `[table, table]` so both halves see the same LUT.
-
-**Alignment SIGSEGVs on simple-sum and odd-even.** The pre-decomposed path generated vector loads with vector-size alignment (16 or 32 bytes). Stack-allocated Go slices can have sub-vector alignment. On x86-64, a `vmovdqa` (aligned load) on an unaligned address is a SIGSEGV. The decomposed path, combined with switching to element-size alignment (`SetAlignment(elemSize)` instead of vector size), eliminated these faults across every example.
+At 4 lanes or fewer, a `<4 x i32>` index vector is 16 bytes -- trivially cheap -- and it enable efficient/usable loop on small type. Above 4, the decomposed path is strictly better. It originally had a `spmdIsWASM()` gate because we developed it for WASM first, but we removed that restriction on 2026-03-31. The technique is correct and profitable on every target.
 
 ## Power-of-2 modulo: a clean bonus
 
@@ -82,6 +63,8 @@ i % 16  -->  lane_offset & 0x0F    (one vpand with a splatted constant)
 ```
 
 The compiler handles this algebraically in `spmdDecomposedBinOp`: for `AND`, `REM`, or `QUO` with a power-of-2 constant, it operates on the `i8` offset directly without materializing the full index. The same optimization would work on a full `<N x i64>` index vector, but on the decomposed path it operates on 8-bit values -- smaller registers, less throughput consumed, and it composes naturally with subsequent byte-width operations.
+
+In general all the math you actually need operate cleanly and neatly on this decomposed index for all practical purpose. Of course, you can still have to fallback to the slow path if an operation on the index can not be decomposed itself. This is something to later decide, allow all operation and let a linter catch bad practice or make the index a bit of a special type that restrict operation to only what can be decomposed.
 
 ## Build this from day one
 
