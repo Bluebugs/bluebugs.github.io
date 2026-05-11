@@ -258,6 +258,47 @@ On AVX2, iterating at byte granularity gives you **32 lanes** per iteration. Ite
 
 Rule of thumb: if your algorithm is naturally byte-parallel, prefer byte lanes.
 
+### Vectorized table lookup
+
+A `[16]byte{...}` constant indexed by a varying byte compiles to **one shuffle instruction** — `vpshufb` on x86 SSSE3/AVX2, `i8x16.swizzle` on WASM SIMD128, `tbl` on ARM NEON. This is the compiler accepting an idiom Go programmers already write naturally and turning it into the densest SIMD primitive on every target.
+
+The base64 decoder uses this twice in its first pass: once with an arithmetic LUT (the existing `benchDecodeLUT[ch>>4]` to map base64 chars to sextets), and a second time you can add for **per-byte validity checking** at intrinsic-grade speed. Encode every base64 char's category as a bit, store one set of category bits per upper nibble in one LUT, one per lower nibble in another, and AND the lookup results:
+
+```go
+// Each base64 char belongs to exactly one of 7 categories. Each LUT
+// returns the bitset of categories allowed by that nibble; AND gives
+// the unique category for valid chars and 0 for invalid chars.
+var b64ValidUpper = [16]byte{
+    0x00, 0x00, 0x01, 0x06, 0x08, 0x10, 0x20, 0x40,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+}
+var b64ValidLower = [16]byte{
+    0x52, 0x7A, 0x7A, 0x7A, 0x7A, 0x7A, 0x7A, 0x7A,
+    0x7A, 0x7A, 0x78, 0x29, 0x28, 0x2C, 0x28, 0x29,
+}
+
+var hadInvalid lanes.Varying[bool]
+go for i, ch := range src {
+    if (b64ValidUpper[ch>>4] & b64ValidLower[ch&0xF]) == 0 {
+        hadInvalid = true
+    }
+    // ... decode work alongside ...
+}
+if reduce.Any(hadInvalid) {
+    return errors.New("invalid base64 char")
+}
+```
+
+This compiles to **two `vpshufb` + one `vpand` + one `vpcmpeqb`** per byte — the same per-byte instruction count as the hand-tuned C++ implementations in libraries like simdutf. The Go reads as a normal `if` statement; the SIMD lowering is the compiler's job, not yours.
+
+#### When the table is too big
+
+The shuffle instructions accept a 16-byte table. If your problem looks like a 256-byte LUT — full byte-to-byte translation, character-class detection, etc. — decompose by nibble: one 16-entry LUT keyed by `ch >> 4`, another keyed by `ch & 0xF`, combine the results.
+
+Almost every byte-classification problem fits: ASCII case mapping, JSON whitespace detection, base64/hex validation, URL-encoding sentinels. When you see yourself reaching for a 256-byte array indexed by a varying byte, stop and ask whether the problem decomposes into nibbles. It usually does, and when it does the compiler gives you AVX2-grade output from idiomatic Go.
+
+If the problem genuinely needs a 256-byte LUT (rare; e.g., an arbitrary substitution cipher), the array indexing still works but compiles to a true gather, which is meaningfully slower. Reach for the nibble decomposition first.
+
 ## Debugging
 
 ### `fmt.Printf` with `%v` on varying values
