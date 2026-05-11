@@ -160,6 +160,8 @@ Real numbers from our test infrastructure, measured on an AMD Ryzen 7 6800U:
 | Hex-encode | WASM | 6-9x (varies by host) |
 | Hex-encode | SSE | 6.31x |
 
+One comparison from this table is worth flagging on its own. The `lo-min` / `lo-max` numbers above are against scalar `samber/lo`. We also ran the same reductions against [`samber/lo/exp/simd`](https://github.com/samber/lo) -- the experimental library built on Go's new `simd` intrinsics package -- and SPMD comes out 1.8x to 2.6x faster on sum, min, and contains, even though both targets emit AVX2 8-wide code. The gap is not about ISA choice: it is a structural property of how a per-operation intrinsic API interacts with loop-carried state. A reduction's accumulator gets spilled to the stack across every intrinsic call, because the call returns its vector through the ABI return register that the accumulator wants to live in; the compiler cannot inline through the intrinsic boundary to fix it, and it cannot apply loop-level rewrites like peeling or `vtestps` for early-exit that a `go for` body gets for free. The two layers are complementary -- `archsimd` for instruction-level control, a loop construct on top for portable loop-level data parallelism -- but the reduction case shows there is performance available at the loop level that an intrinsic library structurally cannot reach. We walk through the disassembly in [Why a Reduction Loop Tells the Story](../spmd-vs-intrinsics-reduction/).
+
 Honest disclosure: not everything speeds up. Our IPv4 parser hit 0.58x with inner-SPMD -- slower than scalar, even though Daniel Lemire's [SIMD parser](https://lemire.me/blog/2023/06/08/parsing-ip-addresses-crazily-fast/) shows this workload can be made fast. That is useful evidence too: SPMD is not a free lunch, and some algorithms want a different structure than the one I chose here. In this case, outer-SPMD batching is still future work, so the current result should be read as "this version is not the right shape yet," not as "IPv4 parsing can never benefit." Also, the scalar fallback of an SPMD-oriented algorithm can be a bit slower than a hand-tuned scalar stdlib implementation, because once you write for parallel execution you are often making different tradeoffs.
 
 ## Why TinyGo
@@ -231,5 +233,6 @@ If you want to dig deeper, the rest of this series covers the details:
 - [Pattern Matching Outperformed Hand-Written SIMD](../spmd-pattern-matching/) -- why the simplest code produced the fastest output
 - [Loop Peeling: Where Most of the Speed Comes From](../spmd-loop-peeling/) -- the single highest-leverage optimization
 - [We Built Cross-Lane SIMD Primitives. None of Them Helped.](../spmd-negative-result/) -- the most important negative result
+- [Why a Reduction Loop Tells the Story: SPMD vs Per-Op SIMD Intrinsics](../spmd-vs-intrinsics-reduction/) -- a disassembly walkthrough of the structural advantage of whole-loop vectorization
 
 ---
