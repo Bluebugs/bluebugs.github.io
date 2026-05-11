@@ -1,0 +1,490 @@
+<!doctype html><html lang=en-us><head><meta charset=utf-8><meta http-equiv=X-UA-Compatible content="IE=edge,chrome=1"><title>SPMD for Go: What If Your Loops Were Just Faster? | Cedric Bail</title>
+<meta name=viewport content="width=device-width,minimum-scale=1"><meta name=description content="A proof of concept for language-level data parallelism in Go, with live WASM demos and real benchmark results"><meta name=generator content="Hugo 0.136.0"><meta name=robots content="index, follow"><meta name=author content="Cedric Bail"><link rel=stylesheet href=/ananke/css/main.min.a6182f0e1b5d771fbfc13f1077d6dc63f54a484e3237f2c8584d7b3d17136133.css><link rel=canonical href=http://bluebugs.github.io/blogs/spmd-results/><meta property="og:url" content="http://bluebugs.github.io/blogs/spmd-results/"><meta property="og:site_name" content="Cedric Bail"><meta property="og:title" content="SPMD for Go: What If Your Loops Were Just Faster?"><meta property="og:description" content="A proof of concept for language-level data parallelism in Go, with live WASM demos and real benchmark results"><meta property="og:locale" content="en_us"><meta property="og:type" content="article"><meta property="article:section" content="blogs"><meta property="article:published_time" content="2026-04-15T10:00:00-07:00"><meta property="article:modified_time" content="2026-04-15T10:00:00-07:00"><meta itemprop=name content="SPMD for Go: What If Your Loops Were Just Faster?"><meta itemprop=description content="A proof of concept for language-level data parallelism in Go, with live WASM demos and real benchmark results"><meta itemprop=datePublished content="2026-04-15T10:00:00-07:00"><meta itemprop=dateModified content="2026-04-15T10:00:00-07:00"><meta itemprop=wordCount content="2989"><meta name=twitter:card content="summary"><meta name=twitter:title content="SPMD for Go: What If Your Loops Were Just Faster?"><meta name=twitter:description content="A proof of concept for language-level data parallelism in Go, with live WASM demos and real benchmark results"></head><body class="ma0 avenir bg-near-white production"><header class="cover bg-center" style=background-image:url(http://bluebugs.github.io/images/banff.jpg)><div class=bg-black-60><nav class="pv3 ph3 ph4-ns" role=navigation><div class="flex-l justify-between items-center center"><a href=/ class="f3 fw2 hover-white no-underline white-90 dib">Cedric Bail</a><div class="flex-l items-center"><ul class="pl0 mr3"><li class="list f5 f4-ns fw4 dib pr3"><a class="hover-white no-underline white-90" href=/blogs/ title="Blog page">Blog</a></li><li class="list f5 f4-ns fw4 dib pr3"><a class="hover-white no-underline white-90" href=/examples/ title="Code Examples page">Code Examples</a></li></ul><div class=ananke-socials></div></div></div></nav><div class="tc-l pv6 ph3 ph4-ns"><div class="f2 f1-l fw2 white-90 mb0 lh-title">SPMD for Go: What If Your Loops Were Just Faster?</div><div class="fw1 f5 f3-l white-80 measure-wide-l center lh-copy mt3 mb4">A proof of concept for language-level data parallelism in Go, with live WASM demos and real benchmark results</div></div></div></header><main class=pb7 role=main><article class="flex-l flex-wrap justify-between mw8 center ph3"><header class="mt4 w-100"><aside class="instapaper_ignoref b helvetica tracked ttu">Blog</aside><div id=sharing class="mt3 ananke-socials"></div><h1 class="f1 athelas mt3 mb1">SPMD for Go: What If Your Loops Were Just Faster?</h1><p class=tracked>By <strong>Cedric Bail</strong></p><time class="f6 mv4 dib tracked" datetime=2026-04-15T10:00:00-07:00>April 15, 2026</time></header><div class="nested-copy-line-height lh-copy serif f4 nested-links black pr4-l w-two-thirds-l"><p>We wrote a base64 decoder in about 40 lines of Go. It runs at roughly 17 GB/s on AVX2 &ndash; about 9x faster than <code>encoding/base64</code> and within 77% of the best C++ SIMD library (<a href=https://github.com/simdutf/simdutf>simdutf</a>). No assembly. No intrinsics. No <code>unsafe</code>. Just Go with a new loop keyword.</p><p>This is a proof of concept, not a proposal text or an upstream implementation plan. The point is narrower: show that loop-level data parallelism can fit Go&rsquo;s style, compile to real SIMD on multiple targets, and deliver meaningful wins on real workloads. Below are two live demos running real WebAssembly code in your browser.</p><h2 id=see-it-mandelbrot>See it: Mandelbrot</h2><p>Two compilations of the same Go source &ndash; scalar on the left, Single Program Multiple Data (SPMD) on the right. Both come from <a href=https://github.com/Bluebugs/go-spmd/blob/main/examples/mandelbrot/main.go><code>examples/mandelbrot/main.go</code></a>. The only difference is the compiler flag: <code>-simd=false</code> vs <code>-simd=true</code>. Click &ldquo;Run Benchmark&rdquo; to see the gap.</p><p>The SPMD version uses <code>go for</code> to process multiple pixels per iteration and <code>lanes.Varying[float32]</code> for the complex-plane coordinates. The compiler handles the rest: vectorized arithmetic, per-lane break when a point diverges, and a masked tail for the last few pixels in each row.</p><style>#spmd-demo_mandelbrot{display:flex;flex-direction:column;font-family:sans-serif;border:1px solid #ccc;padding:20px;max-width:1000px;margin:20px auto;background-color:#f9f9f9;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.1)}#spmd-demo_mandelbrot h3{margin:0 0 12px;color:#333;text-align:center}#spmd-simd-badge_mandelbrot{text-align:center;margin-bottom:16px;font-size:.85em;font-weight:600}#spmd-simd-badge_mandelbrot .badge{display:inline-block;padding:3px 10px;border-radius:12px;color:#fff}#spmd-simd-badge_mandelbrot .badge-ok{background-color:#28a745}#spmd-simd-badge_mandelbrot .badge-warn{background-color:#e67e22}#spmd-simd-badge_mandelbrot .badge-err{background-color:#dc3545}#spmd-canvases_mandelbrot{display:flex;gap:24px;justify-content:center;flex-wrap:wrap}.spmd-canvas-col_mandelbrot{display:flex;flex-direction:column;align-items:center}.spmd-canvas-col_mandelbrot h4{margin:0 0 8px;color:#555;font-size:.95em}.spmd-canvas-col_mandelbrot canvas{width:360px;height:300px;image-rendering:pixelated;border:1px solid #ccc;border-radius:4px;background-color:#000}.spmd-canvas-col_mandelbrot .timing{margin-top:6px;font-size:.9em;color:#555;font-variant-numeric:tabular-nums;min-height:1.4em}#spmd-speedup_mandelbrot{text-align:center;margin-top:12px;font-size:1.1em;font-weight:600;color:#007bff;min-height:1.4em}#spmd-controls_mandelbrot{text-align:center;margin-top:16px}#spmd-run-btn_mandelbrot{padding:10px 28px;font-size:1em;font-weight:600;color:#fff;background-color:#007bff;border:none;border-radius:6px;cursor:pointer;transition:background-color .15s}#spmd-run-btn_mandelbrot:hover:not(:disabled){background-color:#0056b3}#spmd-run-btn_mandelbrot:disabled{background-color:#999;cursor:not-allowed}.spmd-canvas-col_mandelbrot.disabled canvas{opacity:.35}.spmd-canvas-col_mandelbrot.disabled h4{color:#aaa}@media(max-width:768px){#spmd-canvases_mandelbrot{flex-direction:column;align-items:center}}</style><div id=spmd-demo_mandelbrot><h3>Mandelbrot Set: Serial vs SPMD</h3><div id=spmd-simd-badge_mandelbrot></div><div id=spmd-canvases_mandelbrot><div class=spmd-canvas-col_mandelbrot id=spmd-serial-col_mandelbrot><h4>Serial (scalar)</h4><canvas id=spmd-canvas-serial_mandelbrot width=360 height=300></canvas><div class=timing id=spmd-time-serial_mandelbrot></div></div><div class=spmd-canvas-col_mandelbrot id=spmd-spmd-col_mandelbrot><h4>SPMD (4-wide SIMD)</h4><canvas id=spmd-canvas-spmd_mandelbrot width=360 height=300></canvas><div class=timing id=spmd-time-spmd_mandelbrot></div></div></div><div id=spmd-speedup_mandelbrot></div><div id=spmd-controls_mandelbrot><button id=spmd-run-btn_mandelbrot>Run Benchmark</button></div></div><script src=/wasm/wasm_exec.js></script><script type=module>
+import { simd } from "https://unpkg.com/wasm-feature-detect?module";
+
+(async () => {
+    const badge     = document.getElementById('spmd-simd-badge_mandelbrot');
+    const btn       = document.getElementById('spmd-run-btn_mandelbrot');
+    const serialCol = document.getElementById('spmd-serial-col_mandelbrot');
+    const spmdCol   = document.getElementById('spmd-spmd-col_mandelbrot');
+    const canvasS   = document.getElementById('spmd-canvas-serial_mandelbrot');
+    const canvasSP  = document.getElementById('spmd-canvas-spmd_mandelbrot');
+    const timeS     = document.getElementById('spmd-time-serial_mandelbrot');
+    const timeSP    = document.getElementById('spmd-time-spmd_mandelbrot');
+    const speedupEl = document.getElementById('spmd-speedup_mandelbrot');
+
+    const W = 360, H = 300, MAX_ITER = 256;
+
+    
+    const hasWasm = typeof WebAssembly === 'object';
+    const hasSimd = hasWasm ? await simd() : false;
+
+    if (!hasWasm) {
+        badge.innerHTML = '<span class="badge badge-err">WebAssembly not supported</span>';
+        btn.disabled = true;
+        return;
+    }
+    if (hasSimd) {
+        badge.innerHTML = '<span class="badge badge-ok">Browser supports WASM SIMD</span>';
+    } else {
+        badge.innerHTML = '<span class="badge badge-warn">No WASM SIMD &mdash; SPMD column will be skipped</span>';
+        spmdCol.classList.add('disabled');
+    }
+
+    
+    let serialInst = null, spmdInst = null;
+    let serialGo = null, spmdGo = null;
+    let isRunning = false;
+
+    async function loadWasm(url) {
+        const go = new Go();
+        const result = await WebAssembly.instantiateStreaming(fetch(url), go.importObject);
+        const inst = result.instance;
+        go._inst = inst;
+        
+        
+        
+        try { inst.exports._start(); } catch (e) {   }
+        return { instance: inst, go: go };
+    }
+
+    async function ensureLoaded() {
+        if (!serialInst) {
+            const s = await loadWasm('/wasm/mandelbrot-serial.wasm?v=4');
+            serialInst = s.instance;
+            serialGo = s.go;
+        }
+        if (hasSimd && !spmdInst) {
+            const s = await loadWasm('/wasm/mandelbrot-spmd.wasm?v=4');
+            spmdInst = s.instance;
+            spmdGo = s.go;
+        }
+    }
+
+    
+    function iterToRGBA(iter, maxIter) {
+        if (iter >= maxIter) return [0, 0, 0, 255]; 
+
+        
+        const hue = (iter / maxIter) * 360;
+        const sat = 0.8, lit = 0.5;
+        const c = (1 - Math.abs(2 * lit - 1)) * sat;
+        const x = c * (1 - Math.abs((hue / 60) % 2 - 1));
+        const m = lit - c / 2;
+        let r, g, b;
+        if (hue < 60)       { r = c; g = x; b = 0; }
+        else if (hue < 120) { r = x; g = c; b = 0; }
+        else if (hue < 180) { r = 0; g = c; b = x; }
+        else if (hue < 240) { r = 0; g = x; b = c; }
+        else if (hue < 300) { r = x; g = 0; b = c; }
+        else                { r = c; g = 0; b = x; }
+        return [
+            Math.round((r + m) * 255),
+            Math.round((g + m) * 255),
+            Math.round((b + m) * 255),
+            255
+        ];
+    }
+
+    function paintCanvas(canvas, wasmInstance) {
+        const ctx = canvas.getContext('2d');
+        const ptr = wasmInstance.exports.getBufferPtr();
+        const pixels = W * H;
+        const data = new Int32Array(wasmInstance.exports.memory.buffer, ptr, pixels);
+        const img = ctx.createImageData(W, H);
+        for (let i = 0; i < pixels; i++) {
+            const [r, g, b, a] = iterToRGBA(data[i], MAX_ITER);
+            img.data[i * 4]     = r;
+            img.data[i * 4 + 1] = g;
+            img.data[i * 4 + 2] = b;
+            img.data[i * 4 + 3] = a;
+        }
+        ctx.putImageData(img, 0, 0);
+    }
+
+    
+    
+    
+    
+
+    
+    const CX = -0.75, CY = 0.1;
+    const ZOOM_FRAMES = 30;  
+    const ZOOM_FACTOR = 1.12; 
+
+    function computeViewport(frame) {
+        
+        const cycle = frame % (ZOOM_FRAMES * 2);
+        const step = cycle < ZOOM_FRAMES ? cycle : (ZOOM_FRAMES * 2 - 1 - cycle);
+        const scale = Math.pow(ZOOM_FACTOR, -step);
+        const hw = 2.0 * scale, hh = 1.25 * scale;
+        return {
+            x0: CX - hw, y0: CY - hh,
+            x1: CX + hw, y1: CY + hh
+        };
+    }
+
+    btn.addEventListener('click', async () => {
+        if (isRunning) return;
+        isRunning = true;
+        btn.disabled = true;
+        btn.textContent = 'Loading...';
+        timeS.textContent = '';
+        timeSP.textContent = '';
+        speedupEl.textContent = '';
+
+        try {
+            await ensureLoaded();
+            btn.textContent = 'Animating...';
+
+            let serialTotal = 0, spmdTotal = 0, frames = 0;
+            const totalFrames = ZOOM_FRAMES * 2;
+
+            for (let f = 0; f < totalFrames; f++) {
+                const vp = computeViewport(f);
+
+                
+                const t0s = performance.now();
+                serialInst.exports.computeMandelbrotZoom(vp.x0, vp.y0, vp.x1, vp.y1, W, H, MAX_ITER);
+                const serialMs = performance.now() - t0s;
+                serialTotal += serialMs;
+
+                paintCanvas(canvasS, serialInst);
+
+                
+                let spmdMs = 0;
+                if (hasSimd && spmdInst) {
+                    const t0p = performance.now();
+                    spmdInst.exports.computeMandelbrotZoom(vp.x0, vp.y0, vp.x1, vp.y1, W, H, MAX_ITER);
+                    spmdMs = performance.now() - t0p;
+                    spmdTotal += spmdMs;
+
+                    paintCanvas(canvasSP, spmdInst);
+                }
+
+                frames++;
+                const avgSerial = serialTotal / frames;
+                const avgSpmd = spmdTotal / frames;
+
+                timeS.textContent = 'Serial: ' + avgSerial.toFixed(1) + ' ms/frame';
+                if (hasSimd && spmdInst) {
+                    timeSP.textContent = 'SPMD: ' + avgSpmd.toFixed(1) + ' ms/frame';
+                    speedupEl.textContent = 'Speedup: ' + (avgSerial / avgSpmd).toFixed(1) + 'x (' + frames + '/' + totalFrames + ' frames)';
+                }
+
+                
+                await new Promise(r => requestAnimationFrame(r));
+            }
+
+            
+            const avgSerial = serialTotal / frames;
+            timeS.textContent = 'Serial: ' + avgSerial.toFixed(1) + ' ms/frame (avg over ' + frames + ')';
+            if (hasSimd && spmdInst) {
+                const avgSpmd = spmdTotal / frames;
+                timeSP.textContent = 'SPMD: ' + avgSpmd.toFixed(1) + ' ms/frame (avg over ' + frames + ')';
+                speedupEl.textContent = 'Speedup: ' + (avgSerial / avgSpmd).toFixed(1) + 'x';
+            } else {
+                timeSP.textContent = 'SIMD not available';
+            }
+        } catch (err) {
+            console.error('Mandelbrot benchmark error:', err);
+            speedupEl.textContent = 'Error: ' + err.message;
+        } finally {
+            btn.textContent = 'Run Benchmark';
+            btn.disabled = false;
+            isRunning = false;
+        }
+    });
+})();
+</script><p>Here is the full SPMD mandelbrot &ndash; the calling loop and the kernel together:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#75715e>// file: examples/mandelbrot/main.go
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// The driver: a scalar outer loop over rows, an SPMD inner loop over columns.
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>func</span> <span style=color:#a6e22e>mandelbrotSPMD</span>(<span style=color:#a6e22e>x0</span>, <span style=color:#a6e22e>y0</span>, <span style=color:#a6e22e>x1</span>, <span style=color:#a6e22e>y1</span> <span style=color:#66d9ef>float32</span>, <span style=color:#a6e22e>width</span>, <span style=color:#a6e22e>height</span>, <span style=color:#a6e22e>maxIter</span> <span style=color:#66d9ef>int</span>, <span style=color:#a6e22e>output</span> []<span style=color:#66d9ef>int</span>) {
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>dx</span> <span style=color:#f92672>:=</span> (<span style=color:#a6e22e>x1</span> <span style=color:#f92672>-</span> <span style=color:#a6e22e>x0</span>) <span style=color:#f92672>/</span> float32(<span style=color:#a6e22e>width</span>)
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>dy</span> <span style=color:#f92672>:=</span> (<span style=color:#a6e22e>y1</span> <span style=color:#f92672>-</span> <span style=color:#a6e22e>y0</span>) <span style=color:#f92672>/</span> float32(<span style=color:#a6e22e>height</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> <span style=color:#a6e22e>j</span> <span style=color:#f92672>:=</span> <span style=color:#ae81ff>0</span>; <span style=color:#a6e22e>j</span> &lt; <span style=color:#a6e22e>height</span>; <span style=color:#a6e22e>j</span><span style=color:#f92672>++</span> {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>y</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>y0</span> <span style=color:#f92672>+</span> float32(<span style=color:#a6e22e>j</span>)<span style=color:#f92672>*</span><span style=color:#a6e22e>dy</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>go</span> <span style=color:#66d9ef>for</span> <span style=color:#a6e22e>i</span> <span style=color:#f92672>:=</span> <span style=color:#66d9ef>range</span> <span style=color:#a6e22e>width</span> {
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>x</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>x0</span> <span style=color:#f92672>+</span> <span style=color:#a6e22e>lanes</span>.<span style=color:#a6e22e>Varying</span>[<span style=color:#66d9ef>float32</span>](<span style=color:#a6e22e>i</span>)<span style=color:#f92672>*</span><span style=color:#a6e22e>dx</span>
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>iterations</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>mandelSPMD</span>(<span style=color:#a6e22e>x</span>, <span style=color:#a6e22e>y</span>, <span style=color:#a6e22e>maxIter</span>)
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>index</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>j</span><span style=color:#f92672>*</span><span style=color:#a6e22e>width</span> <span style=color:#f92672>+</span> <span style=color:#a6e22e>i</span>
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>output</span>[<span style=color:#a6e22e>index</span>] = <span style=color:#a6e22e>iterations</span>
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// The kernel: runs per pixel, receives a varying x and uniform y.
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>func</span> <span style=color:#a6e22e>mandelSPMD</span>(<span style=color:#a6e22e>cRe</span>, <span style=color:#a6e22e>cIm</span> <span style=color:#a6e22e>lanes</span>.<span style=color:#a6e22e>Varying</span>[<span style=color:#66d9ef>float32</span>], <span style=color:#a6e22e>maxIter</span> <span style=color:#66d9ef>int</span>) <span style=color:#a6e22e>lanes</span>.<span style=color:#a6e22e>Varying</span>[<span style=color:#66d9ef>int</span>] {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>var</span> <span style=color:#a6e22e>zRe</span> <span style=color:#a6e22e>lanes</span>.<span style=color:#a6e22e>Varying</span>[<span style=color:#66d9ef>float32</span>] = <span style=color:#a6e22e>cRe</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>var</span> <span style=color:#a6e22e>zIm</span> <span style=color:#a6e22e>lanes</span>.<span style=color:#a6e22e>Varying</span>[<span style=color:#66d9ef>float32</span>] = <span style=color:#a6e22e>cIm</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>var</span> <span style=color:#a6e22e>iterations</span> <span style=color:#a6e22e>lanes</span>.<span style=color:#a6e22e>Varying</span>[<span style=color:#66d9ef>int</span>] = <span style=color:#a6e22e>maxIter</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> <span style=color:#a6e22e>iter</span> <span style=color:#f92672>:=</span> <span style=color:#66d9ef>range</span> <span style=color:#a6e22e>maxIter</span> {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>magSquared</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>zRe</span><span style=color:#f92672>*</span><span style=color:#a6e22e>zRe</span> <span style=color:#f92672>+</span> <span style=color:#a6e22e>zIm</span><span style=color:#f92672>*</span><span style=color:#a6e22e>zIm</span>
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>diverged</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>magSquared</span> &gt; <span style=color:#ae81ff>4.0</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> <span style=color:#a6e22e>diverged</span> {
+</span></span><span style=display:flex><span>            <span style=color:#a6e22e>iterations</span> = <span style=color:#a6e22e>iter</span>
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>break</span>  <span style=color:#75715e>// per-lane: only diverged lanes exit
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>        }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>newRe</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>zRe</span><span style=color:#f92672>*</span><span style=color:#a6e22e>zRe</span> <span style=color:#f92672>-</span> <span style=color:#a6e22e>zIm</span><span style=color:#f92672>*</span><span style=color:#a6e22e>zIm</span>
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>newIm</span> <span style=color:#f92672>:=</span> <span style=color:#ae81ff>2.0</span> <span style=color:#f92672>*</span> <span style=color:#a6e22e>zRe</span> <span style=color:#f92672>*</span> <span style=color:#a6e22e>zIm</span>
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>zRe</span> = <span style=color:#a6e22e>cRe</span> <span style=color:#f92672>+</span> <span style=color:#a6e22e>newRe</span>
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>zIm</span> = <span style=color:#a6e22e>cIm</span> <span style=color:#f92672>+</span> <span style=color:#a6e22e>newIm</span>
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#a6e22e>iterations</span>
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>The structure: a scalar <code>for j</code> iterates rows. Inside it, <code>go for i := range width</code> is the SPMD loop &ndash; each lane computes a different x coordinate in parallel, all sharing the same y. The kernel <code>mandelSPMD</code> is an SPMD function (it takes varying parameters); the compiler can generate SIMD instruction transparently thanks to the developer expressing the data parallelism.</p><p>The <code>break</code> inside a varying <code>if</code> is the interesting part. Each lane breaks independently &ndash; when a pixel diverges, its lane goes inactive while the others keep iterating. The compiler turns this into per-lane mask tracking: no branches, just predicated execution.</p><p><code>go for</code> is to data parallelism what <code>go func</code> is to control flow parallelism.</p><h2 id=see-it-base64>See it: Base64</h2><p>The base64 decoder is four <code>go for</code> loops with plain Go arithmetic. No SIMD intrinsics. No cross-lane shuffle operations. The compiler recognizes the multiply-add patterns and emits the right SIMD instructions for every target &ndash; <code>vpmaddubsw</code>/<code>vpmaddwd</code> on x86, deinterleave-widen-multiply-add on WASM.</p><style>#spmd-base64-demo{display:flex;flex-direction:column;font-family:sans-serif;border:1px solid #ccc;padding:20px;max-width:900px;margin:20px auto;background-color:#f9f9f9;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.1)}#spmd-base64-demo h3{margin:0 0 12px;color:#333;text-align:center}#spmd-base64-badge{text-align:center;margin-bottom:16px;font-size:.85em;font-weight:600}#spmd-base64-badge .badge{display:inline-block;padding:3px 10px;border-radius:12px;color:#fff}#spmd-base64-badge .badge-ok{background-color:#28a745}#spmd-base64-badge .badge-warn{background-color:#e67e22}#spmd-base64-badge .badge-err{background-color:#dc3545}#spmd-base64-input-section{margin-bottom:16px}#spmd-base64-input-section label{display:block;margin-bottom:4px;font-size:.85em;color:#555;font-weight:600}#spmd-base64-input{width:100%;height:60px;font-family:monospace;font-size:.8em;padding:8px;border:1px solid #ccc;border-radius:4px;resize:vertical;box-sizing:border-box}#spmd-base64-input-info{font-size:.8em;color:#888;margin-top:4px}#spmd-base64-results{width:100%;border-collapse:collapse;margin-bottom:8px}#spmd-base64-results th,#spmd-base64-results td{padding:8px 12px;text-align:center;border-bottom:1px solid #ddd}#spmd-base64-results th{background-color:#f0f0f0;font-size:.95em;color:#555;font-weight:600}#spmd-base64-results th:first-child,#spmd-base64-results td:first-child{text-align:left;font-weight:600;color:#555;font-size:.9em}#spmd-base64-results .throughput-cell{font-size:1.15em;font-weight:700;color:#333;font-variant-numeric:tabular-nums}#spmd-base64-results .timing-cell{font-size:.85em;color:#555;font-variant-numeric:tabular-nums}#spmd-base64-results .preview-cell{font-family:monospace;font-size:.75em;color:#333;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#spmd-base64-results .disabled-cell{opacity:.35}#spmd-base64-speedup{text-align:center;margin-top:12px;font-size:1.1em;font-weight:600;color:#007bff;min-height:1.4em}#spmd-base64-controls{text-align:center;margin-top:16px}#spmd-base64-run-btn{padding:10px 28px;font-size:1em;font-weight:600;color:#fff;background-color:#007bff;border:none;border-radius:6px;cursor:pointer;transition:background-color .15s}#spmd-base64-run-btn:hover:not(:disabled){background-color:#0056b3}#spmd-base64-run-btn:disabled{background-color:#999;cursor:not-allowed}@media(max-width:768px){#spmd-base64-panels{flex-direction:column;align-items:center}}</style><div id=spmd-base64-demo><h3>Base64 Decode: Go stdlib vs Scalar vs SPMD</h3><div id=spmd-base64-badge></div><div id=spmd-base64-input-section><label for=spmd-base64-input>Base64 Input</label>
+<textarea id=spmd-base64-input></textarea><div id=spmd-base64-input-info></div></div><table id=spmd-base64-results><thead><tr><th></th><th>Go stdlib</th><th>Scalar SPMD</th><th id=spmd-base64-spmd-header>SPMD (WASM SIMD)</th></tr></thead><tbody><tr><td>Throughput</td><td class=throughput-cell id=spmd-base64-stdlib-throughput>--</td><td class=throughput-cell id=spmd-base64-scalar-throughput>--</td><td class=throughput-cell id=spmd-base64-spmd-throughput>--</td></tr><tr><td>Time / iter</td><td class=timing-cell id=spmd-base64-stdlib-timing>--</td><td class=timing-cell id=spmd-base64-scalar-timing>--</td><td class=timing-cell id=spmd-base64-spmd-timing>--</td></tr><tr><td>Decoded preview</td><td class=preview-cell id=spmd-base64-stdlib-preview>--</td><td class=preview-cell id=spmd-base64-scalar-preview>--</td><td class=preview-cell id=spmd-base64-spmd-preview>--</td></tr></tbody></table><div id=spmd-base64-speedup></div><div id=spmd-base64-controls><button id=spmd-base64-run-btn>Run Benchmark</button></div></div><script src=/wasm/wasm_exec.js></script><script type=module>
+import { simd, relaxedSimd } from "https://unpkg.com/wasm-feature-detect?module";
+(async () => {
+    const badge       = document.getElementById('spmd-base64-badge');
+    const btn         = document.getElementById('spmd-base64-run-btn');
+    const inputArea   = document.getElementById('spmd-base64-input');
+    const inputInfo   = document.getElementById('spmd-base64-input-info');
+    const spmdHeader  = document.getElementById('spmd-base64-spmd-header');
+    const stdlibTP    = document.getElementById('spmd-base64-stdlib-throughput');
+    const scalarTP    = document.getElementById('spmd-base64-scalar-throughput');
+    const spmdTP      = document.getElementById('spmd-base64-spmd-throughput');
+    const stdlibTime  = document.getElementById('spmd-base64-stdlib-timing');
+    const scalarTime  = document.getElementById('spmd-base64-scalar-timing');
+    const spmdTime    = document.getElementById('spmd-base64-spmd-timing');
+    const stdlibPrev  = document.getElementById('spmd-base64-stdlib-preview');
+    const scalarPrev  = document.getElementById('spmd-base64-scalar-preview');
+    const spmdPrev    = document.getElementById('spmd-base64-spmd-preview');
+    const speedupEl   = document.getElementById('spmd-base64-speedup');
+
+    
+    
+    const maxInputLen = 65536;
+    const sourceText = `Go is a high-level, general-purpose programming language that is statically typed and compiled. Designed at Google in 2007 by Robert Griesemer, Rob Pike, and Ken Thompson, Go was publicly announced in November 2009, with version 1.0 released in March 2012. Go is syntactically similar to C but includes garbage collection, structural typing, and CSP-style concurrency.
+
+The language was created to improve programming productivity in an era of multicore, networked machines and large codebases. The designers aimed to address criticisms of other languages used at Google while preserving their useful characteristics: static typing and runtime efficiency similar to C, readability and usability comparable to Python, and high-performance networking and multiprocessing capabilities.
+
+Go contains 25 reserved keywords. The syntax includes changes from C aimed at keeping code concise and readable. A combined declaration/initialization operator allows programmers to write i := 3 without specifying variable types. Methods may return multiple values, and returning a result, err pair is the conventional way methods indicate errors to callers.
+
+Go provides two features replacing class inheritance: embedding and interfaces. Interfaces provide runtime polymorphism. Any object with matching functions for all required methods implicitly satisfies that interface. The empty interface can refer to items of any concrete type. Generics were added in version 1.18 on March 15, 2022.
+
+The primary concurrency construct is the goroutine, a type of green thread. A function call prefixed with the go keyword starts a function in a new goroutine. Channels send messages between goroutines. The select statement implements non-blocking communication on multiple channels. Go includes built-in facilities and library support for writing concurrent programs.
+
+Go was designed at Google in 2007. The designers were primarily motivated by their shared dissatisfaction with C++. Go was publicly announced in November 2009. It is widely used in production at Google and in many other organizations and open-source projects. Popular applications written in Go include Docker, Kubernetes, CockroachDB, Hugo, and Caddy.
+
+The Go authors put substantial effort into influencing Go program style. The gofmt tool automatically standardizes indentation, spacing, and other surface-level code details. Tools and libraries distributed with Go suggest standard approaches to API documentation, testing, building, and package management. Go enforces rules that are recommendations in other languages, banning cyclic dependencies, unused variables or imports, and implicit type conversions.
+
+The linker in the gc toolchain creates statically linked binaries by default. Go deliberately omits certain common features: implementation inheritance, assertions, pointer arithmetic, implicit type conversions, untagged unions, and tagged unions. The designers added only facilities all three agreed upon. Exception handling uses a panic/recover mechanism. Across package boundaries, Go includes a canonical error type with multi-value returns as the standard idiom.`;
+
+    
+    let fullText = "";
+    while (fullText.length < 48000) fullText += sourceText;
+    let defaultInput = btoa(fullText);
+    if (defaultInput.length > maxInputLen) {
+        defaultInput = defaultInput.substring(0, maxInputLen - (maxInputLen % 4));
+    }
+    inputArea.value = defaultInput;
+    inputInfo.textContent = defaultInput.length + " bytes of base64 input (Wikipedia article about Go)";
+
+    inputArea.addEventListener('input', () => {
+        const len = inputArea.value.length;
+        inputInfo.textContent = len + " bytes of base64 input";
+    });
+
+    
+    const hasWasm = typeof WebAssembly === 'object';
+    const hasSimd = hasWasm ? await simd() : false;
+    const hasRelaxedSimd = hasSimd ? await relaxedSimd() : false;
+
+    if (!hasWasm) {
+        badge.innerHTML = '<span class="badge badge-err">WebAssembly not supported</span>';
+        btn.disabled = true;
+        return;
+    }
+    if (hasRelaxedSimd) {
+        badge.innerHTML = '<span class="badge badge-ok">Browser supports WASM SIMD + Relaxed SIMD</span>';
+    } else if (hasSimd) {
+        badge.innerHTML = '<span class="badge badge-warn">No Relaxed SIMD &mdash; SPMD SIMD column will be skipped</span>';
+        spmdTP.classList.add('disabled-cell');
+        spmdTime.classList.add('disabled-cell');
+        spmdPrev.classList.add('disabled-cell');
+    } else {
+        badge.innerHTML = '<span class="badge badge-warn">No WASM SIMD &mdash; SPMD SIMD column will be skipped</span>';
+        spmdTP.classList.add('disabled-cell');
+        spmdTime.classList.add('disabled-cell');
+        spmdPrev.classList.add('disabled-cell');
+    }
+
+    
+    let stdlibInst = null, scalarInst = null, spmdInst = null;
+    let isRunning = false;
+
+    async function loadWasm(url) {
+        const go = new Go();
+        const result = await WebAssembly.instantiateStreaming(fetch(url), go.importObject);
+        const inst = result.instance;
+        go._inst = inst;
+        try { inst.exports._start(); } catch (e) {   }
+        return { instance: inst, go: go };
+    }
+
+    async function ensureLoaded() {
+        if (!stdlibInst) {
+            const s = await loadWasm('/wasm/base64-stdlib.wasm?v=3');
+            stdlibInst = s.instance;
+        }
+        if (!scalarInst) {
+            const s = await loadWasm('/wasm/base64-scalar.wasm?v=3');
+            scalarInst = s.instance;
+        }
+        if (hasRelaxedSimd && !spmdInst) {
+            const s = await loadWasm('/wasm/base64-spmd.wasm?v=3');
+            spmdInst = s.instance;
+        }
+    }
+
+    
+    
+    const MIN_BENCH_MS = 500;
+
+    function runDecode(inst, inputBytes) {
+        const inputLen = inputBytes.length;
+        const inputPtr = inst.exports.getInputPtr();
+        new Uint8Array(inst.exports.memory.buffer, inputPtr, inputLen).set(inputBytes);
+
+        
+        inst.exports.decodeBase64(inputLen);
+
+        
+        let iterations = 0;
+        const t0 = performance.now();
+        let elapsed = 0;
+        while (elapsed < MIN_BENCH_MS) {
+            inst.exports.decodeBase64(inputLen);
+            iterations++;
+            elapsed = performance.now() - t0;
+        }
+        const totalMs = elapsed;
+
+        const outputPtr = inst.exports.getOutputPtr();
+        const outputLen = inst.exports.getOutputLen();
+        const outputBytes = new Uint8Array(inst.exports.memory.buffer, outputPtr, outputLen);
+        const decoded = new TextDecoder().decode(outputBytes.slice(0, 80));
+
+        const mbPerSec = (inputLen * iterations / 1024 / 1024) / (totalMs / 1000);
+        const perIter = totalMs / iterations;
+
+        return { totalMs, perIter, mbPerSec, decoded, iterations };
+    }
+
+    
+    btn.addEventListener('click', async () => {
+        if (isRunning) return;
+        isRunning = true;
+        btn.disabled = true;
+        btn.textContent = 'Loading...';
+        stdlibTP.textContent = '...'; stdlibTime.textContent = ''; stdlibPrev.textContent = '';
+        scalarTP.textContent = '...'; scalarTime.textContent = ''; scalarPrev.textContent = '';
+        spmdTP.textContent = '...'; spmdTime.textContent = ''; spmdPrev.textContent = '';
+        speedupEl.textContent = '';
+
+        try {
+            await ensureLoaded();
+
+            let inputText = inputArea.value;
+            if (inputText.length > maxInputLen) {
+                inputText = inputText.substring(0, maxInputLen);
+                inputText = inputText.substring(0, inputText.length - (inputText.length % 4));
+            }
+            const inputBytes = new TextEncoder().encode(inputText);
+
+            function showResult(label, tp, time, prev, result) {
+                tp.textContent = result.mbPerSec.toFixed(1) + ' MB/s';
+                time.textContent = result.perIter.toFixed(3) + ' ms/iter (' + result.iterations + ' iters)';
+                prev.textContent = result.decoded;
+            }
+
+            
+            btn.textContent = 'Running Go stdlib...';
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+            const stdlib = runDecode(stdlibInst, inputBytes);
+            showResult('stdlib', stdlibTP, stdlibTime, stdlibPrev, stdlib);
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+            
+            btn.textContent = 'Running Scalar SPMD...';
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+            const scalar = runDecode(scalarInst, inputBytes);
+            showResult('scalar', scalarTP, scalarTime, scalarPrev, scalar);
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+            
+            if (hasRelaxedSimd && spmdInst) {
+                btn.textContent = 'Running SPMD SIMD...';
+                await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+                const spmd = runDecode(spmdInst, inputBytes);
+                showResult('spmd', spmdTP, spmdTime, spmdPrev, spmd);
+
+                const vsStdlib = spmd.mbPerSec / stdlib.mbPerSec;
+                const vsScalar = spmd.mbPerSec / scalar.mbPerSec;
+                speedupEl.textContent = 'SPMD SIMD: ' + vsStdlib.toFixed(1) + 'x vs stdlib, ' + vsScalar.toFixed(1) + 'x vs scalar';
+            } else {
+                spmdTP.textContent = 'N/A';
+                spmdTime.textContent = 'Relaxed SIMD not available';
+                const vsStdlib = scalar.mbPerSec / stdlib.mbPerSec;
+                speedupEl.textContent = 'Scalar SPMD: ' + vsStdlib.toFixed(1) + 'x vs stdlib';
+            }
+        } catch (err) {
+            console.error('Base64 benchmark error:', err);
+            speedupEl.textContent = 'Error: ' + err.message;
+        } finally {
+            btn.textContent = 'Run Benchmark';
+            btn.disabled = false;
+            isRunning = false;
+        }
+    });
+})();
+</script><p>Here is the kernel (with reference to expected SIMD instruction when implemented in assembly):</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#75715e>// file: examples/base64-decoder/main.go
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>func</span> <span style=color:#a6e22e>decodeAndPack</span>(<span style=color:#a6e22e>dst</span>, <span style=color:#a6e22e>src</span> []<span style=color:#66d9ef>byte</span>) <span style=color:#66d9ef>int</span> {
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>n</span> <span style=color:#f92672>:=</span> len(<span style=color:#a6e22e>src</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Loop 1: decode ASCII → 6-bit sextets via nibble LUT.
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#a6e22e>sextets</span> <span style=color:#f92672>:=</span> make([]<span style=color:#66d9ef>byte</span>, <span style=color:#a6e22e>n</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>go</span> <span style=color:#66d9ef>for</span> <span style=color:#a6e22e>i</span>, <span style=color:#a6e22e>ch</span> <span style=color:#f92672>:=</span> <span style=color:#66d9ef>range</span> <span style=color:#a6e22e>src</span> {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>s</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>ch</span> <span style=color:#f92672>+</span> <span style=color:#a6e22e>decodeLUT</span>[<span style=color:#a6e22e>ch</span><span style=color:#f92672>&gt;&gt;</span><span style=color:#ae81ff>4</span>]
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> <span style=color:#a6e22e>ch</span> <span style=color:#f92672>==</span> byte(<span style=color:#e6db74>&#39;+&#39;</span>) { <span style=color:#a6e22e>s</span> <span style=color:#f92672>+=</span> <span style=color:#ae81ff>3</span> }
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>sextets</span>[<span style=color:#a6e22e>i</span>] = <span style=color:#a6e22e>s</span>
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Loop 2: merge pairs → pmaddubsw pattern.
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#a6e22e>halfLen</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>n</span> <span style=color:#f92672>/</span> <span style=color:#ae81ff>2</span>
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>merged</span> <span style=color:#f92672>:=</span> make([]<span style=color:#66d9ef>int16</span>, <span style=color:#a6e22e>halfLen</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>go</span> <span style=color:#66d9ef>for</span> <span style=color:#a6e22e>g</span> <span style=color:#f92672>:=</span> <span style=color:#66d9ef>range</span> <span style=color:#a6e22e>merged</span> {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>merged</span>[<span style=color:#a6e22e>g</span>] = int16(<span style=color:#a6e22e>sextets</span>[<span style=color:#a6e22e>g</span><span style=color:#f92672>*</span><span style=color:#ae81ff>2</span>])<span style=color:#f92672>*</span><span style=color:#ae81ff>64</span> <span style=color:#f92672>+</span> int16(<span style=color:#a6e22e>sextets</span>[<span style=color:#a6e22e>g</span><span style=color:#f92672>*</span><span style=color:#ae81ff>2</span><span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>])
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Loop 3: merge pairs → pmaddwd pattern.
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#a6e22e>quarterLen</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>halfLen</span> <span style=color:#f92672>/</span> <span style=color:#ae81ff>2</span>
+</span></span><span style=display:flex><span>    <span style=color:#a6e22e>packed</span> <span style=color:#f92672>:=</span> make([]<span style=color:#66d9ef>int32</span>, <span style=color:#a6e22e>quarterLen</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>go</span> <span style=color:#66d9ef>for</span> <span style=color:#a6e22e>g</span> <span style=color:#f92672>:=</span> <span style=color:#66d9ef>range</span> <span style=color:#a6e22e>packed</span> {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>packed</span>[<span style=color:#a6e22e>g</span>] = int32(<span style=color:#a6e22e>merged</span>[<span style=color:#a6e22e>g</span><span style=color:#f92672>*</span><span style=color:#ae81ff>2</span>])<span style=color:#f92672>*</span><span style=color:#ae81ff>4096</span> <span style=color:#f92672>+</span> int32(<span style=color:#a6e22e>merged</span>[<span style=color:#a6e22e>g</span><span style=color:#f92672>*</span><span style=color:#ae81ff>2</span><span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>])
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// Loop 4: extract 3 bytes per int32.
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>go</span> <span style=color:#66d9ef>for</span> <span style=color:#a6e22e>g</span> <span style=color:#f92672>:=</span> <span style=color:#66d9ef>range</span> <span style=color:#a6e22e>packed</span> {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>dst</span>[<span style=color:#a6e22e>g</span><span style=color:#f92672>*</span><span style=color:#ae81ff>3</span><span style=color:#f92672>+</span><span style=color:#ae81ff>0</span>] = byte(<span style=color:#a6e22e>packed</span>[<span style=color:#a6e22e>g</span>] <span style=color:#f92672>&gt;&gt;</span> <span style=color:#ae81ff>16</span>)
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>dst</span>[<span style=color:#a6e22e>g</span><span style=color:#f92672>*</span><span style=color:#ae81ff>3</span><span style=color:#f92672>+</span><span style=color:#ae81ff>1</span>] = byte(<span style=color:#a6e22e>packed</span>[<span style=color:#a6e22e>g</span>] <span style=color:#f92672>&gt;&gt;</span> <span style=color:#ae81ff>8</span>)
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>dst</span>[<span style=color:#a6e22e>g</span><span style=color:#f92672>*</span><span style=color:#ae81ff>3</span><span style=color:#f92672>+</span><span style=color:#ae81ff>2</span>] = byte(<span style=color:#a6e22e>packed</span>[<span style=color:#a6e22e>g</span>])
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#a6e22e>quarterLen</span> <span style=color:#f92672>*</span> <span style=color:#ae81ff>3</span>
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>The compiler sees <code>int16(a)*64 + int16(b)</code> and emits <code>vpmaddubsw</code>. It sees the stride-3 byte extraction and emits a <code>vpshufb</code>-based byte-decomposition store. Four pattern detectors fire simultaneously on this one function &ndash; all from idiomatic Go that any developer can read. This is exactly what a compiler is designed for. Once you express data parallelism, the compiler can optimize.</p><h2 id=the-30-second-explanation>The 30-second explanation</h2><p>Three concepts make SPMD work in Go:</p><p><strong><code>go for</code></strong> marks a loop for data-parallel execution. The compiler vectorizes it: a main body with all lanes active, plus a masked tail for the remainder. The developer&rsquo;s job is to choose loops whose iterations are independent enough to run in parallel, just as <code>go func</code> asks the developer to decide when control-flow parallelism is safe.</p><p><strong><code>lanes.Varying[T]</code></strong> is a value that differs across SIMD lanes. Inside a <code>go for</code>, the loop variable is automatically varying. Arithmetic on varying values produces varying results. Regular Go variables are uniform &ndash; the same across all lanes.</p><p><strong><code>reduce.Add</code></strong> (and <code>reduce.Min</code>, <code>reduce.Max</code>, etc.) collapse a varying value back to a scalar.</p><p>Here is the simplest useful example &ndash; summing a slice:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#75715e>// file: examples/lo/sum/main.go
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>func</span> <span style=color:#a6e22e>sumSPMD</span>(<span style=color:#a6e22e>data</span> []<span style=color:#66d9ef>int32</span>) <span style=color:#66d9ef>int32</span> {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>var</span> <span style=color:#a6e22e>total</span> <span style=color:#a6e22e>lanes</span>.<span style=color:#a6e22e>Varying</span>[<span style=color:#66d9ef>int32</span>] = <span style=color:#ae81ff>0</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>go</span> <span style=color:#66d9ef>for</span> <span style=color:#a6e22e>_</span>, <span style=color:#a6e22e>v</span> <span style=color:#f92672>:=</span> <span style=color:#66d9ef>range</span> <span style=color:#a6e22e>data</span> {
+</span></span><span style=display:flex><span>        <span style=color:#a6e22e>total</span> <span style=color:#f92672>+=</span> <span style=color:#a6e22e>v</span>
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#a6e22e>reduce</span>.<span style=color:#a6e22e>Add</span>(<span style=color:#a6e22e>total</span>)
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>You write a loop. The compiler vectorizes it. The type system tracks what is varying. The mask handles the tail. That is the entire mental model.</p><h2 id=benchmark-results>Benchmark results</h2><p>Real numbers from our test infrastructure, measured on an AMD Ryzen 7 6800U:</p><table><thead><tr><th>Workload</th><th>Target</th><th>Speedup</th></tr></thead><tbody><tr><td>Base64 decode</td><td>AVX2</td><td>~17 GB/s (~9x stdlib, ~77% simdutf C++)</td></tr><tr><td>Base64 decode</td><td>SSSE3</td><td>~8.5 GB/s</td></tr><tr><td>lo-min / lo-max</td><td>AVX2 8-wide</td><td>7.27x / 7.18x</td></tr><tr><td>Mandelbrot</td><td>AVX2</td><td>6.07x</td></tr><tr><td>Mandelbrot</td><td>WASM</td><td>2.5-3.6x (varies by host)</td></tr><tr><td>Hex-encode</td><td>WASM</td><td>6-9x (varies by host)</td></tr><tr><td>Hex-encode</td><td>SSE</td><td>6.31x</td></tr></tbody></table><p>Honest disclosure: not everything speeds up. Our IPv4 parser hit 0.58x with inner-SPMD &ndash; slower than scalar, even though Daniel Lemire&rsquo;s <a href=https://lemire.me/blog/2023/06/08/parsing-ip-addresses-crazily-fast/>SIMD parser</a> shows this workload can be made fast. That is useful evidence too: SPMD is not a free lunch, and some algorithms want a different structure than the one I chose here. In this case, outer-SPMD batching is still future work, so the current result should be read as &ldquo;this version is not the right shape yet,&rdquo; not as &ldquo;IPv4 parsing can never benefit.&rdquo; Also, the scalar fallback of an SPMD-oriented algorithm can be a bit slower than a hand-tuned scalar stdlib implementation, because once you write for parallel execution you are often making different tradeoffs.</p><h2 id=why-tinygo>Why TinyGo</h2><p>A fair question: why build this on TinyGo rather than the main Go compiler?</p><p>The short answer is LLVM. ISPC &ndash; the closest existing SPMD compiler, and the one we learned the most from &ndash; is built on LLVM. Every SIMD architecture we care about (WASM simd128, x86 SSE/AVX2/AVX-512, ARM NEON/SVE) already has mature vector instruction support in LLVM&rsquo;s backend. TinyGo uses LLVM. The main Go compiler does not. Building on TinyGo meant we could emit LLVM vector IR (<code>&lt;4 x i32></code>, <code>&lt;32 x i8></code>, masked loads and stores) and get correct code on every target without writing a single line of architecture-specific codegen ourselves. The multi-architecture support was already there; bolting on SPMD loop lowering was the only missing piece. This helped iterate and experiment as we know the underlying compiler would handle the code generation just fine.</p><p>Another benefit is that TinyGo already had the browser-facing WebAssembly infrastructure needed to make the live demos in this post practical. That mattered for this project: it let the proof of concept be something people can run and inspect, not just benchmark numbers in a table.</p><p>That said, TinyGo has its own costs. The biggest one is the Go compiler&rsquo;s duplicated infrastructure. Go has <em>two</em> type-checker implementations (<code>cmd/compile/internal/types2</code> and <code>go/types</code>), <em>two</em> SSA representations (<code>cmd/compile/internal/ssa</code> and <code>golang.org/x/tools/go/ssa</code>), and <em>two</em> parser implementations (<code>cmd/compile/internal/syntax</code> and <code>go/parser</code>). TinyGo uses the <code>go/</code> standard-library versions of all three. The main Go compiler uses the <code>cmd/compile/internal/</code> versions. They are near-identical codebases maintained separately.</p><p>For the PoC, this meant every frontend change &ndash; every type-checker rule for <code>lanes.Varying[T]</code>, every parser extension for <code>go for</code>, every control-flow restriction &ndash; had to be written in <em>both</em> trees. The SPMD SSA work went into a patched <code>golang.org/x/tools/go/ssa</code> because that is what TinyGo consumes, but for an upstream Go implementation the same patterns would go into <code>cmd/compile/internal/ssa</code>. We ended up maintaining three forked repositories (Go, TinyGo, and x-tools-spmd) and learned the hard way that this work really does span all three.</p><p>The duplication is not a TinyGo problem. It is a Go ecosystem problem. Any tool that needs to understand Go at the type or SSA level &ndash; gopls, staticcheck, go vet, TinyGo &ndash; faces the same split. If the Go project ever unified <code>types2</code> and <code>go/types</code>, or converged the two SSA representations, it would benefit every downstream consumer, not just SPMD.</p><p>For the PoC&rsquo;s purposes, TinyGo was the right choice. It gave us LLVM&rsquo;s vector infrastructure for free, it let us iterate on the SSA-level transforms without modifying the main Go compiler, and it produced real executables we could benchmark on real hardware. The tradeoff was the double-write tax on frontend work.</p><h2 id=why-this-belongs-in-the-compiler>Why this belongs in the compiler</h2><p>SPMD is not a library feature. It is a compiler feature. The core transforms &ndash; predication (linearizing varying <code>if</code>/<code>else</code> into masked selects), loop peeling (splitting into an all-ones main body and a masked tail), and pattern detection (recognizing multiply-add, contiguous access, byte-decomposition stores) &ndash; are SSA-level transformations that live at the heart of the compiler.</p><p>We learned this the hard way. Our first approach tried to bolt SPMD onto the TinyGo backend as an analysis pass, reconstructing masks from control-flow structure without touching the SSA representation. It worked for simple cases. Then varying switch, compound boolean chains, per-lane break, and inner scalar loops each demanded new special cases. Every bug was &ldquo;the mask was wrong on this path.&rdquo; We deleted roughly 330 lines of mask-stack code and accepted what we should have known from the start: the varying-ness of control flow must be encoded in the SSA form itself.</p><p>The proof-of-concept adds three SPMD-aware SSA instructions (<code>SPMDLoad</code>, <code>SPMDStore</code>, <code>SPMDSelect</code>) and four metadata structures to <code>go/ssa</code>. With that foundation, predication and loop peeling become mechanical transforms, and mask correctness is guaranteed by construction rather than reconstructed by analysis.</p><p><strong>How this relates to <code>simd/archsimd</code>.</strong> The two approaches are complementary, not competing. <code>archsimd</code> is instruction-level: you pick <code>Int32x8</code>, you call <code>.Add()</code>, you get one instruction. It is architecture-facing and explicit. SPMD is a higher level of abstraction: you write <code>go for</code>, the compiler picks the width and the instructions. One is useful when you want instruction-level control. The other is useful when you want portable loop-level data parallelism in ordinary Go code.</p><p>The Go team has also discussed a portable API layer on top of <code>archsimd</code>. That would be a third point in the design space, closer to something like Google&rsquo;s Highway for C++. My hypothesis is that a language approach would still be the most approachable form for application code: <code>archsimd</code> underneath for instruction-level control where teams really want it, and SPMD on top for loop-level data parallelism where readability and portability matter more than hand-selecting instructions.</p><h2 id=where-spmd-would-help-in-the-stdlib>Where SPMD would help in the stdlib</h2><p>Two categories stand out as natural fits:</p><p><strong>Image processing.</strong> <code>image/draw</code>, <code>image/color</code> conversions (RGB-to-YCbCr, alpha premultiplication), JPEG/PNG decode pipelines. Per-pixel arithmetic is the golden SPMD case: contiguous memory, uniform control flow, and many related kernels that share the same shape. A properly vectorized <code>draw.Draw</code> becomes one vector load and one vector store per lane-count pixels in the common path. The <code>image</code> family has many such kernels, and writing each one with instruction-level SIMD would mean a permanent per-architecture maintenance burden. SPMD compiles them all from one source.</p><p><strong>Byte parsing.</strong> HTTP header scanning (<code>net/http</code>), JSON structural character detection, <code>go/scanner</code> tokenization, <code>encoding/hex</code>, <code>encoding/base64</code>. The proof-of-concept&rsquo;s hex-encode and base64 examples are proofs of concept for this whole category. Anything that is &ldquo;scan a <code>[]byte</code>, classify each byte, act on the classification&rdquo; fits the same pattern: byte-lane iteration, small-table lookup via <code>vpshufb</code>, and masked stores. These hot paths are well-tested, self-contained, and performance-visible in real services &ndash; good properties for introducing a new compiler technology.</p><h2 id=how-this-was-built-six-months-of-vibe-coding>How this was built: six months of vibe coding</h2><p>I want to be transparent about how this proof of concept came together, because the process itself is part of the story.</p><p>This entire PoC was built with Claude Code over roughly six months, starting in late 2025. The Go frontend, the TinyGo backend, the x-tools-spmd patches, and the E2E test infrastructure &ndash; but not the examples &ndash; all came out of a human-AI collaboration where I provided the direction and the AI wrote most of the code. I could not have built this alone on that timeline. The compiler engineering involved &ndash; predicated SSA, loop peeling, pattern detection, LLVM IR generation across three SIMD targets &ndash; spans too many domains for one person without deep LLVM experience to execute at this pace.</p><p>That said, it was not smooth. The biggest friction was that the model had never seen <code>go for</code> before. Every Go example it had ever trained on uses <code>go</code> followed by <code>func()</code>, never <code>go</code> followed by <code>for</code>. It consistently tried to rewrite SPMD code as goroutine launches or switched back to pure scalar &ldquo;because they work&rdquo;, or inserted <code>go func()</code> wrappers around <code>for</code> loops. <strong>All examples and tests had to be written by hand.</strong> Every <code>go for</code> loop, every <code>lanes.Varying[T]</code> declaration, every <code>reduce.Add</code> call in the test suite &ndash; I wrote those, because the model could not reliably generate valid SPMD Go from scratch. And gopls and my IDE also were annoyingly in the way as they were not aware of this syntax.</p><p>Strangely, the reverse worked well: once I gave the model the rules and the context (the type-checker restrictions, the ISPC semantics, the SSA generation strategy), it could <em>review</em> the hand-written examples and tests and find real bugs. It caught mask-propagation errors, missing edge cases in control-flow rules, and type-checker omissions that I had missed. The model was a better reviewer than it was a writer for novel syntax.</p><p>The other persistent source of confusion was the duplicated Go infrastructure. The model regularly mixed up <code>cmd/compile/internal/types2</code> with <code>go/types</code>, <code>cmd/compile/internal/ssa</code> with <code>golang.org/x/tools/go/ssa</code>, and <code>cmd/compile/internal/syntax</code> with <code>go/parser</code>. It would confidently edit the wrong file, add imports from the wrong package, or reference APIs that existed in one SSA but not the other. With three forked repositories, each with its own branch, the context management was genuinely difficult. A significant fraction of the six months was spent correcting navigation errors rather than making progress.</p><p>Things changed in January 2026 when I switched to a structured agent workflow: a development agent writes the code, a separate reviewer agent checks it, and a commit agent handles the git work. The reviewer agent turned out to be the key &ndash; it caught the navigation errors and the types2/go-types mix-ups that the development agent introduced, and it enforced consistency across the three repositories. Sometimes I added a final validation step to check that the result actually matched the goal, because agents love to &ldquo;defer&rdquo; work and the reviewer will not always catch that. From that point, the pace of progress changed dramatically. We got the mandelbrot example working in a few weeks.</p><p><strong>What should be reused from this PoC:</strong> the learnings, the design (predicated SSA at the SSA level, explicit masks, pattern detection philosophy), the examples, and the test suite. <strong>What should not be reused:</strong> the compiler code itself. It was written to explore and validate, not to ship. A real implementation would start from the architectural lessons documented in these articles and build the transforms properly inside <code>cmd/compile/internal/ssa</code>, not retrofit them from a TinyGo fork.</p><p>The PoC served its purpose: it proved that SPMD-for-Go is viable, it identified the patterns that deliver performance, and it documented the dead ends so the next person does not have to rediscover them. That is enough.</p><h2 id=where-to-go-from-here>Where to go from here</h2><p>The proof of concept is open source. The full implementation spans three repositories: a Go fork (type system and SSA), a TinyGo fork (LLVM backend for WASM and x86), and a patched <code>golang.org/x/tools</code> (SSA-level predication and loop peeling). We have 90 end-to-end run tests passing across WASM, SSE, and AVX2, plus compile-only coverage for rejected or incomplete cases. It is far from production-ready, but it is good enough as an experiment to show what is possible.</p><p>We would welcome feedback from the Go community &ndash; whether you are a developer who would use this, a compiler engineer who sees how to do it better, or someone who spots a flaw in the design. The interesting conversation is not &ldquo;should Go have SIMD?&rdquo; (it should, and <code>archsimd</code> is already here) but rather &ldquo;should Go have <em>loop-level</em> data parallelism, and if so, what should it look like?&rdquo;</p><p><strong>Go experiment the language change <a href=FIXME>here</a>!</strong></p><p>If you want to dig deeper, the rest of this series covers the details:</p><ul><li><a href=../writing-spmd-go/>Writing SPMD Go: A Practical Guide</a> &ndash; the mental model, idioms, and worked examples</li><li><a href=../spmd-compiler-internals/>How SPMD Lives in the Compiler</a> &ndash; the mask-stack lesson, predicated SSA, and what we would do differently</li><li><a href=../spmd-pattern-matching/>Pattern Matching Outperformed Hand-Written SIMD</a> &ndash; why the simplest code produced the fastest output</li><li><a href=../spmd-loop-peeling/>Loop Peeling: Where Most of the Speed Comes From</a> &ndash; the single highest-leverage optimization</li><li><a href=../spmd-negative-result/>We Built Cross-Lane SIMD Primitives. None of Them Helped.</a> &ndash; the most important negative result</li></ul><hr><ul class=pa0></ul><div class="mt6 instapaper_ignoref"><div id=disqus_thread></div><script>window.disqus_config=function(){},function(){if(["localhost","127.0.0.1"].indexOf(window.location.hostname)!=-1){document.getElementById("disqus_thread").innerHTML="Disqus comments not available by default when the website is previewed locally.";return}var t=document,e=t.createElement("script");e.async=!0,e.src="//bluebugs.disqus.com/embed.js",e.setAttribute("data-timestamp",+new Date),(t.head||t.body).appendChild(e)}()</script><noscript>Please enable JavaScript to view the <a href=https://disqus.com/?ref_noscript>comments powered by Disqus.</a></noscript><a href=https://disqus.com class=dsq-brlink>comments powered by <span class=logo-disqus>Disqus</span></a><div id=commento></div><script defer src=https://cdn.commento.io/js/commento.js></script></div></div><aside class="w-30-l mt6-l"></aside></article></main><footer class="bg-black bottom-0 w-100 pa3" role=contentinfo><div class="flex justify-between"><a class="f4 fw4 hover-white no-underline white-70 dn dib-ns pv2 ph3" href=http://bluebugs.github.io/>&copy; Cedric Bail 2026</a><div><div class=ananke-socials></div></div></div></footer></body></html>
