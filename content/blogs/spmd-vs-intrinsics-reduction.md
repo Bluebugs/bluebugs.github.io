@@ -1,6 +1,6 @@
 +++
 date = '2026-05-10T10:00:00-07:00'
-draft = true
+draft = false
 title = 'Why a Reduction Loop Tells the Story: SPMD vs Per-Op SIMD Intrinsics'
 description = 'A side-by-side disassembly of the same AVX2 reduction reveals a structural advantage of whole-loop vectorization over per-operation intrinsics'
 featured_image = 'images/mountain-2.jpg'

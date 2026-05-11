@@ -1,6 +1,6 @@
 +++
 date = '2026-04-15T10:05:00-07:00'
-draft = true
+draft = false
 title = 'Byte Iteration at 32 Lanes: The Decomposed Index Path'
 description = 'How to iterate a []byte on AVX2 without drowning in index-register pressure'
 featured_image = 'images/mountain-8.jpg'
@@ -75,4 +75,4 @@ The implementation is roughly 300 lines of Go in the TinyGo compiler. The concep
 
 ---
 
-*This article is part of a series on the SPMD-for-Go proof of concept. For the overall pitch, see [Data Parallelism: simpler solution for Golang?](../go-data-parallelism/). For how pattern detection replaced hand-written SIMD primitives, see the pattern matching article (forthcoming).*
+*This article is part of a series on the SPMD-for-Go proof of concept. For the overall pitch, see [Data Parallelism: simpler solution for Golang?](../go-data-parallelism/). For how pattern detection replaced hand-written SIMD primitives, see [Pattern Matching Outperformed Hand-Written SIMD](../spmd-pattern-matching/).*

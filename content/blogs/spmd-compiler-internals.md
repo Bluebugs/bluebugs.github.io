@@ -1,6 +1,6 @@
 +++
 date = '2026-04-15T10:02:00-07:00'
-draft = true
+draft = false
 title = 'How SPMD Lives in the Compiler: Lessons from Building It'
 description = 'The mask-stack detour, predicated SSA, and why SPMD has to live at the heart of the compiler'
 featured_image = 'images/mountain-6.jpg'
@@ -10,7 +10,7 @@ tags = ['SPMD', 'compiler', 'SSA', 'LLVM']
 
 We added a way to express data parallelism in idiomatic Go. Earlier discussions around this space often stalled on a simple question: how would it actually work in the compiler? A working proof of concept that compiles `go for` loops to WASM SIMD128, x86 SSE, and x86 AVX2, with end-to-end tests passing and a base64 decoder reaching ~77% of simdutf C++ throughput, is a better answer than another round of speculation. The goal here is to make the implementation strategy concrete. Along the way we learned one lesson the hard way: **SPMD is a compiler feature that has to live at the heart of the SSA form.** Everything else follows from that.
 
-This article is for compiler engineers. If you want to see the benchmarks and the short version, read [the overview](../spmd-results/). If you want to write SPMD Go code, the [practical guide](../writing-spmd-go) is for you. Here, we talk about what we built inside the compiler, what we got wrong, and what we would do differently.
+This article is for compiler engineers. If you want to see the benchmarks and the short version, read [the overview](../spmd-results/). If you want to write SPMD Go code, the [practical guide](../writing-spmd-go/) is for you. Here, we talk about what we built inside the compiler, what we got wrong, and what we would do differently.
 
 <!--more-->
 
@@ -118,6 +118,15 @@ Each of these was a five-minute fix once found. All were hidden until scalar mod
 **Fork `go/ssa` on day one.** The mask-stack detour cost us months. If we had accepted the three-fork maintenance burden early and built predication at the SSA level from the start, the total project time would have been shorter. The bugs were proportional to the gap between what the SSA knew and what the backend needed. Close the gap at the source. That is the lesson, and it is the one we would give to anyone starting a similar project.
 
 Also we need a better name. I am bad at naming things. `goroutine` is nice and understandable way to describe light thread. So what should be the name of a SPMD for loop, this little `go for`... I am so close to call it a gopher loop :-D Yes, my jokes are not much better than my sense of naming. Compiler work might be easier.
+
+---
+
+For deeper dives into specific compiler mechanisms touched on above:
+
+- [Loop Peeling: Where Most of the Speed Comes From](../spmd-loop-peeling/) -- the single highest-leverage optimization, and how the SSA-level split works.
+- [How the Compiler Knows Your Load Is Contiguous](../spmd-contiguous-analysis/) -- the analysis that turns per-lane gather into a single vector load.
+- [Byte Iteration at 32 Lanes: The Decomposed Index Path](../spmd-decomposed-index/) -- the representation choice that makes byte-granular iteration tractable at wide SIMD widths.
+- [16 Bytes That Saved a Thousand Branches](../spmd-wasm-guard-zone/) -- the WASM linear-memory guard zone that eliminates bounce-buffer overhead on tail loads.
 
 ---
 

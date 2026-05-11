@@ -1,6 +1,6 @@
 +++
 date = '2026-04-15T10:06:00-07:00'
-draft = true
+draft = false
 title = '16 Bytes That Saved a Thousand Branches'
 description = 'The cheapest optimization in our SPMD proof of concept: a WASM linear memory guard zone for safe vector overreads'
 featured_image = 'images/mountain-9.jpg'
@@ -110,4 +110,4 @@ Any WASM runtime that supports SIMD should do this. If WASM ever gains 256-bit o
 
 ---
 
-**Further reading:** [Data Parallelism: simpler solution for Golang?](../go-data-parallelism/) for the full SPMD pitch. The compiler internals article (forthcoming) covers the predicated SSA architecture that makes this and every other optimization in the PoC possible.
+**Further reading:** [Data Parallelism: simpler solution for Golang?](../go-data-parallelism/) for the full SPMD pitch. [How SPMD Lives in the Compiler](../spmd-compiler-internals/) covers the predicated SSA architecture that makes this and every other optimization in the PoC possible.
