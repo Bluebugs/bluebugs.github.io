@@ -2,7 +2,7 @@
 title: "Putting It All Together"
 date: 2025-07-13T14:00:00-07:00
 description: "Fast IPv4 Parsing with SPMD Go"
-featured_image: 'images/lakelouise.jpg'
+featured_image: 'images/mountain-12.jpg'
 featured_image_class: 'cover bg-center'
 tags: ["golang", "performance", "networking", "SIMD", "SPMD"]
 ---

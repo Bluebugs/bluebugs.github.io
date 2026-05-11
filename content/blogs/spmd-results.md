@@ -3,7 +3,7 @@ date = '2026-04-15T10:00:00-07:00'
 draft = true
 title = 'SPMD for Go: What If Your Loops Were Just Faster?'
 description = 'A proof of concept for language-level data parallelism in Go, with live WASM demos and real benchmark results'
-featured_image = 'images/banff.jpg'
+featured_image = 'images/mountain-1.jpg'
 featured_image_class = 'cover bg-center'
 +++
 

@@ -3,7 +3,7 @@ date = '2026-04-15T10:01:00-07:00'
 draft = true
 title = 'Writing SPMD Go: A Practical Guide'
 description = 'How to think about uniform vs varying, write go for loops, use reductions, and avoid the common pitfalls'
-featured_image = 'images/lakelouise.jpg'
+featured_image = 'images/mountain-3.jpg'
 featured_image_class = 'cover bg-center'
 +++
 

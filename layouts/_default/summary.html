@@ -8,15 +8,11 @@
                  (hasPrefix $name "go-data-parallelism")
                  (hasPrefix $name "practical-vector") }}
 <article class="blog-card bg-white br2 overflow-hidden flex flex-column">
-  <a href="{{ .RelPermalink }}" class="link db dim">
-    {{ if $featured_image }}
-      <div class="blog-card-image aspect-ratio aspect-ratio--16x9">
-        <img src="{{ $featured_image }}" class="aspect-ratio--object cover" alt="">
-      </div>
-    {{ end }}
-  </a>
   <div class="blog-card-body pa3 pa4-ns flex flex-column flex-auto">
     <div class="blog-card-meta f6 mb2 flex items-center">
+      {{ if $featured_image }}
+        <img src="{{ $featured_image }}" alt="" class="blog-card-thumb" loading="lazy">
+      {{ end }}
       {{ if .Date }}
         <time class="gray" datetime="{{ .Date.Format "2006-01-02" }}">
           {{ .Date | time.Format (default "Jan 2, 2006" .Site.Params.date_format) }}

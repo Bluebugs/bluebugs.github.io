@@ -3,7 +3,7 @@ date = '2026-04-15T10:02:00-07:00'
 draft = true
 title = 'How SPMD Lives in the Compiler: Lessons from Building It'
 description = 'The mask-stack detour, predicated SSA, and why SPMD has to live at the heart of the compiler'
-featured_image = 'images/lakelouise.jpg'
+featured_image = 'images/mountain-6.jpg'
 featured_image_class = 'cover bg-center'
 +++
 
