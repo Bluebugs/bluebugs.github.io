@@ -5,6 +5,7 @@ title = 'Why a Reduction Loop Tells the Story: SPMD vs Per-Op SIMD Intrinsics'
 description = 'A side-by-side disassembly of the same AVX2 reduction reveals a structural advantage of whole-loop vectorization over per-operation intrinsics'
 featured_image = 'images/mountain-2.jpg'
 featured_image_class = 'cover bg-center'
+tags = ['SPMD', 'SIMD', 'AVX2', 'intrinsics', 'benchmarks']
 +++
 
 We have a small surprise from our SPMD proof of concept. On three identical AVX2 reductions over `[]int32` -- sum, min, contains -- our SPMD-compiled code is 1.8x to 2.6x faster than the same algorithms written against [`samber/lo/exp/simd`](https://github.com/samber/lo), the experimental Go library built on Go's new `simd` intrinsics package. Both run AVX2 8-wide. Both issue roughly the same number of vector ops in the body. The runtime gap is not about ISA choice. It is about what each compiler can see when it codegens the loop, and that turns out to be a structural property of how the intrinsic API is shaped -- not a missed optimization in `go`.

@@ -3,6 +3,7 @@ date = '2024-11-13T18:31:52-07:00'
 draft = true
 featured_image = 'images/strathcona.jpg'
 title = 'Layoffs in Tech: Impacts on Teams and Technical Debt'
+tags = ['engineering', 'tech-debt', 'teams']
 +++
 
 The tech sector, after a decade of remarkable growth, has faced significant layoffs. These events affect everyone-not just those directly impacted, but also the colleagues who remain. For those let go, the challenges of finding new opportunities in a tough market are profound. Meanwhile, those who stay often grapple with shaken trust in management, increased workloads, and heightened stress about their own job security.

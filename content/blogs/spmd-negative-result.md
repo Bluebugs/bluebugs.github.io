@@ -5,6 +5,7 @@ title = 'We Built Cross-Lane SIMD Primitives. None of Them Helped.'
 description = 'The most important negative result from our SPMD-for-Go proof of concept: explicit shuffles and rotations lost to compiler pattern detection on idiomatic Go'
 featured_image = 'images/mountain-10.jpg'
 featured_image_class = 'cover bg-center'
+tags = ['SPMD', 'SIMD', 'design']
 +++
 
 We built six cross-lane SIMD primitives for our Go SPMD proof of concept. We benchmarked them across ten examples. None delivered a measurable win. Every example that shipped fast shipped without them.

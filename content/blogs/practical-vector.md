@@ -5,6 +5,7 @@ title = 'What if? Practical parallel data.'
 description = 'Using a hypothetical `go for` construct to implement a variety of string operation'
 featured_image = 'images/lakelouise.jpg'
 featured_image_class = 'cover bg-center'
+tags = ['golang', 'SPMD', 'SIMD']
 +++
 
 ## Printf helper

@@ -5,6 +5,7 @@ title = 'Loop Peeling: Where Most of the Speed Comes From'
 description = 'How SSA-level loop peeling enables the all-ones mask fast path that delivers ~2x of SPMD benchmark wins'
 featured_image = 'images/mountain-5.jpg'
 featured_image_class = 'cover bg-center'
+tags = ['SPMD', 'compiler', 'optimization', 'SSA']
 +++
 
 If you took every optimization in our SPMD-for-Go proof of concept and ranked them by benchmark impact, loop peeling would be at the top. Not pattern detection. Not contiguous access analysis. Not the decomposed index path. Peeling. It is the structural foundation that everything else is built on, and the reason our hot loops run at one memory operation per store instead of three.

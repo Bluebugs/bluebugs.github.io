@@ -5,6 +5,7 @@ title = '16 Bytes That Saved a Thousand Branches'
 description = 'The cheapest optimization in our SPMD proof of concept: a WASM linear memory guard zone for safe vector overreads'
 featured_image = 'images/mountain-9.jpg'
 featured_image_class = 'cover bg-center'
+tags = ['SPMD', 'WASM', 'optimization']
 +++
 
 The cheapest optimization in our entire SPMD proof of concept cost 16 bytes of memory and eliminated an entire class of branch-heavy fallback code.

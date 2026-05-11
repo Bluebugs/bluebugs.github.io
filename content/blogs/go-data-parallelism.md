@@ -4,6 +4,7 @@ draft = false
 featured_image = 'images/banff.jpg'
 featured_image_class = 'cover bg-center'
 title = 'Data Parallelism: simpler solution for Golang?'
+tags = ['golang', 'SPMD', 'data-parallelism']
 +++
 
 ## Why Data Parallelism Matters in Go

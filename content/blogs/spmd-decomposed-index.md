@@ -5,6 +5,7 @@ title = 'Byte Iteration at 32 Lanes: The Decomposed Index Path'
 description = 'How to iterate a []byte on AVX2 without drowning in index-register pressure'
 featured_image = 'images/mountain-8.jpg'
 featured_image_class = 'cover bg-center'
+tags = ['SPMD', 'compiler', 'AVX2', 'x86']
 +++
 
 When we set out to make `for i, b := range byteSlice` fast on AVX2, the first thing that went wrong was the index vector. This article explains what happened, the technique we used to fix it, and the chain of bugs the fix resolved along the way.

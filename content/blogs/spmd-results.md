@@ -5,6 +5,7 @@ title = 'SPMD for Go: What If Your Loops Were Just Faster?'
 description = 'A proof of concept for language-level data parallelism in Go, with live WASM demos and real benchmark results'
 featured_image = 'images/mountain-1.jpg'
 featured_image_class = 'cover bg-center'
+tags = ['golang', 'SPMD', 'SIMD', 'performance', 'benchmarks']
 +++
 
 We wrote a base64 decoder in about 40 lines of Go. It runs at roughly 17 GB/s on AVX2 -- about 9x faster than `encoding/base64` and within 77% of the best C++ SIMD library ([simdutf](https://github.com/simdutf/simdutf)). No assembly. No intrinsics. No `unsafe`. Just Go with a new loop keyword.

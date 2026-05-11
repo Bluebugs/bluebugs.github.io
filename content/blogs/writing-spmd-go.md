@@ -5,6 +5,7 @@ title = 'Writing SPMD Go: A Practical Guide'
 description = 'How to think about uniform vs varying, write go for loops, use reductions, and avoid the common pitfalls'
 featured_image = 'images/mountain-3.jpg'
 featured_image_class = 'cover bg-center'
+tags = ['golang', 'SPMD', 'tutorial']
 +++
 
 You have read the short version: a base64 decoder in 40 lines of Go that runs at ~17 GB/s on AVX2, about 9x faster than `encoding/base64` and within 77% of the best C++ SIMD library. If that got your attention, this article is where you learn how to write code like that yourself.

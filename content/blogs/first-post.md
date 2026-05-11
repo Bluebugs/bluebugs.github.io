@@ -2,6 +2,7 @@
 date = '2024-10-29T20:49:45-06:00'
 title = 'The SuperH family'
 description = 'In depth SuperH instructions set'
+tags = ['assembly', 'SuperH', 'ISA']
 +++
 
 In this post, I’ll explore the SuperH instruction set and its relevance today, along with a tool I created to navigate it.

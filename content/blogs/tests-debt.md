@@ -3,6 +3,7 @@ date = '2024-11-09T14:20:32-07:00'
 title = 'Tests Debt'
 featured_image = 'images/kicking-horse.jpg'
 description = 'Avoiding Tech debt in your tests!'
+tags = ['testing', 'tech-debt', 'engineering']
 +++
 
 Tests should help you release code faster and with confidence. Yet, for many developers, testing has the opposite effect, creating delays and frustration. Here, I'll explore common pitfalls in testing and suggest better practices to make tests truly beneficial.

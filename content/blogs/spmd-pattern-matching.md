@@ -5,6 +5,7 @@ title = 'Pattern Matching Outperformed Hand-Written SIMD'
 description = 'How compiler pattern detection on idiomatic Go outperformed explicit cross-lane SIMD builtins in our SPMD proof of concept'
 featured_image = 'images/mountain-4.jpg'
 featured_image_class = 'cover bg-center'
+tags = ['SPMD', 'compiler', 'SIMD', 'pattern-detection']
 +++
 
 Our base64 decoder was implemented twice. Version 1 used explicit cross-lane operations --- shuffles, rotations, compact stores. It peaked at roughly 2x scalar performance. Version 2 used four plain `go for` loops with no cross-lane operations at all. It hit approximately 17 GB/s on AVX2 --- about 77% of simdutf C++ and 9x faster than Go's `encoding/base64`. The simpler code outperformed the clever code by a wide margin.

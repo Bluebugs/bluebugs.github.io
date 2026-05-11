@@ -5,6 +5,7 @@ title = 'How the Compiler Knows Your Load Is Contiguous'
 description = 'The most important backend optimization in SPMD: recognizing contiguous memory access through ChangeType and BinOp chains'
 featured_image = 'images/mountain-7.jpg'
 featured_image_class = 'cover bg-center'
+tags = ['SPMD', 'compiler', 'optimization']
 +++
 
 The single most important question the SPMD backend asks is: **"is this memory access contiguous?"** The answer determines whether your loop runs at vector speed or crawls through gather/scatter. This article is about the compiler pass that answers that question, and why it was worth more than every other optimization we built combined.

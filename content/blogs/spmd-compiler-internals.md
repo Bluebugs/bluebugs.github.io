@@ -5,6 +5,7 @@ title = 'How SPMD Lives in the Compiler: Lessons from Building It'
 description = 'The mask-stack detour, predicated SSA, and why SPMD has to live at the heart of the compiler'
 featured_image = 'images/mountain-6.jpg'
 featured_image_class = 'cover bg-center'
+tags = ['SPMD', 'compiler', 'SSA', 'LLVM']
 +++
 
 We added a way to express data parallelism in idiomatic Go. Earlier discussions around this space often stalled on a simple question: how would it actually work in the compiler? A working proof of concept that compiles `go for` loops to WASM SIMD128, x86 SSE, and x86 AVX2, with end-to-end tests passing and a base64 decoder reaching ~77% of simdutf C++ throughput, is a better answer than another round of speculation. The goal here is to make the implementation strategy concrete. Along the way we learned one lesson the hard way: **SPMD is a compiler feature that has to live at the heart of the SSA form.** Everything else follows from that.

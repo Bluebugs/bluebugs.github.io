@@ -4,6 +4,7 @@ title = 'Cross-Lane Communication: When Lanes Need to Talk'
 description = 'Understanding why and how SPMD programs coordinate data between execution lanes through base64 decoding'
 featured_image = 'images/mountain-11.jpg'
 featured_image_class = 'cover bg-center'
+tags = ['SPMD', 'SIMD', 'base64']
 +++
 
 ## When Independent Lanes Aren't Enough
