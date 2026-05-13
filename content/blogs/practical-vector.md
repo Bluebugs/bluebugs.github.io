@@ -8,6 +8,9 @@ featured_image_class = 'cover bg-center'
 tags = ['golang', 'SPMD', 'SIMD']
 +++
 
+> [!WARNING]
+> **Historical note.** This post predates the actual TinyGo SPMD compiler and explores a hypothetical `go for`. The core patterns (parallel scan with `reduce.Any` early exit, hex-encode via per-lane table lookup, two-phase scan/convert for `ToUpper`) all work today — see the [hex-encode example](https://github.com/Bluebugs/SPMD/blob/main/playground/examples/spmd/hex-encode/main.go). However: `reduce.FindFirstSet` is currently a stub (not implemented), `lanes.Count(c)` is a uniform compile-time constant (typically written `lanes.Count[T]()`), and `//go:noinline` discipline on hot SPMD functions turned out to matter for codegen quality. For the working idioms see [Writing SPMD Go](../writing-spmd-go/); for measured perf vs Go's stdlib hex see [SPMD Results](../spmd-results/).
+
 ## Printf helper
 
 One of the first and most repetitive tasks for [doPrintf](https://github.com/golang/go/blob/master/src/fmt/print.go#L1028) is to find `%` in a string. Right now, this is just iterating one character after another. This is very simple to parallelize using data parallelism and would look like the code below.

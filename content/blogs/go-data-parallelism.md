@@ -7,6 +7,9 @@ title = 'Data Parallelism: simpler solution for Golang?'
 tags = ['golang', 'SPMD', 'data-parallelism']
 +++
 
+> [!WARNING]
+> **Historical note.** This post predates the actual TinyGo SPMD compiler. It is a thought experiment from when the design space was still open. The high-level ideas (uniform vs varying, `go for` as the SPMD construct, masking for divergent control flow) all survived, but some details have evolved: `lanes.Varying[T]` is now a package-typed magic generic (no `varying` keyword), and several restrictions on `return`/`break`, function visibility, and `go for` nesting were added during implementation. For accurate, measured behavior see [Writing SPMD Go](../writing-spmd-go/) and [SPMD Results](../spmd-results/).
+
 ## Why Data Parallelism Matters in Go
 
 Go is a fast language, but it lacks easy ways to express data parallelism and does not provide direct access to low-level **SIMD** (Single Instruction Multiple Data) instructions. As a result, standard libraries like [base64](https://github.com/golang/go/issues/19636), [hex](https://github.com/golang/go/issues/68188), [utf8](https://github.com/golang/go/issues/63347), [json](https://github.com/golang/go/issues/53178), [jpeg](https://github.com/golang/go/issues/24499), and [map](https://github.com/golang/go/issues/71255) are slower than expected. Other ecosystems are more likely to adopt specialized, high-performance libraries, which is why, in some cases, for example, Node.js can outperform Go.

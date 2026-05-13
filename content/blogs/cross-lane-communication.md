@@ -7,6 +7,9 @@ featured_image_class = 'cover bg-center'
 tags = ['SPMD', 'SIMD', 'base64']
 +++
 
+> [!WARNING]
+> **Historical note.** This post is a thought experiment that predates the actual TinyGo SPMD compiler. The high-level point — that base64 decoding requires data exchange between lanes — survived, but the **actual base64 decoder we ended up shipping does not use `SwizzleWithin` + `RotateWithin` at all**. The working AVX2 decoder uses a cascading byte → int16 → int32 pipeline that triggers `vpmaddubsw` + `vpmaddwd` + `vpshufb` + `vpermd`, achieving ~17 GB/s (~9x Go stdlib). See the [base64-mula-lemire example](https://github.com/Bluebugs/SPMD/blob/main/playground/examples/spmd/base64-mula-lemire/main.go) and the [vectorized-table-lookup section of Writing SPMD Go](../writing-spmd-go/#vectorized-table-lookup) for the patterns that actually work. Other drift from this post: `lanes.From` returns a `Varying[T]` of bounded width (it caps to lane count), `Varying` field/element addressing via `r[i] = ...` is not how lane writes are expressed (use `lanes.Index()` and arithmetic), and `[]byte(output)` conversion from a varying value is not supported — use `lanes.CompactStore` or contiguous slice writes. The `*Within` builtins are real, but constant-index only in current codegen.
+
 ## When Independent Lanes Aren't Enough
 
 Most SPMD examples show lanes working independently—each processing its own data without communicating with neighbors. But real-world algorithms often require **cross-lane communication**: lanes must exchange data to solve the problem correctly. Base64 decoding demonstrates this problem, transforming groups of 4 ASCII characters into groups of 3 bytes through coordinated lane operations.
