@@ -225,7 +225,7 @@ The proof of concept is open source. The full implementation spans three reposit
 
 We would welcome feedback from the Go community -- whether you are a developer who would use this, a compiler engineer who sees how to do it better, or someone who spots a flaw in the design. The interesting conversation is not "should Go have SIMD?" (it should, and `archsimd` is already here) but rather "should Go have _loop-level_ data parallelism, and if so, what should it look like?"
 
-**Go experiment the language change [here](FIXME)!**
+**Go experiment the language change [here](https://gofor-tinygo.netlify.app/)!**
 
 If you want to dig deeper, the rest of this series covers the details:
 

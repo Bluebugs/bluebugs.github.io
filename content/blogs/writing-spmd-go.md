@@ -429,7 +429,7 @@ The patterns that deliver wins: contiguous slice loads and stores (the golden ca
 
 The anti-patterns that hurt: inspecting individual lanes with `reduce.From`, reaching for `Swizzle` or `*Within` operations before measuring, and vectorizing a single small string when you could batch across strings.
 
-The proof of concept is open source. The full developer guide, the compiler internals, and every example referenced in this article are in the repository. If you want to try it yourself locally, `GOEXPERIMENT=spmd` and a forked TinyGo are all you need. Or you can just try it right now online [here](FIXME).
+The proof of concept is open source. The full developer guide, the compiler internals, and every example referenced in this article are in the repository. If you want to try it yourself locally, `GOEXPERIMENT=spmd` and a forked TinyGo are all you need. Or you can just try it right now online [here](https://gofor-tinygo.netlify.app/).
 
 ---
 
