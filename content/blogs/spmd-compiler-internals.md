@@ -115,7 +115,7 @@ Each of these was a five-minute fix once found. All were hidden until scalar mod
 
 **A smaller [`compiler/spmd.go`](https://github.com/Bluebugs/tinygo/blob/spmd/compiler/spmd.go).** The file grew to approximately 9,000 lines. It should have been seven files of 1,200 lines each: `spmd_loop.go`, `spmd_memory.go`, `spmd_masks.go`, `spmd_patterns_x86.go`, `spmd_patterns_wasm.go`, `spmd_builtins.go`, `spmd_lowering.go`. Commit to a file-per-concern structure from day one.
 
-**Fork `go/ssa` on day one.** The mask-stack detour cost us months. If we had accepted the three-fork maintenance burden early and built predication at the SSA level from the start, the total project time would have been shorter. The bugs were proportional to the gap between what the SSA knew and what the backend needed. Close the gap at the source. That is the lesson, and it is the one we would give to anyone starting a similar project.
+**Work on `go/ir`, `go/ssa` and `x-tools/ssa` from day one.** The mask-stack detour cost us months. If we had accepted the three-fork maintenance burden early and built predication at the SSA level from the start, the total project time would have been shorter. The bugs were proportional to the gap between what the SSA knew and what the backend needed. Close the gap at the source. That is the lesson, and it is the one we would give to anyone starting a similar project.
 
 Also we need a better name. I am bad at naming things. `goroutine` is nice and understandable way to describe light thread. So what should be the name of a SPMD for loop, this little `go for`... I am so close to call it a gopher loop :-D Yes, my jokes are not much better than my sense of naming. Compiler work might be easier.
 
