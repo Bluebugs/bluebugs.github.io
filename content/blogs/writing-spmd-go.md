@@ -8,13 +8,13 @@ featured_image_class = 'cover bg-center'
 tags = ['golang', 'SPMD', 'tutorial']
 +++
 
-You have read the short version: a base64 decoder in 40 lines of Go that runs at ~17 GB/s on AVX2, about 9x faster than `encoding/base64` and within 77% of the best C++ SIMD library. If that got your attention, this article is where you learn how to write code like that yourself.
+The short version: a base64 decoder in 40 lines of Go running at ~17 GB/s on AVX2, about 9x faster than `encoding/base64` and within 77% of the best C++ SIMD library. This article is where you learn how to write code like that yourself.
 
 This is written against the proof of concept in this repository, not upstream Go. The aim is practical: explain the mental model that made the examples fast, and explain the mistakes that made some of them slow.
 
 <!--more-->
 
-I am going to walk through the mental model, the idioms that deliver wins, and the mistakes that will waste your time. Every code example here comes from the proof-of-concept repository and has been compiled and benchmarked. Nothing is hypothetical.
+This walks through the mental model, the idioms that deliver wins, and the mistakes that will waste your time. Every code example comes from the proof-of-concept repository and has been compiled and benchmarked.
 
 ## The mental model: uniform vs varying
 
@@ -62,7 +62,7 @@ u = reduce.Max(v)   // OK: extracts the max lane
 
 Going the other way --- uniform to varying --- is implicit (broadcast). So `v = u` is fine.
 
-Intel's ISPC enforces the same rule for the same reason. Without it, you would silently drop information (which lane's value are you assigning?). Do not look for workarounds.
+Intel's ISPC enforces the same rule for the same reason. Without it, you would silently drop information (which lane's value are you assigning?). There are no workarounds.
 
 ### Where varying values come from
 
@@ -72,7 +72,7 @@ Three sources:
 2. **Loading from a slice inside a `go for`.** `x := slice[i]` where `i` is varying produces a varying `x`.
 3. **`lanes.Index()`.** Returns the current per-lane index as a varying value. Equivalent to `lanes.Varying[int]{0, 1, 2, 3}` on a 4-wide target.
 
-`lanes.Count[T]()` is **uniform** --- it is a compile-time constant equal to the lane count for element type T (4 for int32 on WASM, 8 on AVX2). Use it for batch sizing, never per-lane computation.
+`lanes.Count[T]()` is **uniform** --- it's a compile-time constant equal to the lane count for element type T (4 for int32 on WASM, 8 on AVX2). Use it for batch sizing, never per-lane computation.
 
 ## Your first `go for`
 
@@ -98,13 +98,13 @@ func sumSPMD(data []int) int {
 Line by line:
 
 - `var total lanes.Varying[int] = 0` declares a zero-initialized varying accumulator. Each lane starts at 0. The `0` is uniform; it broadcasts automatically.
-- `go for _, value := range data` iterates the slice in SPMD. Inside the body, `value` is varying --- on a 4-wide target it is `[data[0], data[1], data[2], data[3]]` in the first main iteration.
+- `go for _, value := range data` iterates the slice in SPMD. Inside the body, `value` is varying --- on a 4-wide target it's `[data[0], data[1], data[2], data[3]]` in the first main iteration.
 - `total += value` adds the current vector of values into the accumulator. One `vpaddd` per main iteration.
 - `return reduce.Add(total)` collapses the varying accumulator into a single scalar.
 
 For a 1024-element slice on AVX2 (8 lanes of int), the main loop runs 128 iterations, each doing one load and one add. The scalar equivalent does 1024 of each. Roughly 8x fewer instructions. Roughly that much speed up.
 
-## The golden pattern
+## The golden pattern for performance
 
 Almost every loop that hits 5x or better speedup in the proof of concept has this shape:
 
@@ -136,13 +136,13 @@ func findFirst(xs []int32, target int32) int {
 
 The problem: `i` is varying and `result` is uniform. The assignment should not typecheck (and the compiler rejects it). But even if it did, you would get "some lane's value of i," and which lane depends on the SIMD width of your target. On a 4-wide target you might get one answer; on 8-wide you get another.
 
-**Any time your output depends on the SIMD width, you have a correctness bug.** This is not a performance issue --- it is a "your tests pass in one mode and fail in another" issue.
+**Any time your output depends on the SIMD width, you have a correctness bug.**
 
 The broader anti-pattern is using `reduce.From()` to inspect individual lane values in real logic. That too produces lane-count-dependent results.
 
 The correct discipline is to produce scalar results via reductions: `reduce.Add`, `reduce.Min`, `reduce.Max`, `reduce.Or`, `reduce.And`, `reduce.Mask`. Those give the same answer regardless of SIMD width.
 
-`reduce.From(v)` exists --- it extracts all lanes into a Go slice. It is a code smell in hot paths: slow (N scalar extractions), lane-count-dependent, and a sign you are trying to do per-lane work on the scalar side. Reserve it for tests and debugging.
+`reduce.From(v)` exists --- it extracts all lanes into a Go slice. It's a code smell in hot paths: slow (N scalar extractions), lane-count-dependent, and a sign you are trying to do per-lane work on the scalar side. Reserve it for tests and debugging.
 
 **How to detect lane-count bugs today:** compile in dual mode and diff the output:
 
@@ -261,7 +261,7 @@ Rule of thumb: if your algorithm is naturally byte-parallel, prefer byte lanes.
 
 ### Vectorized table lookup
 
-A `[16]byte{...}` constant indexed by a varying byte compiles to **one shuffle instruction** — `vpshufb` on x86 SSSE3/AVX2, `i8x16.swizzle` on WASM SIMD128, `tbl` on ARM NEON. This is the compiler accepting an idiom Go programmers already write naturally and turning it into the densest SIMD primitive on every target.
+A `[16]byte{...}` constant indexed by a varying byte compiles to **one shuffle instruction**: `vpshufb` on x86 SSSE3/AVX2, `i8x16.swizzle` on WASM SIMD128, `tbl` on ARM NEON. This is the compiler accepting an idiom Go programmers already write naturally and turning it into the densest SIMD primitive on every target.
 
 The base64 decoder uses this twice in its first pass: once with an arithmetic LUT (the existing `benchDecodeLUT[ch>>4]` to map base64 chars to sextets), and a second time you can add for **per-byte validity checking** at intrinsic-grade speed. Encode every base64 char's category as a bit, store one set of category bits per upper nibble in one LUT, one per lower nibble in another, and AND the lookup results:
 
@@ -290,11 +290,11 @@ if reduce.Any(hadInvalid) {
 }
 ```
 
-This compiles to **two `vpshufb` + one `vpand` + one `vpcmpeqb`** per byte — the same per-byte instruction count as the hand-tuned C++ implementations in libraries like simdutf. The Go reads as a normal `if` statement; the SIMD lowering is the compiler's job, not yours.
+This compiles to **two `vpshufb` + one `vpand` + one `vpcmpeqb`** per byte, the same per-byte instruction count as the hand-tuned C++ implementations in libraries like simdutf. The Go reads as a normal `if` statement; the SIMD lowering is the compiler's job, not yours.
 
 #### When the table is too big
 
-The shuffle instructions accept a 16-byte table. If your problem looks like a 256-byte LUT — full byte-to-byte translation, character-class detection, etc. — decompose by nibble: one 16-entry LUT keyed by `ch >> 4`, another keyed by `ch & 0xF`, combine the results.
+The shuffle instructions accept a 16-byte table. If your problem looks like a 256-byte LUT (full byte-to-byte translation, character-class detection, etc.), decompose by nibble: one 16-entry LUT keyed by `ch >> 4`, another keyed by `ch & 0xF`, combine the results.
 
 Almost every byte-classification problem fits: ASCII case mapping, JSON whitespace detection, base64/hex validation, URL-encoding sentinels. When you see yourself reaching for a 256-byte array indexed by a varying byte, stop and ask whether the problem decomposes into nibbles. It usually does, and when it does the compiler gives you AVX2-grade output from idiomatic Go.
 
@@ -363,7 +363,7 @@ func EncodeSrc(dst, src []byte) int {
 
 Same output, different shape. The strided stores `dst[i*2]` and `dst[i*2+1]` trigger the byte-decomposition store pattern: the compiler recognizes that they form a stride-2 interleaved write and emits a single bitcast + pshufb + store sequence.
 
-On WASM the dst-centric form wins slightly; on AVX2 the difference is small. **This is a recurring theme in SPMD: the same algorithm can be expressed multiple ways, and the best one depends in practice.** Benchmark both. Also WASM performance might vary depending on the runtime/os/cpu, it isn't the best platform to optimize for and choose an ideal SPMD algorithm.
+On WASM the dst-centric form wins slightly; on AVX2 the difference is small. Benchmark both. Also WASM performance might vary depending on the runtime/os/cpu, it isn't the best platform to optimize for and choose an ideal SPMD algorithm.
 
 ### Mandelbrot: divergent iteration with SPMD function calls
 
@@ -419,11 +419,9 @@ The outer `for j` is scalar (rows). The inner `go for i := range width` is SPMD 
 
 Measured speedup: **6.07x** on AVX2, **3.71x** on SSE, **2.5-3.6x** on WASM simd128 (varies by host).
 
-The lesson: divergent iteration counts --- different lanes finishing their work at different times --- are handled well by SPMD. Write the uniform loop with a varying break condition. The compiler tracks per-lane masks correctly. You do not manage any of this yourself.
+Divergent iteration counts --- different lanes finishing at different times --- are handled well by SPMD. Write the uniform loop with a varying break condition. The compiler tracks per-lane masks correctly.
 
-## What to remember
-
-Write the loop. Trust the compiler. If the generated code is bad, file a bug --- do not reach for a cross-lane builtin. Most of the time, the fix is in the compiler's pattern recognizer, not in your code.
+Write the loop and trust the compiler. If the generated code is bad, file a bug. Most of the time, the fix is in the compiler's pattern recognizer, not in your code.
 
 The patterns that deliver wins: contiguous slice loads and stores (the golden case), cascading `go for` loops with constant-coefficient multiply-add, chunk sizing with `lanes.Count[T]()`, and varying accumulators collapsed with `reduce.Add` / `reduce.Max` / `reduce.Min`.
 

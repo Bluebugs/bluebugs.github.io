@@ -31,7 +31,7 @@ However, as a 90s CPU, bringing _SuperH_ outside of the IoT scope would require 
 
 - **Design a modern MMU/TLB that enables a large L1 cache**: This requires a balance between memory waste and efficiency in accessing and using that memory while also ensuring that the software ecosystem can utilize it. Large L1 caches are possible with larger memory pages. Once you select a memory page size, the entire ecosystem becomes locked to that choice. x86 is significantly impacted by the 4KB page limit today, which Apple’s ARM hardware has managed to bypass.
 
-Even with a full _Debian_ running today on the _SuperH_ family, it would take a lot of work to bring the _SuperH_ family to handle modern workloads outside of IoT. Nevertheless, I believe that as computing workloads become increasingly constrained by energy, the _SuperH_ family—or at least its concepts—will be more relevant than ever.
+Even with a full _Debian_ running today on the _SuperH_ family, it would take a lot of work to bring the _SuperH_ family to handle modern workloads outside of IoT. Nevertheless, I believe that as computing workloads become increasingly constrained by energy, the _SuperH_ family (or at least its concepts) will be more relevant than ever.
 
 Have fun exploring the instruction set below. You can filter, search, and tag (locally stored) through the instruction set.
 

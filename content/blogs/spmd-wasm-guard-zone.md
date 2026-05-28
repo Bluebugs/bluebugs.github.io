@@ -8,11 +8,11 @@ featured_image_class = 'cover bg-center'
 tags = ['SPMD', 'WASM', 'optimization']
 +++
 
-The cheapest optimization in our entire SPMD proof of concept cost 16 bytes of memory and eliminated an entire class of branch-heavy fallback code.
+The cheapest optimization in our SPMD proof of concept cost 16 bytes of memory and eliminated an entire class of branch-heavy fallback code.
 
 <!--more-->
 
-This is part of a [series on SPMD for Go](../go-data-parallelism/). If you want the full picture -- what SPMD is, why it belongs in Go, and what performance it delivers -- start there. This article is about one small trick that made the whole thing practical on WebAssembly.
+This is part of a [series on SPMD for Go](../go-data-parallelism/). If you want the full picture -- what SPMD is, why it belongs in Go, and what performance it delivers -- start there. This article is about one trick that made the whole thing practical on WebAssembly.
 
 ## The problem
 
@@ -102,11 +102,9 @@ If `nearEnd` is false -- roughly 99.6% of the time -- a single `vmovdqu` suffice
 
 Two paths, one branch, and the branch is almost never taken.
 
-## Closing
+The guard zone looks obvious in hindsight: reserve a few bytes of padding so the hardware never faults on an overread. But "obvious in hindsight" and "obvious before you've spent a week debugging bounce-buffer codegen" are different things.
 
-The guard zone is the kind of optimization that looks obvious in hindsight: reserve a few bytes of padding so the hardware never faults on an overread. But "obvious in hindsight" and "obvious before you've spent a week debugging bounce-buffer codegen" are different things.
-
-Any WASM runtime that supports SIMD should do this. If WASM ever gains 256-bit or 512-bit vector extensions, scale the guard zone to match the register width -- 32 or 64 bytes instead of 16. The cost is negligible. The codegen simplification is substantial.
+Any WASM runtime that supports SIMD should do this. If WASM ever gains 256-bit or 512-bit vector extensions, scale the guard zone to match the register width -- 32 or 64 bytes instead of 16. The cost is negligible and the codegen simplification is substantial.
 
 ---
 

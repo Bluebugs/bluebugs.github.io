@@ -8,7 +8,7 @@ featured_image_class = 'cover bg-center'
 tags = ['SPMD', 'SIMD', 'design']
 +++
 
-We built six cross-lane SIMD primitives for our Go SPMD proof of concept. We benchmarked them across ten examples. None delivered a measurable win. Every example that shipped fast shipped without them.
+We built six cross-lane SIMD primitives for our Go SPMD proof of concept, benchmarked them across ten examples, and none delivered a measurable win. Every example that shipped fast shipped without them.
 
 <!--more-->
 
@@ -22,13 +22,13 @@ The `lanes` package in our PoC included a full suite of cross-lane operations, m
 - **`lanes.ShiftLeftWithin(v, k, n)`** / **`lanes.ShiftRightWithin(v, k, n)`** -- shift within groups.
 - **`lanes.SwizzleWithin(v, idx, n)`** -- const-indexed permutation within groups of `n` lanes.
 
-All of these compile. All of them pass correctness tests on WASM SIMD128, x86 SSE, and x86 AVX2, in both SIMD and scalar fallback modes. The implementation is clean -- const-only `shufflevector` lowering for the `*Within` family, AVX2 `vpshufb` table duplication for byte-lane lookups, scalar fallback for runtime `Swizzle`. We are not reporting a failure of implementation. They work. They just do not matter.
+All of these compile and pass correctness tests on WASM SIMD128, x86 SSE, and x86 AVX2, in both SIMD and scalar fallback modes. The implementation is clean -- const-only `shufflevector` lowering for the `*Within` family, AVX2 `vpshufb` table duplication for byte-lane lookups, scalar fallback for runtime `Swizzle`. We are not reporting a failure of implementation. They work but they just do not matter.
 
 ## What we measured
 
 We benchmarked every example at multiple points during development. At the end of the project, every example had been rewritten to use zero cross-lane primitives -- or, at most, `Broadcast`, `Count`, and `Index`, which compile to a splat, a compile-time constant, and a constant vector respectively. Essentially free.
 
-The centerpiece evidence is the base64 decoder.
+The clearest evidence is the base64 decoder.
 
 **Version 1** used explicit cross-lane machinery: `lanes.CompactStore` for output compaction and `lanes.Rotate` tricks for packing bytes across lane boundaries. We built `SPMDMux` and `SPMDInterleaveStore` -- two new SSA-level optimizations, roughly 1500 lines of compiler code -- specifically to make these cross-lane patterns fast. v1 peaked at about 2x scalar throughput.
 
@@ -77,7 +77,7 @@ v2 hit ~17 GB/s on AVX2 -- roughly 77% of simdutf (the best C++ SIMD base64 libr
 
 The rest of the examples tell the same story. Hex-encode: 6-9x on WASM (varies by host), no cross-lane ops. Mandelbrot: 6.07x on AVX2, no cross-lane ops. lo-min: 7.27x on AVX2, no cross-lane ops. IPv4 parser: initially used `lanes.DotProductI8x16Add` as a custom builtin; we deleted it when the `vpmaddubsw` pattern detector subsumed it. Performance was unchanged.
 
-We deleted the 1500 lines of `CompactStore` / `SPMDMux` / `SPMDInterleaveStore` compiler machinery. Nothing got slower.
+We deleted the 1500 lines of `CompactStore` / `SPMDMux` / `SPMDInterleaveStore` compiler machinery with no performance regression.
 
 ## Why the wins came from elsewhere
 
@@ -91,7 +91,7 @@ Cross-lane primitives move values *within* a SIMD register. They do not change h
 
 **Decomposed index path.** At byte granularity on AVX2 (32 lanes), maintaining a 32-element index vector would consume 256 bytes of register state. The scalar-base + `<N x i8>` constant-offset decomposition makes byte-lane iteration tractable without crushing register pressure.
 
-None of these optimizations involve moving values between lanes. They are all about reducing memory traffic, reducing instruction count, and eliminating masking overhead. Cross-lane primitives contribute to none of them.
+None of these optimizations involve moving values between lanes. They are about reducing memory traffic, instruction count, and masking overhead. Cross-lane primitives contribute to none of them.
 
 They also make the source more opaque to the compiler, which means fewer opportunities for higher-level optimizations to fire.
 
@@ -101,7 +101,7 @@ ISPC and Mojo ship rich cross-lane vocabularies, and for good reason. Their prim
 
 Go's likely SPMD market is different. Encoding (base64, hex, JSON), parsing (HTTP headers, IPv4, CSV), numerical reductions over slices (`min`, `max`, `sum`, `mean`), image processing (per-pixel color math). These are contiguous-memory workloads. Data comes in from a slice, gets transformed element-wise or in small fixed-stride patterns, and goes back out to a slice. The values in lane 0 almost never need to visit lane 3.
 
-This is not a criticism of ISPC or Mojo. They serve their markets well. It is a statement about Go's market: **the cross-lane vocabulary we built was designed for problems Go developers do not typically have.**
+This isn't a criticism of ISPC or Mojo. They serve their markets well. It's a statement about Go's market: **the cross-lane vocabulary we built was designed for problems Go developers do not typically have.**
 
 ## What to ship in v1
 
@@ -113,13 +113,13 @@ Based on this evidence, a real Go SPMD implementation should ship three cross-la
 
 That is it. Maybe add compile-time-const `lanes.Rotate` if a specific benchmark demands it -- circular buffer tricks are a candidate. But gate even that on concrete evidence.
 
-Do not ship the `*Within` family. Do not ship runtime-indexed `Swizzle`. Even when some of these lower efficiently in the good cases, they cost real engineering to maintain: type-checker enforcement for const-only arguments, AVX2 table duplication interactions, scalar fallback paths, test matrices. Unused builtins are a tax on every future compiler change.
+Skip the `*Within` family. Skip runtime-indexed `Swizzle`. Even when some of these lower efficiently in the good cases, they cost real engineering to maintain: type-checker enforcement for const-only arguments, AVX2 table duplication interactions, scalar fallback paths, test matrices. Unused builtins are a tax on every future compiler change.
 
-You can always add more primitives later when a real benchmark demands them. This runs against the "future-proof API surface" instinct, but the evidence says it is the right call: we built the full suite, measured everything, and deleted most of it.
+You can always add more primitives later when a real benchmark demands them. This runs against the "future-proof API surface" instinct, but the evidence says it's the right call: we built the full suite, measured everything, and deleted most of it.
 
 ## The lesson
 
-If you are designing a SIMD API -- for Go or anything else -- invest in pattern detectors first, builtins second. The simplest code produced the fastest results, because the compiler's pattern detectors work best on idiomatic patterns. Complexity is not just a readability cost; it is a performance cost.
+If you are designing a SIMD API -- for Go or anything else -- invest in pattern detectors first, builtins second. The simplest code produced the fastest results, because the compiler's pattern detectors work best on idiomatic patterns. Complexity is not just a readability cost; it's a performance cost.
 
 We wrote this up because negative results deserve documentation. We spent real engineering time on cross-lane primitives, learned they do not help for Go's workloads, and want to save others from the same detour.
 

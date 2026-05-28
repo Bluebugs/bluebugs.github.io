@@ -8,11 +8,11 @@ featured_image_class = 'cover bg-center'
 tags = ['SPMD', 'SIMD', 'AVX2', 'intrinsics', 'benchmarks']
 +++
 
-We got a small surprise from our SPMD proof of concept. On three identical AVX2 reductions over `[]int32` -- sum, min, contains -- our SPMD-compiled code is 1.8x to 2.6x faster than the same algorithms written against [`samber/lo/exp/simd`](https://github.com/samber/lo), the experimental Go library built on Go's new `simd` intrinsics package. Both run AVX2 8-wide. Both issue roughly the same number of vector ops in the body. The runtime gap is not about ISA choice. It is about what each compiler can see when it codegens the loop, and that turns out to be a structural property of how the intrinsic API is shaped.
+On three identical AVX2 reductions over `[]int32` -- sum, min, contains -- our SPMD-compiled code is 1.8x to 2.6x faster than the same algorithms written against [`samber/lo/exp/simd`](https://github.com/samber/lo), the experimental Go library built on Go's new `simd` intrinsics package. Both run AVX2 8-wide. Both issue roughly the same number of vector ops in the body. The runtime gap is not about ISA choice. It is about what each compiler can see when it codegens the loop, and that turns out to be a structural property of how the intrinsic API is shaped.
 
 <!--more-->
 
-This post walks through the disassembly for two of the three kernels and explains where the cycles go. The takeaway is not "intrinsics are slow." It is narrower and more interesting: **per-operation SIMD intrinsics that return a vector through the ABI return register cannot keep a loop-carried accumulator live across a call boundary.** And there are a few other places where owning the whole loop gives the compiler optimizations the intrinsic user cannot reach from the library side without cumbersome code structure.
+This post walks through the disassembly for two of the three kernels and explains where the cycles go. The takeaway: **per-operation SIMD intrinsics that return a vector through the ABI return register cannot keep a loop-carried accumulator live across a call boundary.** And there are a few other places where owning the whole loop gives the compiler optimizations the intrinsic user cannot reach from the library side without cumbersome code structure.
 
 ## The setup
 
@@ -65,7 +65,7 @@ SPMD avoids it entirely. Because the loop body is a single LLVM function with no
 
 The horizontal reduce at the end shows the same pattern from a different angle. `lo/simd` stores the vector to the stack and then runs a scalar 8-element loop summing it back -- 9 instructions, all scalar. SPMD does `vextracti128 + 3×vphaddd + vmovd` -- 5 instructions, all vector. Both are correct. The latter happens because LLVM owns the reduction.
 
-This is something that could be improved in the current `go` by inlining completely the intrinsics and giving the opportunity to avoid this register spill on the stack. I don't think it is a limitation of the current simd intrinsics proposal, and I can see how implemented for tinygo today it wouldn't have this problem. So it is in my opinion just due to how young this code path is in the `go` compiler.
+This could be improved in the current `go` compiler by fully inlining the intrinsics, avoiding the register spill. It's not a fundamental limitation of the simd intrinsics proposal -- it's just how young this code path is in the `go` compiler.
 
 ## Contains: three structural wins compound
 
@@ -100,7 +100,7 @@ Three things compound:
 2. **Memory-operand `vpcmpeqd`.** With the load fused into the compare, what was two instructions becomes one. The `simd` API exposes the load as a separate function, so the compiler never has the chance to fuse it.
 3. **`vtestps` instead of `vmovmskps + test`.** The natural Go expression for "is any lane true?" is `cmp.ToBits() != 0`, which goes through a vector→GP-register move. `vtestps` sets ZF directly from a vector register. Today there is no intrinsic that exposes it.
 
-These will be hard to optimize in a library that try to abstract away like google highway. With SPMD, they live in the compiler, and it sees the loop as a unit that it can optimize as a whole. This reduce the cognitive load on the developers and should make it easier for more developers to get it right.
+These are hard to optimize in a library like google highway. With SPMD, they live in the compiler, and it sees the loop as a unit it can optimize as a whole.
 
 ## Min has its own small story
 
@@ -118,7 +118,7 @@ Three root causes, in order of how much they cost:
 
 **3. Loop-level rewrites are not available to the intrinsic user.** Loop peeling, choosing between `vmovmskps` and `vtestps`, ... -- these are not library decisions. They are compiler-level transformations that need to see the loop as a whole or the developer need to shape his code with this optimization in mind.
 
-**4. The obvious lack of portability.** By design intrinsics are not abstracting the hardware, but exposing it. With SPMD you get portable and competitive code, while with intrinsics you need to know each architecture and duplicate your files to handle those including a fallback to pure scalar classic Go. All that burden get lifted with `go for`!
+**4. Portability.** Intrinsics expose hardware rather than abstracting it. With SPMD you get portable and competitive code, while with intrinsics you need to know each architecture and duplicate your files, including a fallback to scalar Go. That burden gets lifted with `go for`.
 
 ## Could the experimental `simd` package narrow the gap?
 
@@ -129,20 +129,20 @@ In two of the three kernels, yes -- partially -- with API or implementation chan
 
 There is also a backend angle worth noting. If the `simd` package were ported to TinyGo, each intrinsic would naturally lower to LLVM vector IR rather than an opaque assembly stub, so two of the three causes above -- the call-boundary accumulator spill and the missed load/compare fusion -- would mostly disappear on their own: LLVM's register allocator would keep the accumulator live across iterations, and its instruction selector would fuse memory operands and pattern-match idioms like "any-lane true" to `vtestps` without the library having to ask. The third cause -- loop peeling and the rest of the loop-shape rewrites -- would not be addressed by a backend change alone, because the compiler still does not own the loop. That residual is exactly the seam where a loop-level construct earns its keep, and it lines up with the conclusion above: backends can close the codegen gap, but loop-level transformations need a loop-level anchor.
 
-None of this is a criticism of the `simd` package. It is doing exactly what an instruction-level intrinsic library is supposed to do. The point is that **the API shape (per-op, vector return values) carries a structural cost on loop-carried state that no amount of library polish can remove**, and a complementary loop-level approach can address that cost without competing with the intrinsic surface for control.
+This isn't a criticism of the `simd` package. It's doing exactly what an instruction-level intrinsic library is supposed to do. **The API shape (per-op, vector return values) carries a structural cost on loop-carried state that no amount of library polish can remove**, and a complementary loop-level approach can address that cost without competing with the intrinsic surface for control.
 
 One of the example, I am not covering much here, is the IPv4 parser which I couldn't get to its theoretical speed with a SPMD approach and I suspect it will do much better with just pure intrinsics. IPv4 just fit in a 128 bits register. There is no loop needed and you are actually fighting to get them to disappear when using a SPMD approach. This class of algorithm are likely going to fair a lot better with pure manual selection of instruction when you are already at the edge of what is doable.
 
 ## How this fits with `archsimd`
 
-We have written before that SPMD and `archsimd` are complementary, and this comparison is a concrete example of where the layers live:
+SPMD and `archsimd` are complementary, and this comparison is a concrete example of where the layers live:
 
-- `archsimd` is the right tool when you want to pick exact instructions. It is honest about what it is: vector ops, one at a time, return values, explicit width.
+- `archsimd` is the right tool when you want to pick exact instructions. It's honest about what it is: vector ops, one at a time, return values, explicit width.
 - A loop-level construct like `go for` is the right tool when you want the compiler to choose width, generate the masked tail, hoist invariants, apply loop peeling and generating portable code -- without you writing any of it.
 
 The two are not in competition. You could expect to use both in the same program: `archsimd` for the handful of kernels where intrinsic-level control is genuinely worth the source cost, and a loop-level construct for the long tail of reductions, scans, byte-classification loops, and per-pixel arithmetic where readability and portability matter more than picking instructions by hand.
 
-The relevant lesson from these three reductions is that there is real performance available at the loop level that a per-op intrinsic library structurally cannot reach. That is a useful argument for having both layers, not for replacing one with the other.
+The real performance available at the loop level is something a per-op intrinsic library structurally cannot reach. That is a useful argument for having both layers, not for replacing one with the other.
 
 ## Reproducing the comparison
 

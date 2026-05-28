@@ -12,7 +12,7 @@ Our base64 decoder was implemented twice. Version 1 used explicit cross-lane ope
 
 <!--more-->
 
-This is the story of how we learned to trust the compiler more than our SIMD intuition, and why we think pattern detection should come before builtins in any SIMD API design.
+We learned to trust the compiler more than our SIMD intuition, and pattern detection should come before builtins in any SIMD API design.
 
 ## The base64 story
 
@@ -76,7 +76,7 @@ func decodeAndPack(dst, src []byte) int {
 
 No `SwizzleWithin`. No `RotateWithin`. No `ShiftLeftWithin`. No output pattern. No explicit cross-lane anything. Just four `go for` loops with plain Go arithmetic. And it hit 77% of the best C++ SIMD library. There is an obvious ceiling here: TinyGo optimizes for size, so we are not getting aggressive loop unrolling, and simdutf's AVX2 decoder processes 64 bytes per iteration where ours processes 32. So 77% is not the end of the road so much as the current result under a size-oriented compiler.
 
-The original blog post even asked the right question: "Is the added complexity worth it? Perhaps the real question is whether we need the full suite of cross-lane operations, or if reduction alone would cover the majority of practical use cases." The answer turned out to be more dramatic than we expected.
+The original blog post even asked the right question: "Is the added complexity worth it? Perhaps the real question is whether we need the full suite of cross-lane operations, or if reduction alone would cover the majority of practical use cases."
 
 ## The vpmaddubsw/vpmaddwd detector
 
@@ -122,7 +122,7 @@ The compiler's byte-decomposition store detector recognizes the stride-S pattern
 
 Three operations, independent of the number of lanes. On WASM, `v128.swizzle` does the same job. On SSE, `pshufb`. The detection pass is roughly 300 lines of compiler code.
 
-Here is the part that still amazes me: the byte-decomposition store detector replaced approximately 1,500 lines of `CompactStore`, `SPMDMux`, and `SPMDInterleaveStore` infrastructure we had built for the v1 decoder. We added those three features --- explicit cross-lane builtins with SSA-level optimization passes, diagonal-extraction shuffles, and per-lane selection logic. Four days later, we deleted all of it. One recognizer, 300 lines, did the same job better.
+The byte-decomposition store detector replaced approximately 1,500 lines of `CompactStore`, `SPMDMux`, and `SPMDInterleaveStore` infrastructure we had built for the v1 decoder. We added those three features --- explicit cross-lane builtins with SSA-level optimization passes, diagonal-extraction shuffles, and per-lane selection logic. Four days later, we deleted all of it. One recognizer, 300 lines, did the same job better.
 
 If this optimization were to be carried forward into a production compiler, covering stride-2 through stride-4 cases first would likely capture most of the practical wins. Hex encoding, base64, and a lot of image-manipulation code all fall into that range.
 
@@ -138,7 +138,7 @@ After living with both approaches for several months, we see four reasons the pa
 
 **The developer writes less code, and that code is easier to review.** The v2 base64 kernel is roughly 40 lines. A full implementation of the v1 approach would be 80 or more lines of explicit shuffles, rotations, and output patterns. Less code means fewer bugs. It also means that a reviewer who understands Go arithmetic can verify correctness without understanding SIMD lane semantics.
 
-The blog's approach treated the compiler as a translator --- "emit the instructions I tell you." The PoC's winning approach treated the compiler as an optimizer --- "here's what I want to compute; you pick the instructions." The optimizer won.
+The blog's approach treated the compiler as a translator --- "emit the instructions I tell you." The PoC's winning approach treated the compiler as an optimizer --- "here's what I want to compute; you pick the instructions."
 
 ## The DotProductI8x16Add cautionary tale
 
@@ -148,15 +148,11 @@ Then we built the pmadd pattern detector for the base64 decoder. The detector re
 
 So we deleted the builtin. One commit: `1df19e8`. Approximately 163 lines of compiler code removed --- type checking, LLVM lowering for three targets, test infrastructure. The IPv4 parser continued to work without changes, because it had never needed the builtin; it just needed the compiler to recognize a multiply-add when it saw one.
 
-The moral is simple: **pattern detectors generalize; builtins do not.** Every builtin is a tax on future compiler changes --- it has to be type-checked, lowered on every target, documented, and maintained in a stable API. A pattern detector is pure compiler internals. It can be improved, generalized, or deleted without affecting user source code. When a detector subsumes a builtin, delete the builtin.
+**Pattern detectors generalize; builtins do not.** Every builtin is a tax on future compiler changes --- it has to be type-checked, lowered on every target, documented, and maintained in a stable API. A pattern detector is pure compiler internals. It can be improved, generalized, or deleted without affecting user source code. When a detector subsumes a builtin, delete the builtin.
 
-## Closing
+If you are designing a SIMD API --- whether for Go, Rust, Mojo, or anything else --- consider investing in pattern detectors first, builtins second. Ship `Broadcast` (it's free --- just a splat). Ship `Count[T]()` (it's a compile-time constant). Ship `Index()` (it's a constant vector). That might be enough.
 
-If you are designing a SIMD API --- whether for Go, Rust, Mojo, or anything else --- consider investing in pattern detectors first, builtins second. Ship `Broadcast` (it is free --- just a splat). Ship `Count[T]()` (it is a compile-time constant). Ship `Index()` (it is a constant vector). That might be enough.
-
-The evidence from this proof of concept says: four pattern detectors on idiomatic Go delivered 77% of the performance of handwritten C++ SIMD, from source code that any Go developer can read. A full suite of cross-lane builtins delivered 20%. The simpler code, the one that trusts the compiler, was the faster code.
-
-Ship fewer primitives, not more. Let the compiler do the thinking.
+Four pattern detectors on idiomatic Go delivered 77% of the performance of handwritten C++ SIMD, from source code that any Go developer can read. A full suite of cross-lane builtins delivered 20%. The code that trusted the compiler was the faster code.
 
 ---
 

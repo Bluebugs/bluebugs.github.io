@@ -8,7 +8,7 @@ tags = ['golang', 'SPMD', 'data-parallelism']
 +++
 
 > [!WARNING]
-> **Historical note.** This post predates the actual TinyGo SPMD compiler. It is a thought experiment from when the design space was still open. The high-level ideas (uniform vs varying, `go for` as the SPMD construct, masking for divergent control flow) all survived, but some details have evolved: `lanes.Varying[T]` is now a package-typed magic generic (no `varying` keyword), and several restrictions on `return`/`break`, function visibility, and `go for` nesting were added during implementation. For accurate, measured behavior see [Writing SPMD Go](../writing-spmd-go/) and [SPMD Results](../spmd-results/).
+> **Historical note.** This post predates the actual TinyGo SPMD compiler. It's a thought experiment from when the design space was still open. The high-level ideas (uniform vs varying, `go for` as the SPMD construct, masking for divergent control flow) all survived, but some details have evolved: `lanes.Varying[T]` is now a package-typed magic generic (no `varying` keyword), and several restrictions on `return`/`break`, function visibility, and `go for` nesting were added during implementation. For accurate, measured behavior see [Writing SPMD Go](../writing-spmd-go/) and [SPMD Results](../spmd-results/).
 
 ## Why Data Parallelism Matters in Go
 
@@ -24,7 +24,7 @@ The solution to this bottleneck is for the Go compiler to generate SIMD instruct
 
 ## What if Go Made Data Parallelism Simpler?
 
-I believe that integrating data parallelism as a core language feature would make Go code faster, but keep its accessibility, readability, and portability. In this blog, I will explore what it might look like to add data parallelism to Go, inspired by languages like ISPC and Mojo. Even if Go never adopts this approach, understanding these concepts can help you write better compute kernels or Mojo code.
+Integrating data parallelism as a core language feature would make Go code faster while keeping it accessible and portable. This post explores what that might look like, drawing from ISPC and Mojo. Even if Go never adopts this approach, these concepts map to shader kernels and Mojo code.
 
 The key feature missing in Go is the ability to express that we can manipulate data in parallel in a certain block of code. While Go supports concurrent function execution with the **`go`** keyword, it focus only on code flow level parallelism. Languages like ISPC use **`foreach`**, and Mojo uses **`vectorize`** to express this. Both enable the same code to run on CPUs and GPUs.
 
@@ -69,13 +69,13 @@ Let's look at how **`for`** inside a **`go for`** SPMD context would work. We'll
 
 {{< spmd-countbits >}}
 
-> NOTE: For simplicity of the example and because I do not want everyone to have to click 32 times in the inner loop, I went with byte and uint8 type here. In a more practical implementation of this function, I should be manipulating int32 directly and write the inner loop test just inside the if  like so **`if v & (1 << it) != 0 {`**. The compiler should be able to match this loop with a popcount instruction if the hardware support it. Basically there is no reason that this would be any slower than a more direct to assembly approach, but it keep its readability in my opinion.
+> NOTE: For simplicity I went with byte and uint8 here so you don't have to click 32 times in the inner loop. In real code you'd use int32 and write the test as **`if v & (1 << it) != 0 {`**. The compiler should match this to a popcount instruction if the hardware supports it. It wouldn't be any slower than writing assembly directly, and it keeps readability.
 
 This was a fairly simple **`for`** loop that operate on a uniform variable (same value for all lanes), but it shows how manipulating the mask enable all the complexity in behavior we could want. We can nest loop, if. We can also implement **`break`** and **`continue`** using just mask.
 
 ## Divergent Control Flow
 
-The previous example showed lanes executing the same loop with uniform iteration counts. But what happens when different lanes need to execute loops of different lengths? This is where SPMD really shines - it can handle **divergent control flow** where each lane follows a different execution path.
+The previous example showed lanes executing the same loop with uniform iteration counts. Different lanes can also execute loops of different lengths -- this is **divergent control flow**.
 
 Consider this example where we sum arrays of different lengths:
 
@@ -83,11 +83,11 @@ Consider this example where we sum arrays of different lengths:
 
 This example demonstrates a key SPMD concept: **lanes can finish their work at different times**. Lane 2 finishes after processing just one element `[4]`, while Lane 3 continues processing three elements `[5,6,7]`. The SPMD execution model handles this gracefully by using masks - when a lane finishes its inner loop, it becomes inactive (masked out) while other lanes continue executing.
 
-This is fundamentally different from traditional SIMD where all lanes must execute the same instruction. In our SPMD model, the compiler can generate efficient code that handles divergent control flow, making it practical for real-world algorithms where data doesn't always fit neat, uniform patterns.
+This is different from traditional SIMD where all lanes execute the same instruction. The compiler generates code that handles divergent control flow, which matters for real-world algorithms where data doesn't fit neat uniform patterns.
 
 ## Summary
 
-And we have shown that it is possible to extend Go with just a few types in a package and the **`go for`** construct to make writing data parallel algorithm approachable, more readable and maintainable in my opinion. Let me know if there is anything that need clarification.
+So yes, you can extend Go with a few types and the **`go for`** construct to write data-parallel algorithms that are still readable and maintainable.
 
 Adding data parallelism as a first-class feature in Go could make high-performance computing more accessible and portable. By learning from languages like ISPC and Mojo, we can imagine a future where Go code is simple, fast and leverage the full power of modern hardware. Even if Go never adopts these features, understanding them can help you write shader, compute kernel and code for Mojo or ISPC.
 

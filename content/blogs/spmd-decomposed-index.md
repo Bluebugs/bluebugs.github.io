@@ -8,7 +8,7 @@ featured_image_class = 'cover bg-center'
 tags = ['SPMD', 'compiler', 'AVX2', 'x86']
 +++
 
-When we set out to make `for i, b := range byteSlice` fast on AVX2, the first thing that went wrong was the index vector. This article explains what happened, the technique we used to fix it, and the chain of bugs the fix resolved along the way.
+When making `for i, b := range byteSlice` fast on AVX2, the first thing that went wrong was the index vector.
 
 <!--more-->
 
@@ -22,7 +22,7 @@ But byte-granular iteration over a `[]byte` requires computing 32 memory address
 <32 x i64> = [base, base+1, base+2, ..., base+31]
 ```
 
-That is **256 bytes of register state just for the index**, before you have loaded any actual data. On AVX-512 with 64 byte-lanes, it doubles to 512 bytes. LLVM's GEP vectorization path struggles with this: it scalarizes the gather into 32 individual loads, and the "vectorized" loop is slower than the scalar one. Solving this problem is critical to make SPMD and gopher loops useful in Go.
+That is **256 bytes of register state just for the index**, before you have loaded any actual data. On AVX-512 with 64 byte-lanes, it doubles to 512 bytes. LLVM's GEP vectorization path struggles with this: it scalarizes the gather into 32 individual loads, and the "vectorized" loop is slower than the scalar one.
 
 ## The technique: scalar base + constant lane offset
 
@@ -67,11 +67,9 @@ The compiler handles this algebraically in `spmdDecomposedBinOp`: for `AND`, `RE
 
 In general all the math you actually need operate cleanly and neatly on this decomposed index for all practical purpose. Of course, you can still have to fallback to the slow path if an operation on the index can not be decomposed itself. This is something to later decide, allow all operation and let a linter catch bad practice or make the index a bit of a special type that restrict operation to only what can be decomposed.
 
-## Build this from day one
+The decomposed index path is a representation choice that determines whether byte-granular iteration is tractable at wide SIMD widths. Without it, you either pay the gather/scatter cost (32 individual loads per iteration on AVX2) or you drop to narrower loops and leave parallelism on the table.
 
-The decomposed index path is not an optimization you bolt on after the fact. It is a representation choice that determines whether byte-granular iteration is tractable at wide SIMD widths. Without it, you either pay the gather/scatter cost (32 individual loads per iteration on AVX2) or you drop to narrower loops and leave parallelism on the table.
-
-The implementation is roughly 300 lines of Go in the TinyGo compiler. The conceptual move is what matters: recognize that range-over-slice admits a clean factorization into a scalar base and a constant offset, make the compiler track that pair explicitly, and propagate it algebraically through arithmetic operations. If you are building an SPMD compiler or an auto-vectorizing frontend and you want byte-level iteration to be fast, start here.
+The implementation is roughly 300 lines of Go in the TinyGo compiler. The conceptual move is what matters: recognize that range-over-slice admits a clean factorization into a scalar base and a constant offset, make the compiler track that pair explicitly, and propagate it algebraically through arithmetic operations.
 
 ---
 

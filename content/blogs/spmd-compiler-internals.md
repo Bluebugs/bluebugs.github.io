@@ -8,7 +8,7 @@ featured_image_class = 'cover bg-center'
 tags = ['SPMD', 'compiler', 'SSA', 'LLVM']
 +++
 
-We added a way to express data parallelism in idiomatic Go. Earlier discussions around this space often stalled on a simple question: how would it actually work in the compiler? A working proof of concept that compiles `go for` loops to WASM SIMD128, x86 SSE, and x86 AVX2, with end-to-end tests passing and a base64 decoder reaching ~77% of simdutf C++ throughput, is a better answer than another round of speculation. The goal here is to make the implementation strategy concrete. Along the way we learned one lesson the hard way: **SPMD is a compiler feature that has to live at the heart of the SSA form.** Everything else follows from that.
+We added a way to express data parallelism in idiomatic Go. Earlier discussions around this space often stalled on how it would actually work in the compiler. A working proof of concept that compiles `go for` loops to WASM SIMD128, x86 SSE, and x86 AVX2, with end-to-end tests passing and a base64 decoder reaching ~77% of simdutf C++ throughput, is a better answer than another round of speculation. The goal here is to make the implementation strategy concrete. Along the way we learned one lesson the hard way: **SPMD is a compiler feature that has to live at the heart of the SSA form.** Everything else follows from that.
 
 This article is for compiler engineers. If you want to see the benchmarks and the short version, read [the overview](../spmd-results/). If you want to write SPMD Go code, the [practical guide](../writing-spmd-go/) is for you. Here, we talk about what we built inside the compiler, what we got wrong, and what we would do differently.
 
@@ -30,7 +30,7 @@ We eventually accepted that the third fork was necessary. We created `x-tools-sp
 
 The result was immediate: that entire class of mask-stack bugs largely disappeared. New control-flow cases -- divergent inner loops, boolean chains, varying switch -- landed without the old style of regressions because the SSA already encoded the correct mask at every point of use. The block walker became trivial: each memory operation carries its mask; the walker emits it.
 
-The lesson is simple and, in hindsight, obvious. **SPMD is a compiler feature that has to live at the heart of the SSA form. You cannot bolt it on as a backend analysis.** The mask semantics are a property of the program's control flow, and they must be resolved where control flow is represented -- in the SSA -- not reconstructed during a traversal of a different IR. The bugs are proportional to the gap between what the SSA knows and what the backend needs. Close the gap at the source.
+**SPMD is a compiler feature that has to live at the heart of the SSA form. You cannot bolt it on as a backend analysis.** The mask semantics are a property of the program's control flow, and they must be resolved where control flow is represented -- in the SSA -- not reconstructed during a traversal of a different IR. The bugs are proportional to the gap between what the SSA knows and what the backend needs. Close the gap at the source.
 
 ## Predicated SSA
 
@@ -60,7 +60,7 @@ optimizeBlocks
 
 TinyGo's job shrinks to "consume the SSA mechanically." That is the whole point of doing predication at the SSA level.
 
-One trap worth documenting: all this metadata holds pointers into the CFG. Then `optimizeBlocks()` runs -- it deletes empty blocks, merges straight-line chains, renumbers everything. Our metadata pointers go stale. The fix is two resolution passes (`resolveSPMDSwitchChains`, `resolveSPMDBooleanChains`) that run immediately after `optimizeBlocks` and re-discover which blocks correspond to which logical roles. If you add metadata that holds block pointers to any SSA, add a resolver hook that runs after every optimization pass. Design it up front or you will rediscover this bug the hard way.
+All this metadata holds pointers into the CFG. Then `optimizeBlocks()` runs -- it deletes empty blocks, merges straight-line chains, renumbers everything. The metadata pointers go stale. The fix is two resolution passes (`resolveSPMDSwitchChains`, `resolveSPMDBooleanChains`) that run immediately after `optimizeBlocks` and re-discover which blocks correspond to which logical roles. If you add metadata that holds block pointers to any SSA, add a resolver hook that runs after every optimization pass. Design it up front or you will rediscover this bug the hard way.
 
 ## Where it goes for upstream Go
 
@@ -70,7 +70,7 @@ In Phase 1 of the PoC, we added 42 vector opcodes to [`cmd/compile/internal/ssa/
 
 The 42 opcodes were the wrong shape but the right location. A flat list of vector ops is how you would design a SIMD intrinsics library, not how you would design a compiler. The structured approach that worked -- `SPMDLoopInfo`, explicit-mask `SPMDLoad`/`SPMDStore`/`SPMDSelect`, `If.IsVarying` metadata, predication transforms, SSA-level loop peeling -- is what should replace them. An upstream implementation should rework `cmd/compile/internal/ssa` to carry these patterns natively.
 
-## The `lanes.Varying[T]` type magic
+## The `lanes.Varying[T]` type
 
 `lanes.Varying[T]` is a compiler-magic generic. It parses as a plain generic index expression -- `PkgName.TypeName[TypeArg]` -- but the type checker special-cases it: when resolving the index expression, if the callee is the magic type `lanes.Varying`, it dispatches to the SPMD code path and synthesizes an `SPMDType`. Tooling works unchanged; the grammar is unchanged; `gopls` sees a generic invocation and does the right thing.
 
@@ -86,7 +86,7 @@ The type lattice produced surprises we had to retrofit painfully:
 - **`Varying[[N]T][i]` produces `Varying[T]`.** Indexing a varying fixed-size array returns a varying element.
 - **`*Varying[Struct].Field` produces `Varying[FieldType]`.** Field access through a pointer to a varying struct.
 
-Varying is a functor over types. Build the full lattice -- pointers, arrays, structs, slices-of -- up front, not as retrofits. Each one we added late cost time of propagation through four codebases.
+Varying is a functor over types. The full lattice -- pointers, arrays, structs, slices-of -- should be built up front. Each one we added late cost time propagating through four codebases.
 
 ## Scalar fallback as correctness oracle
 
@@ -101,13 +101,13 @@ Building scalar mode exposed five categories of assumption bugs:
 3. `splatScalar` optimized for lane count 1 by returning the scalar directly, which broke type matching downstream.
 4. `reduce.Add` and friends matched by a naming convention that broke when scalar mode inlined differently.
 
-Each of these was a five-minute fix once found. All were hidden until scalar mode ran. Do not ship an SPMD compiler without a scalar fallback mode. It is the only automated correctness check that catches entire classes of bugs that pass under SIMD and fail under 1-lane execution.
+Each of these was a five-minute fix once found. All were hidden until scalar mode ran. Ship an SPMD compiler with a scalar fallback mode. It's the only automated correctness check that catches entire classes of bugs that pass under SIMD and fail under 1-lane execution.
 
 ## What we would do differently
 
 **Unify `types2` and `go/types`.** The double-write cost us more time than any single technical decision. Every type-system extension was implemented twice, debugged twice, tested twice. We eventually gave up on making every pass elegant and settled for getting the behavior correct, even when that meant leaving some logic in later phases than it should have lived. There is clearly cleanup work left there. It was not an ideal decision, but it was a real tradeoff in a time-boxed PoC.
 
-**First-class mask width in the type system.** Two `go for` loops in the same function can have different lane counts -- one iterating `int32` (4-wide on SSE), another iterating `byte` (16-wide on SSE). Their masks have different LLVM types. We handled this with deferred mask type resolution at materialization points. It works but it is ugly. A cleaner design would make mask width part of the SPMD type system so that `Varying[mask[N]]` carries its N. That has to be done with the implied decision that the `go for` loops drive the final lane count inside a loop.
+**First-class mask width in the type system.** Two `go for` loops in the same function can have different lane counts -- one iterating `int32` (4-wide on SSE), another iterating `byte` (16-wide on SSE). Their masks have different LLVM types. We handled this with deferred mask type resolution at materialization points. It works but it's ugly. A cleaner design would make mask width part of the SPMD type system so that `Varying[mask[N]]` carries its N. That has to be done with the implied decision that the `go for` loops drive the final lane count inside a loop.
 
 **A real calling convention for the mask parameter.** In the PoC, the current mask is a synthetic parameter shoved into the front of every SPMD function's argument list. In a real implementation, debuggers, profilers, FFI bridges, and reflection should see it explicitly. It deserves a calling convention, not a hack.
 
@@ -115,7 +115,7 @@ Each of these was a five-minute fix once found. All were hidden until scalar mod
 
 **A smaller [`compiler/spmd.go`](https://github.com/Bluebugs/tinygo/blob/spmd/compiler/spmd.go).** The file grew to approximately 9,000 lines. It should have been seven files of 1,200 lines each: `spmd_loop.go`, `spmd_memory.go`, `spmd_masks.go`, `spmd_patterns_x86.go`, `spmd_patterns_wasm.go`, `spmd_builtins.go`, `spmd_lowering.go`. Commit to a file-per-concern structure from day one.
 
-**Work on `go/ir`, `go/ssa` and `x-tools/ssa` from day one.** The mask-stack detour cost us months. If we had accepted the three-fork maintenance burden early and built predication at the SSA level from the start, the total project time would have been shorter. The bugs were proportional to the gap between what the SSA knew and what the backend needed. Close the gap at the source. That is the lesson, and it is the one we would give to anyone starting a similar project.
+**Work on `go/ir`, `go/ssa` and `x-tools/ssa` from day one.** The mask-stack detour cost us months. If we had accepted the three-fork maintenance burden early and built predication at the SSA level from the start, the total project time would have been shorter. The bugs were proportional to the gap between what the SSA knew and what the backend needed. Close the gap at the source.
 
 Also we need a better name. I am bad at naming things. `goroutine` is nice and understandable way to describe light thread. So what should be the name of a SPMD for loop, this little `go for`... I am so close to call it a gopher loop :-D Yes, my jokes are not much better than my sense of naming. Compiler work might be easier.
 

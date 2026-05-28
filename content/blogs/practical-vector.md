@@ -9,7 +9,7 @@ tags = ['golang', 'SPMD', 'SIMD']
 +++
 
 > [!WARNING]
-> **Historical note.** This post predates the actual TinyGo SPMD compiler and explores a hypothetical `go for`. The core patterns (parallel scan with `reduce.Any` early exit, hex-encode via per-lane table lookup, two-phase scan/convert for `ToUpper`) all work today — see the [hex-encode example](https://github.com/Bluebugs/SPMD/blob/main/playground/examples/spmd/hex-encode/main.go). However: `reduce.FindFirstSet` is currently a stub (not implemented), `lanes.Count(c)` is a uniform compile-time constant (typically written `lanes.Count[T]()`), and `//go:noinline` discipline on hot SPMD functions turned out to matter for codegen quality. For the working idioms see [Writing SPMD Go](../writing-spmd-go/); for measured perf vs Go's stdlib hex see [SPMD Results](../spmd-results/).
+> **Historical note.** This post predates the actual TinyGo SPMD compiler and explores a hypothetical `go for`. The core patterns (parallel scan with `reduce.Any` early exit, hex-encode via per-lane table lookup, two-phase scan/convert for `ToUpper`) all work today; see the [hex-encode example](https://github.com/Bluebugs/SPMD/blob/main/playground/examples/spmd/hex-encode/main.go). However: `reduce.FindFirstSet` is currently a stub (not implemented), `lanes.Count(c)` is a uniform compile-time constant (typically written `lanes.Count[T]()`), and `//go:noinline` discipline on hot SPMD functions turned out to matter for codegen quality. For the working idioms see [Writing SPMD Go](../writing-spmd-go/); for measured perf vs Go's stdlib hex see [SPMD Results](../spmd-results/).
 
 ## Printf helper
 
@@ -19,9 +19,9 @@ One of the first and most repetitive tasks for [doPrintf](https://github.com/gol
 
 {{< spmd-printf-verbs >}}
 
-One of the important bit of this example is the use `reduce.Any` inside a `go for` loop. This make the `if` act like a normal `if` with a jump and enable a quick exit as soon as at least one `%` is found. This is still readable and maintainable. I would think this could be acceptable in the Go standard library codebase once this feature is properly ready for prime time.
+The trick here is using `reduce.Any` inside a `go for` loop. It makes the `if` act like a normal `if` with a jump, exiting as soon as one `%` is found. Still readable and maintainable. This could live in the Go standard library once the feature is ready.
 
-A crucial detail in this example is the use of `lanes.Count(c)` to increment the uniform `i` variable. Since SPMD execution processes data in chunks equal to the number of available lanes, we need to track our position in the overall data stream. The `lanes.Count()` function returns the number of lanes that actually processed data in the current iteration — typically equal to the hardware's lane count, but potentially fewer when nearing the end of the data. This allows us to correctly calculate absolute positions: when `reduce.FindFirstSet()` returns a lane-relative index (0-3 in our 4-lane example), adding it to the uniform base index `i` gives us the correct position in the original string. Without this uniform tracking, we'd only know which lane found the `%`, not where it actually appears in the input.
+A crucial detail in this example is the use of `lanes.Count(c)` to increment the uniform `i` variable. Since SPMD execution processes data in chunks equal to the number of available lanes, we need to track our position in the overall data stream. The `lanes.Count()` function returns the number of lanes that actually processed data in the current iteration, typically equal to the hardware's lane count but potentially fewer when nearing the end of the data. This allows us to correctly calculate absolute positions: when `reduce.FindFirstSet()` returns a lane-relative index (0-3 in our 4-lane example), adding it to the uniform base index `i` gives us the correct position in the original string. Without this uniform tracking, we'd only know which lane found the `%`, not where it actually appears in the input.
 
 ## Encode hexadecimal
 
@@ -43,11 +43,11 @@ If we adapt it to use `go for` and parallelize the data manipulation, we get the
 
 {{< spmd-hex >}}
 
-There are different ways to do the index access. We could have also used an if statement for both index cases, but the most important change is that we are expressing the operation on one lane at a time. This enables the compiler to automatically adapt the code to whatever number of lanes are available and use proper linear memory access, which is the most efficient way to manipulate data. It is critical when doing SIMD to be very efficient with memory access, as that often ends up being the limiting factor.
+There are different ways to do the index access. We could have also used an if statement for both index cases, but the most important change is that we are expressing the operation on one lane at a time. This enables the compiler to automatically adapt the code to whatever number of lanes are available and use proper linear memory access, which is the most efficient way to manipulate data. It's critical when doing SIMD to be very efficient with memory access, as that often ends up being the limiting factor.
 
 ## bytes.ToUpper
 
-Last practical example. For bytes.ToUpper, the Go standard library has a fast path when the string consists only of ASCII characters. We can make that fast path even faster using SIMD and data parallelism. Here is what the code would look like:
+Last practical example. For bytes.ToUpper, the Go standard library has a fast path when the string is all ASCII. We can make that faster with SIMD:
 
 {{< spmd-toupper >}}
 
@@ -71,7 +71,7 @@ These three practical examples demonstrate how a hypothetical `go for` construct
 
 These optimizations could significantly improve Go's standard library performance and any Go application. String processing, encoding/decoding, parsing, and mathematical operations are fundamental building blocks that appear in virtually every Go application. Making them faster through data parallelism would benefit the entire ecosystem without requiring developers to learn complex SIMD programming.
 
-The `go for` construct bridges the gap between Go's accessibility and the performance demands of modern applications, proving, in my opinion, that readable code and high performance don't have to be mutually exclusive.
+The `go for` construct bridges Go's accessibility with the performance demands of modern applications. Readable code and high performance don't have to be mutually exclusive.
 
 ---
 

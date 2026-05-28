@@ -8,7 +8,7 @@ featured_image_class = 'cover bg-center'
 tags = ['SPMD', 'compiler', 'optimization', 'SSA']
 +++
 
-If you took every optimization in our SPMD-for-Go proof of concept and ranked them by benchmark impact, loop peeling would be at the top. Not pattern detection. Not contiguous access analysis. Not the decomposed index path. Peeling. It is the structural foundation that everything else is built on, and the reason our hot loops run at one memory operation per store instead of three.
+If you took every optimization in our SPMD-for-Go proof of concept and ranked them by benchmark impact, loop peeling would be at the top. Not pattern detection. Not contiguous access analysis. Not the decomposed index path. Peeling. It's the structural foundation that everything else is built on, and the reason our hot loops run at one memory operation per store instead of three.
 
 <!--more-->
 
@@ -33,7 +33,7 @@ The main body increments by `laneCount` per iteration instead of by 1. The tail,
 
 ## Why this has to happen at the SSA level
 
-A reasonable question: why not let LLVM handle this? LLVM has a loop unroller and a vectorizer. Both do forms of peeling. Neither can help here, for three reasons.
+Why not let LLVM handle this? LLVM has a loop unroller and a vectorizer. Both do forms of peeling. Neither can help here, for three reasons.
 
 First, LLVM's loop unroller operates on scalar IR. It does not know about masks. If you unroll a masked loop N times, each unrolled iteration still carries the mask it started with. There is no mechanism inside the unroller to collapse "iterations 1 through N-1 have all-ones masks, iteration N has a computed tail mask."
 
@@ -45,7 +45,7 @@ At the SSA level, peeling is a straightforward block-creation transform: create 
 
 ## The all-ones fast path
 
-This is where the money is.
+This is the core of the win.
 
 Without peeling, every `SPMDStore` in the loop must do three memory operations:
 
@@ -81,7 +81,7 @@ There is one structural subtlety that is easy to get wrong. A loop with a varyin
 2. **Main body to tail body.** Main's final value becomes tail's initial value.
 3. **Tail body to done block.** Tail's final value is the loop result.
 
-The done block therefore needs a phi that selects between "main's final value, if there was no tail" and "tail's final value, if there was." We call this the **done-block phi trampoline**. It is built inside `peelSPMDLoop` and referenced by the predication pass via `loop.MainIterPhi` and `loop.TailIterPhi` on `SPMDLoopInfo`.
+The done block therefore needs a phi that selects between "main's final value, if there was no tail" and "tail's final value, if there was." We call this the **done-block phi trampoline**. It's built inside `peelSPMDLoop` and referenced by the predication pass via `loop.MainIterPhi` and `loop.TailIterPhi` on `SPMDLoopInfo`.
 
 This is the kind of plumbing that is invisible when it works and catastrophic when it does not. We fixed a trampoline bug during the pointer-varying work and it cost us a full day of debugging. If you implement peeling, test accumulator phis exhaustively -- they are one of the two bug dens (the other being break results under varying conditions).
 
@@ -104,11 +104,7 @@ func peelSPMDLoops(fn *Function) {
 
 A scalar build has zero overhead from the peeling transform. This matters because scalar mode is our correctness oracle: we compile every example in both SIMD and scalar mode and diff the outputs. If peeling added cost to the scalar path, we would be benchmarking our testing infrastructure, not our optimization.
 
-## If you implement one optimization, implement peeling
-
-The SPMD-for-Go PoC has dozens of optimizations: contiguous access analysis, pattern detection for `vpmaddubsw`, byte-decomposition stores, decomposed index paths, store merging, LICM. They all matter. But they all build on top of the structural split that peeling provides. Without peeling, the all-ones fast path does not exist, and every store in the hot loop pays 3x. With peeling, the common case is fast by construction and every other optimization compounds on that foundation.
-
-If you are building an SPMD compiler and you can only ship one optimization, ship peeling.
+The SPMD-for-Go PoC has dozens of optimizations: contiguous access analysis, pattern detection for `vpmaddubsw`, byte-decomposition stores, decomposed index paths, store merging, LICM. They all build on the structural split that peeling provides. Without peeling, the all-ones fast path does not exist, and every store in the hot loop pays 3x. With peeling, the common case is fast by construction and every other optimization compounds on that foundation.
 
 ---
 
