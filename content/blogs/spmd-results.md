@@ -1,7 +1,7 @@
 +++
 date = '2026-04-15T10:00:00-07:00'
 draft = false
-title = 'SPMD for Go: What If Your Loops Were Just Faster?'
+title = 'What If Your Loops Were Just Faster?'
 description = 'A proof of concept for language-level data parallelism in Go, with live WASM demos and real benchmark results'
 featured_image = 'images/mountain-1.jpg'
 featured_image_class = 'cover bg-center'
@@ -161,7 +161,7 @@ Real numbers from our test infrastructure, measured on an AMD Ryzen 7 6800U:
 | Hex-encode | WASM | 6-9x (varies by host) |
 | Hex-encode | SSE | 6.31x |
 
-One result from this table deserves more context. The `lo-min` / `lo-max` numbers are against scalar `samber/lo`. We also ran the same reductions against [`samber/lo/exp/simd`](https://github.com/samber/lo) -- Go's experimental `simd` intrinsics package -- and SPMD comes out 1.8x to 2.6x faster on sum, min, and contains, even though both emit AVX2 8-wide code. Part of the gap is how new intrinsics are in Go, but there's a class of optimization that requires knowing the whole loop structure. We walk through the disassembly in [Why a Reduction Loop Tells the Story](../spmd-vs-intrinsics-reduction/). With SPMD we control the loop and can [peel it](../spmd-loop-peeling/) to generate optimal code automatically -- something that needs manual work with intrinsics and explains the largest gap in our tests.
+One result from this table deserves more context. The `lo-min` / `lo-max` numbers are against scalar `samber/lo`. We also ran the same reductions against [`samber/lo/exp/simd`](https://github.com/samber/lo) -- Go's experimental `simd` intrinsics package -- and SPMD comes out 1.8x to 2.6x faster on sum, min, and contains, even though both emit AVX2 8-wide code. Part of the gap is how new intrinsics are in Go, but there's a class of optimization that requires knowing the whole loop structure. We walk through the disassembly in [What a Reduction Loop Reveals About SPMD vs Per-Op Intrinsics](../spmd-vs-intrinsics-reduction/). With SPMD we control the loop and can [peel it](../spmd-loop-peeling/) to generate optimal code automatically -- something that needs manual work with intrinsics and explains the largest gap in our tests.
 
 Where SPMD shines is loop-shaped problems. When there isn't really a loop -- say, parsing an IPv4 address where the whole thing fits in one 128-bit register -- intrinsics are probably the easier path. I tried building an SPMD IPv4 parser based on Daniel Lemire's [SIMD parser](https://lemire.me/blog/2023/06/08/parsing-ip-addresses-crazily-fast/) work and the best I got was 0.58x the Go standard library. No loop to vectorize meant SPMD had nothing to grab onto.
 
@@ -232,6 +232,6 @@ If you want to dig deeper, the rest of this series covers the details:
 - [Pattern Matching Outperformed Hand-Written SIMD](../spmd-pattern-matching/) -- why the simplest code produced the fastest output
 - [Loop Peeling: Where Most of the Speed Comes From](../spmd-loop-peeling/) -- the single highest-leverage optimization
 - [We Built Cross-Lane SIMD Primitives. None of Them Helped.](../spmd-negative-result/) -- the most important negative result
-- [Why a Reduction Loop Tells the Story: SPMD vs Per-Op SIMD Intrinsics](../spmd-vs-intrinsics-reduction/) -- a disassembly walkthrough of the structural advantage of whole-loop vectorization
+- [What a Reduction Loop Reveals About SPMD vs Per-Op Intrinsics](../spmd-vs-intrinsics-reduction/) -- a disassembly walkthrough of the structural advantage of whole-loop vectorization
 
 ---
