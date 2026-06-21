@@ -21,17 +21,19 @@ As _SuperH_ was designed to be more efficient at decoding instructions and using
 
 However, as a 90s CPU, bringing _SuperH_ outside of the IoT scope would require figuring out how to:
 
+- **Larger relative immediate**: The SH-2A introduced longer immediate instruction. Having a valid longer jump and being able to load memory with a larger displacement than the currently available one would likely lead to executable being another 10% smaller than they are today.
+
 - **Add a 64-bit memory mode**: This would have a direct impact on memory bandwidth, as all pointers would instantly double in size, but it is required to run a lot of modern workload. Mixing 32-bit and 64-bit applications or perhaps developing ABI for libraries to support both modes would likely help. Most applications don't need more than 3GB of memory.
 
-- **Add SIMD instructions**: SIMD allows for manipulating multiple data in parallel. They inherently have a high data-to-instruction ratio, which improves memory bandwidth usage for useful data. To compete with ARM, x86, or even RISC-V, you need SIMD instructions. Unfortunately, due to how poorly the software industry has made it to write data-parallel code, any new SIMD instruction set would require a large amount of hand-written code, representing a massive cost for any new architecture.
+- **Add SIMD instructions**: SIMD allows for manipulating multiple data in parallel. They inherently have a high data-to-instruction ratio, which improves memory bandwidth usage for useful data. To compete with ARM, x86, or even RISC-V, you need SIMD instructions. Unfortunately, due to how poorly the software industry has made it to write data-parallel code, any new SIMD instruction set would require a large amount of hand-written code, representing a massive cost for any new architecture as it is not just a hardware investment, but a lot of software need to be written too.
 
 - **Review the instructions generated for JIT**: Today, we have a lot of software that performs _Just-In-Time_ compilation (_JS_ being one example, but also _QEMU_, which is useful for running non-native software). Such technologies didn’t exist in the 90s, so it would be beneficial to ensure that JIT workloads are well supported.
 
 - **Review the need for VMs**: Again, in the 90s, VMs were not common. Today, VM workloads are the norm in data centers and on our laptops.
 
-- **Design a modern MMU/TLB that enables a large L1 cache**: This requires a balance between memory waste and efficiency in accessing and using that memory while also ensuring that the software ecosystem can utilize it. Large L1 caches are possible with larger memory pages. Once you select a memory page size, the entire ecosystem becomes locked to that choice. x86 is significantly impacted by the 4KB page limit today, which Apple’s ARM hardware has managed to bypass.
+- **Design a modern MMU/TLB**: This requires a balance between memory waste, efficiency in accessing, fpga/die usage, VM support and using that memory while also ensuring that the software ecosystem can utilize it effectivement. x86 is significantly impacted by the 4KB page limit today, which Apple’s ARM hardware has managed to bypass.
 
-Even with a full _Debian_ running today on the _SuperH_ family, it would take a lot of work to bring the _SuperH_ family to handle modern workloads outside of IoT. Nevertheless, I believe that as computing workloads become increasingly constrained by energy, the _SuperH_ family (or at least its concepts) will be more relevant than ever.
+Even with a full _Debian_ running today on the _SuperH_ family, it would take a lot of work to bring the _SuperH_ family to handle modern workloads outside of IoT. Nevertheless, I believe that as computing workloads become increasingly constrained by energy, the _SuperH_ family (or at least its concepts) will be still an interesting architecture to work with.
 
 Have fun exploring the instruction set below. You can filter, search, and tag (locally stored) through the instruction set.
 
