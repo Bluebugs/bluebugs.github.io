@@ -347,7 +347,7 @@ func Encode(dst, src []byte) int {
 }
 ```
 
-The iteration variable `i` is varying. `src[i>>1]` is a gather. `hextable[...]` is a 16-entry table lookup that compiles to `pshufb`/`v128.swizzle`. The `if i%2 == 0` is a varying conditional --- both branches compute, the mask selects. `dst[i] = ...` is a contiguous store. On WASM simd128 this hits **6-9x** scalar (varies by host/runtime). On x86 SSE, **6.31x**.
+The iteration variable `i` is varying. `hextable[...]` is a 16-entry table lookup that compiles to `pshufb`/`v128.swizzle`. The `if i%2 == 0` is a varying conditional --- both branches compute, the mask selects. `dst[i] = ...` is a contiguous store. The catch is `src[i>>1]`: a per-lane **gather** with no cheap SIMD form, and a narrow load that needs careful masked-tail handling to stay correct on lengths that aren't a multiple of the lane count. It works --- but as the numbers below show, it leaves a lot on the table.
 
 The **src-centric** version iterates over the source instead:
 
@@ -363,7 +363,7 @@ func EncodeSrc(dst, src []byte) int {
 
 Same output, different shape. The strided stores `dst[i*2]` and `dst[i*2+1]` trigger the byte-decomposition store pattern: the compiler recognizes that they form a stride-2 interleaved write and emits a single bitcast + pshufb + store sequence.
 
-On WASM the dst-centric form wins slightly; on AVX2 the difference is small. Benchmark both. Also WASM performance might vary depending on the runtime/os/cpu, it isn't the best platform to optimize for and choose an ideal SPMD algorithm.
+Measured on this compiler, the src-centric form is clearly the one to reach for. On x86 AVX2 `EncodeSrc` runs about **1.5x** faster than `Encode` (~32 vs ~20 GB/s); on WASM simd128 the gap is far wider --- about **5x** (~17 vs ~3.5 GB/s, both verified byte-for-byte against a scalar reference under wasmtime). The reason is exactly the `src[i>>1]` gather above: a per-lane gather has no cheap SIMD form --- especially on WASM --- whereas `EncodeSrc`'s unit-stride load is a single contiguous vector load, and its stride-2 stores fold into one byte-decomposition write. The src-centric shape is both faster and simpler for the compiler to get right at every length. **Iterate the source with unit stride; reach for the dst-centric shifted-index form only when you have measured a reason to.** (WASM absolute numbers still vary by runtime/os/cpu --- it isn't the platform to over-tune for --- but the direction is consistent.)
 
 ### Mandelbrot: divergent iteration with SPMD function calls
 
